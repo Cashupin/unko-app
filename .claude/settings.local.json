@@ -17,12 +17,15 @@
       "Bash(docker-compose ps)",
       "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"si\" npx prisma migrate reset --force)",
       "Bash(ls -la \"d:\\\\Proyectos\\\\app-mierda\\\\src\\\\app\\\\api\\\\trips\\\\[id]\"\" 2>&1 | grep \"route.ts \")",
-      "Bash(node -e \"const p = require\\(''./package.json''\\); console.log\\(''next-auth:'', p.dependencies[''next-auth'']\\); console.log\\(''next:'', p.dependencies[''next'']\\);\")"
+      "Bash(node -e \"const p = require\\(''./package.json''\\); console.log\\(''next-auth:'', p.dependencies[''next-auth'']\\); console.log\\(''next:'', p.dependencies[''next'']\\);\")",
+      "Bash(ls src/app/trips/[tripId]/)",
+      "Bash(npm run build)"
     ],
     "additionalDirectories": [
       "d:\\Proyectos\\app-mierda\\src\\app\\trips",
       "D:\\Proyectos\\unko-trip\\unko-trip\\src\\lib",
-      "d:\\Proyectos\\app-mierda\\src\\app\\api\\trips\\[id]\\activities"
+      "d:\\Proyectos\\app-mierda\\src\\app\\api\\trips\\[id]\\activities",
+      "C:\\Users\\ralej\\.claude\\projects\\d--Proyectos-app-mierda\\memory"
     ]
   }
 }

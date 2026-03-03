@@ -203,10 +203,11 @@ model Item {
   title       String
   description String?
   type        ItemType
-  location        String?
-  locationPlaceId String?
-  externalUrl     String?
-  imageUrl        String?
+  location    String?
+  locationLat Float?
+  locationLng Float?
+  externalUrl String?
+  imageUrl    String?
   status          ItemStatus @default(PENDING)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -262,9 +263,10 @@ model Activity {
   tripId       String
   title        String
   description  String?
-  location        String?
-  locationPlaceId String?
-  activityDate    DateTime?
+  location     String?
+  locationLat  Float?
+  locationLng  Float?
+  activityDate DateTime?
   activityTime String?
   notes        String?
   photoUrl     String?

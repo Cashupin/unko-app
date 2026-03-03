@@ -13,7 +13,8 @@ type ActivityData = {
   title: string;
   description: string | null;
   location: string | null;
-  locationPlaceId: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
   activityDate: string | null; // "YYYY-MM-DD" or null
   activityTime: string | null;
   notes: string | null;
@@ -47,11 +48,15 @@ export function EditActivityForm({
 
     const fd = new FormData(e.currentTarget);
 
-    const body: Record<string, string | null | undefined> = {
+    const latRaw = (fd.get("locationLat") as string).trim();
+    const lngRaw = (fd.get("locationLng") as string).trim();
+
+    const body: Record<string, string | number | null | undefined> = {
       title: (fd.get("title") as string).trim(),
       description: (fd.get("description") as string).trim() || null,
       location: (fd.get("location") as string).trim() || null,
-      locationPlaceId: (fd.get("locationPlaceId") as string).trim() || null,
+      locationLat: latRaw ? parseFloat(latRaw) : null,
+      locationLng: lngRaw ? parseFloat(lngRaw) : null,
       activityDate: (fd.get("activityDate") as string) || null,
       activityTime: (fd.get("activityTime") as string) || null,
       notes: (fd.get("notes") as string).trim() || null,
@@ -163,9 +168,11 @@ export function EditActivityForm({
                 <LocationInput
                   id="ea-location"
                   name="location"
-                  namePlaceId="locationPlaceId"
+                  nameLat="locationLat"
+                  nameLng="locationLng"
                   defaultValue={activity.location ?? ""}
-                  defaultPlaceId={activity.locationPlaceId ?? ""}
+                  defaultLat={activity.locationLat}
+                  defaultLng={activity.locationLng}
                   placeholder="Ej: Asakusa, Tokyo"
                 />
               </div>

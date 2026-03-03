@@ -96,7 +96,7 @@ function ItemCard({
         {/* Location */}
         {item.location && (
           <a
-            href={getMapsUrl(item.location, item.locationPlaceId)}
+            href={getMapsUrl(item.location, item.locationLat, item.locationLng)}
             target="_blank"
             rel="noopener noreferrer"
             className="mb-3 flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-600 hover:underline dark:text-zinc-500 dark:hover:text-zinc-300"
@@ -231,7 +231,8 @@ export async function ItemList({
         status: true,
         description: true,
         location: true,
-        locationPlaceId: true,
+        locationLat: true,
+        locationLng: true,
         externalUrl: true,
         imageUrl: true,
         tripId: true,

@@ -38,20 +38,24 @@ export function CreateActivityForm({
 
     const fd = new FormData(e.currentTarget);
 
-    const body: Record<string, string | null | undefined> = {
+    const body: Record<string, string | number | null | undefined> = {
       title: (fd.get("title") as string).trim(),
     };
 
     const description = (fd.get("description") as string).trim();
     const location = (fd.get("location") as string).trim();
-    const locationPlaceId = (fd.get("locationPlaceId") as string).trim();
+    const latRaw = (fd.get("locationLat") as string).trim();
+    const lngRaw = (fd.get("locationLng") as string).trim();
+    const locationLat = latRaw ? parseFloat(latRaw) : null;
+    const locationLng = lngRaw ? parseFloat(lngRaw) : null;
     const activityDate = fd.get("activityDate") as string;
     const activityTime = fd.get("activityTime") as string;
     const notes = (fd.get("notes") as string).trim();
 
     if (description) body.description = description;
     if (location) body.location = location;
-    if (locationPlaceId) body.locationPlaceId = locationPlaceId;
+    if (locationLat != null) body.locationLat = locationLat;
+    if (locationLng != null) body.locationLng = locationLng;
     if (activityDate) body.activityDate = activityDate;
     if (activityTime) body.activityTime = activityTime;
     if (notes) body.notes = notes;
@@ -165,7 +169,8 @@ export function CreateActivityForm({
                 <LocationInput
                   id="ca-location"
                   name="location"
-                  namePlaceId="locationPlaceId"
+                  nameLat="locationLat"
+                  nameLng="locationLng"
                   placeholder="Ej: Asakusa, Tokyo"
                 />
               </div>
