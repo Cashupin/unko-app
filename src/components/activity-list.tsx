@@ -56,7 +56,8 @@ export async function ActivityList({
       title: true,
       description: true,
       location: true,
-      locationPlaceId: true,
+      locationLat: true,
+      locationLng: true,
       activityDate: true,
       activityTime: true,
       notes: true,
@@ -157,7 +158,8 @@ type Activity = {
   title: string;
   description: string | null;
   location: string | null;
-  locationPlaceId: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
   activityDate: Date | null;
   activityTime: string | null;
   notes: string | null;
@@ -245,7 +247,8 @@ function ActivityRow({
     title: act.title,
     description: act.description,
     location: act.location,
-    locationPlaceId: act.locationPlaceId,
+    locationLat: act.locationLat,
+    locationLng: act.locationLng,
     activityDate: act.activityDate ? toDateStr(new Date(act.activityDate)) : null,
     activityTime: act.activityTime,
     notes: act.notes,
@@ -283,7 +286,7 @@ function ActivityRow({
         <div className="mt-2 flex flex-wrap items-center gap-3">
           {act.location && (
             <a
-              href={getMapsUrl(act.location, act.locationPlaceId)}
+              href={getMapsUrl(act.location, act.locationLat, act.locationLng)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-700 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"

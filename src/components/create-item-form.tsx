@@ -77,7 +77,7 @@ export function CreateItemForm({ tripId }: { tripId: string }) {
 
     const fd = new FormData(e.currentTarget);
 
-    const body: Record<string, string | undefined> = {
+    const body: Record<string, string | number | undefined> = {
       title: (fd.get("title") as string).trim(),
       type: fd.get("type") as string,
       tripId,
@@ -85,12 +85,16 @@ export function CreateItemForm({ tripId }: { tripId: string }) {
 
     const description = (fd.get("description") as string).trim();
     const location = (fd.get("location") as string).trim();
-    const locationPlaceId = (fd.get("locationPlaceId") as string).trim();
+    const latRaw = (fd.get("locationLat") as string).trim();
+    const lngRaw = (fd.get("locationLng") as string).trim();
+    const locationLat = latRaw ? parseFloat(latRaw) : null;
+    const locationLng = lngRaw ? parseFloat(lngRaw) : null;
     const externalUrl = (fd.get("externalUrl") as string).trim();
 
     if (description) body.description = description;
     if (location) body.location = location;
-    if (locationPlaceId) body.locationPlaceId = locationPlaceId;
+    if (locationLat != null) body.locationLat = locationLat;
+    if (locationLng != null) body.locationLng = locationLng;
     if (externalUrl) body.externalUrl = externalUrl;
     if (imageUrl) body.imageUrl = imageUrl;
 
@@ -167,7 +171,8 @@ export function CreateItemForm({ tripId }: { tripId: string }) {
                     <LocationInput
                       id={field.id}
                       name="location"
-                      namePlaceId="locationPlaceId"
+                      nameLat="locationLat"
+                      nameLng="locationLng"
                       placeholder={field.placeholder}
                     />
                   ) : field.as === "select" ? (
