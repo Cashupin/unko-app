@@ -2,11 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CURRENCY_OPTIONS } from "@/lib/constants";
+import { CURRENCY_OPTIONS, fmtAmount } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 
 type Participant = { id: string; name: string };
+
+type ExpenseItemDraft = {
+  id: string;
+  description: string;
+  amount: string;
+  participantIds: string[];
+};
+
+function newItem(participants: Participant[]): ExpenseItemDraft {
+  return {
+    id: crypto.randomUUID(),
+    description: "",
+    amount: "",
+    participantIds: participants.map((p) => p.id),
+  };
+}
 
 export function CreateExpenseForm({
   tripId,
@@ -20,13 +36,22 @@ export function CreateExpenseForm({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  // All participants selected by default for split
+  const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">("EQUAL");
+  const [currency, setCurrency] = useState(defaultCurrency);
+
+  // EQUAL mode state
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
     participants.map((p) => p.id),
   );
 
+  // ITEMIZED mode state
+  const [items, setItems] = useState<ExpenseItemDraft[]>([]);
+
   function openModal() {
     setSelectedParticipants(participants.map((p) => p.id));
+    setSplitMode("EQUAL");
+    setCurrency(defaultCurrency);
+    setItems([newItem(participants)]);
     setOpen(true);
   }
 
@@ -40,25 +65,124 @@ export function CreateExpenseForm({
     );
   }
 
+  function addItem() {
+    setItems((prev) => [...prev, newItem(participants)]);
+  }
+
+  function removeItem(id: string) {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  }
+
+  function updateItem(id: string, patch: Partial<Omit<ExpenseItemDraft, "id">>) {
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+  }
+
+  function toggleItemParticipant(itemId: string, participantId: string) {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== itemId) return item;
+        const pids = item.participantIds.includes(participantId)
+          ? item.participantIds.filter((p) => p !== participantId)
+          : [...item.participantIds, participantId];
+        return { ...item, participantIds: pids };
+      }),
+    );
+  }
+
+  // Real-time per-participant totals for ITEMIZED mode
+  const perParticipantTotals = participants.map((p) => {
+    const total = items.reduce((sum, item) => {
+      if (!item.participantIds.includes(p.id)) return sum;
+      const n = item.participantIds.length;
+      const amt = parseFloat(item.amount) || 0;
+      return sum + amt / n;
+    }, 0);
+    return { ...p, total };
+  });
+
+  const itemizedTotal = perParticipantTotals.reduce((s, p) => s + p.total, 0);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (selectedParticipants.length === 0) {
-      toast.error("Debes seleccionar al menos un participante");
+    const fd = new FormData(e.currentTarget);
+
+    if (splitMode === "EQUAL") {
+      if (selectedParticipants.length === 0) {
+        toast.error("Debes seleccionar al menos un participante");
+        return;
+      }
+
+      setLoading(true);
+      const body = {
+        splitType: "EQUAL",
+        description: (fd.get("description") as string).trim(),
+        amount: parseFloat(fd.get("amount") as string),
+        currency: fd.get("currency") as string,
+        paidByParticipantId: (fd.get("paidBy") as string) || undefined,
+        expenseDate: (fd.get("expenseDate") as string) || undefined,
+        participantIds: selectedParticipants,
+      };
+
+      try {
+        const res = await fetch(`/api/trips/${tripId}/expenses`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          toast.error(data.error ?? "Error al guardar el gasto");
+          return;
+        }
+        closeModal();
+        router.refresh();
+        toast.success("Gasto registrado");
+      } catch {
+        toast.error("Error de red. Intenta de nuevo.");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
+    // ── ITEMIZED ─────────────────────────────────────────────────────────────
+
+    if (items.length === 0) {
+      toast.error("Agrega al menos un ítem");
+      return;
+    }
+
+    for (const item of items) {
+      if (!item.description.trim()) {
+        toast.error("Cada ítem debe tener una descripción");
+        return;
+      }
+      const amt = parseFloat(item.amount);
+      if (!amt || amt <= 0) {
+        toast.error("Cada ítem debe tener un monto mayor a 0");
+        return;
+      }
+      if (item.participantIds.length === 0) {
+        toast.error("Cada ítem debe tener al menos un participante");
+        return;
+      }
+    }
+
     setLoading(true);
-
-    const fd = new FormData(e.currentTarget);
-
     const body = {
+      splitType: "ITEMIZED",
       description: (fd.get("description") as string).trim(),
-      amount: parseFloat(fd.get("amount") as string),
       currency: fd.get("currency") as string,
       paidByParticipantId: (fd.get("paidBy") as string) || undefined,
       expenseDate: (fd.get("expenseDate") as string) || undefined,
-      participantIds: selectedParticipants,
+      items: items.map((item) => ({
+        description: item.description.trim(),
+        amount: parseFloat(item.amount),
+        participantIds: item.participantIds,
+      })),
     };
 
     try {
@@ -67,14 +191,11 @@ export function CreateExpenseForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       const data = (await res.json()) as { error?: string };
-
       if (!res.ok) {
         toast.error(data.error ?? "Error al guardar el gasto");
         return;
       }
-
       closeModal();
       router.refresh();
       toast.success("Gasto registrado");
@@ -97,104 +218,308 @@ export function CreateExpenseForm({
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
         >
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Nuevo gasto</h2>
-              <button onClick={closeModal} className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300" aria-label="Cerrar">✕</button>
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                Nuevo gasto
+              </h2>
+              <button
+                onClick={closeModal}
+                className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {/* Description */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="expense-desc" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                <label
+                  htmlFor="expense-desc"
+                  className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                >
                   Descripción <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="expense-desc" name="description" type="text" required
+                  id="expense-desc"
+                  name="description"
+                  type="text"
+                  required
                   placeholder="Ej: Cena en Shibuya"
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="expense-amount" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    Monto <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="expense-amount" name="amount" type="number" min="0.01" step="0.01" required
-                    placeholder="0.00"
-                    className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
-                  />
+              {/* Split mode toggle */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Modo de división
+                </span>
+                <div className="flex rounded-lg border border-zinc-200 overflow-hidden dark:border-zinc-700">
+                  <button
+                    type="button"
+                    onClick={() => setSplitMode("EQUAL")}
+                    className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                      splitMode === "EQUAL"
+                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                        : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                    }`}
+                  >
+                    División equitativa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSplitMode("ITEMIZED");
+                      if (items.length === 0) setItems([newItem(participants)]);
+                    }}
+                    className={`flex-1 px-3 py-2 text-xs font-medium transition-colors border-l border-zinc-200 dark:border-zinc-700 ${
+                      splitMode === "ITEMIZED"
+                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                        : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                    }`}
+                  >
+                    Por ítems
+                  </button>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="expense-currency" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Moneda</label>
+              </div>
+
+              {/* Currency */}
+              <div className="grid grid-cols-2 gap-3">
+                {splitMode === "EQUAL" && (
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="expense-amount"
+                      className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      Monto <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="expense-amount"
+                      name="amount"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
+                    />
+                  </div>
+                )}
+                <div className={`flex flex-col gap-1 ${splitMode === "ITEMIZED" ? "col-span-2" : ""}`}>
+                  <label
+                    htmlFor="expense-currency"
+                    className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                  >
+                    Moneda
+                  </label>
                   <select
-                    id="expense-currency" name="currency" defaultValue={defaultCurrency}
+                    id="expense-currency"
+                    name="currency"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
                     className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
                   >
                     {CURRENCY_OPTIONS.map((c) => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label htmlFor="paidBy" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Pagado por</label>
-                <select
-                  id="paidBy" name="paidBy"
-                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
-                >
-                  <option value="">-- Seleccionar --</option>
-                  {participants.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label htmlFor="expense-date" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Fecha</label>
-                <DatePicker
-                  id="expense-date"
-                  name="expenseDate"
-                  placeholder="Seleccionar fecha (opcional)"
-                />
-              </div>
-
-              {/* Participants to split among */}
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Dividir entre <span className="text-zinc-400 dark:text-zinc-500">(división equitativa)</span>
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {participants.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => toggleParticipant(p.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        selectedParticipants.includes(p.id)
-                          ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                          : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                      }`}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
+              {/* Paid by + Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="paidBy"
+                    className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                  >
+                    Pagado por
+                  </label>
+                  <select
+                    id="paidBy"
+                    name="paidBy"
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
+                  >
+                    <option value="">-- Seleccionar --</option>
+                    {participants.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="expense-date"
+                    className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                  >
+                    Fecha
+                  </label>
+                  <DatePicker
+                    id="expense-date"
+                    name="expenseDate"
+                    placeholder="Opcional"
+                  />
                 </div>
               </div>
 
+              {/* ── EQUAL: participant picker ──────────────────────────────── */}
+              {splitMode === "EQUAL" && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    Dividir entre{" "}
+                    <span className="text-zinc-400 dark:text-zinc-500">
+                      (equitativo)
+                    </span>
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {participants.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => toggleParticipant(p.id)}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                          selectedParticipants.includes(p.id)
+                            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                            : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── ITEMIZED: items list ───────────────────────────────────── */}
+              {splitMode === "ITEMIZED" && (
+                <div className="flex flex-col gap-3">
+                  <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    Ítems
+                  </span>
+
+                  {items.map((item, idx) => (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-zinc-200 p-3 flex flex-col gap-2 dark:border-zinc-700"
+                    >
+                      {/* Item header */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                          Ítem {idx + 1}
+                        </span>
+                        {items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            className="text-xs text-zinc-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 transition-colors"
+                            aria-label="Eliminar ítem"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Description + amount */}
+                      <div className="grid grid-cols-[1fr_auto] gap-2">
+                        <input
+                          type="text"
+                          placeholder="Descripción del ítem"
+                          value={item.description}
+                          onChange={(e) =>
+                            updateItem(item.id, { description: e.target.value })
+                          }
+                          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
+                        />
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={item.amount}
+                          onChange={(e) =>
+                            updateItem(item.id, { amount: e.target.value })
+                          }
+                          className="w-28 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
+                        />
+                      </div>
+
+                      {/* Participant toggles */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {participants.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => toggleItemParticipant(item.id, p.id)}
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                              item.participantIds.includes(p.id)
+                                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                                : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400"
+                            }`}
+                          >
+                            {p.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    className="rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-xs font-medium text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 transition-colors dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:text-zinc-300"
+                  >
+                    + Agregar ítem
+                  </button>
+
+                  {/* Per-participant preview */}
+                  {itemizedTotal > 0 && (
+                    <div className="rounded-xl bg-zinc-50 border border-zinc-200 p-3 dark:bg-zinc-700/50 dark:border-zinc-700">
+                      <p className="text-xs font-semibold text-zinc-500 mb-2 dark:text-zinc-400">
+                        Resumen · Total {fmtAmount(itemizedTotal, currency)}
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        {perParticipantTotals
+                          .filter((p) => p.total > 0)
+                          .map((p) => (
+                            <div
+                              key={p.id}
+                              className="flex items-center justify-between"
+                            >
+                              <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                                {p.name}
+                              </span>
+                              <span className="text-xs font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
+                                {fmtAmount(p.total, currency)}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex justify-end gap-2 pt-1">
                 <button
-                  type="button" onClick={closeModal} disabled={loading}
+                  type="button"
+                  onClick={closeModal}
+                  disabled={loading}
                   className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
                 >
                   Cancelar
                 </button>
                 <button
-                  type="submit" disabled={loading}
+                  type="submit"
+                  disabled={loading}
                   className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                 >
                   {loading ? "Guardando..." : "Guardar"}

@@ -10,15 +10,39 @@ async function requireMember(tripId: string, userId: string) {
   });
 }
 
-const createExpenseSchema = z.object({
+const CURRENCIES = ["CLP", "JPY", "USD", "EUR", "GBP", "KRW", "CNY", "THB"] as const;
+
+const equalSchema = z.object({
+  splitType: z.literal("EQUAL"),
   description: z.string().trim().min(1).max(500),
   amount: z.number().positive(),
-  currency: z.enum(["CLP", "JPY", "USD", "EUR", "GBP", "KRW", "CNY", "THB"]),
+  currency: z.enum(CURRENCIES),
   paidByParticipantId: z.string().cuid().optional(),
   expenseDate: z.string().optional(),
-  // EQUAL split: list of participantIds to split among
   participantIds: z.array(z.string().cuid()).min(1),
 });
+
+const itemizedSchema = z.object({
+  splitType: z.literal("ITEMIZED"),
+  description: z.string().trim().min(1).max(500),
+  currency: z.enum(CURRENCIES),
+  paidByParticipantId: z.string().cuid().optional(),
+  expenseDate: z.string().optional(),
+  items: z
+    .array(
+      z.object({
+        description: z.string().trim().min(1).max(200),
+        amount: z.number().positive(),
+        participantIds: z.array(z.string().cuid()).min(1),
+      }),
+    )
+    .min(1),
+});
+
+const createExpenseSchema = z.discriminatedUnion("splitType", [
+  equalSchema,
+  itemizedSchema,
+]);
 
 // ─── GET /api/trips/[id]/expenses ─────────────────────────────────────────────
 
@@ -38,14 +62,32 @@ export async function GET(
   const expenses = await prisma.expense.findMany({
     where: { tripId },
     select: {
-      id: true, description: true, amount: true, currency: true,
-      expenseDate: true, splitType: true, createdAt: true,
+      id: true,
+      description: true,
+      amount: true,
+      currency: true,
+      expenseDate: true,
+      splitType: true,
+      createdAt: true,
       paidBy: { select: { id: true, name: true } },
       participants: {
         select: {
           amount: true,
           participant: { select: { id: true, name: true } },
         },
+      },
+      items: {
+        select: {
+          id: true,
+          description: true,
+          amount: true,
+          participants: {
+            select: {
+              participant: { select: { id: true, name: true } },
+            },
+          },
+        },
+        orderBy: { id: "asc" },
       },
     },
     orderBy: { expenseDate: "desc" },
@@ -71,58 +113,156 @@ export async function POST(
   }
 
   let body: unknown;
-  try { body = await req.json(); } catch {
+  try {
+    body = await req.json();
+  } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const result = createExpenseSchema.safeParse(body);
   if (!result.success) {
-    return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
+    return NextResponse.json(
+      { error: result.error.issues[0].message },
+      { status: 400 },
+    );
   }
 
-  const { description, amount, currency, paidByParticipantId, expenseDate, participantIds } = result.data;
+  const data = result.data;
 
-  // Validate that all participantIds belong to this trip
-  const participantCount = await prisma.tripParticipant.count({
-    where: { id: { in: participantIds }, tripId },
-  });
-  if (participantCount !== participantIds.length) {
-    return NextResponse.json({ error: "Uno o más participantes no pertenecen al viaje" }, { status: 400 });
-  }
+  if (data.splitType === "EQUAL") {
+    const { description, amount, currency, paidByParticipantId, expenseDate, participantIds } = data;
 
-  // Compute equal split (round to 2 decimal places, give remainder to first participant)
-  const perPerson = Math.floor((amount / participantIds.length) * 100) / 100;
-  const remainder = Math.round((amount - perPerson * participantIds.length) * 100) / 100;
+    const participantCount = await prisma.tripParticipant.count({
+      where: { id: { in: participantIds }, tripId },
+    });
+    if (participantCount !== participantIds.length) {
+      return NextResponse.json(
+        { error: "Uno o más participantes no pertenecen al viaje" },
+        { status: 400 },
+      );
+    }
 
-  const expense = await prisma.expense.create({
-    data: {
-      tripId,
-      createdById: session.user.id,
-      paidByParticipantId: paidByParticipantId ?? null,
-      description,
-      amount,
-      currency,
-      expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
-      splitType: "EQUAL",
-      participants: {
-        create: participantIds.map((pid, i) => ({
-          participantId: pid,
-          amount: i === 0 ? perPerson + remainder : perPerson,
-        })),
-      },
-    },
-    select: {
-      id: true, description: true, amount: true, currency: true,
-      expenseDate: true, splitType: true, createdAt: true,
-      paidBy: { select: { id: true, name: true } },
-      participants: {
-        select: {
-          amount: true,
-          participant: { select: { id: true, name: true } },
+    const perPerson = Math.floor((amount / participantIds.length) * 100) / 100;
+    const remainder =
+      Math.round((amount - perPerson * participantIds.length) * 100) / 100;
+
+    const expense = await prisma.expense.create({
+      data: {
+        tripId,
+        createdById: session.user.id,
+        paidByParticipantId: paidByParticipantId ?? null,
+        description,
+        amount,
+        currency,
+        expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
+        splitType: "EQUAL",
+        participants: {
+          create: participantIds.map((pid, i) => ({
+            participantId: pid,
+            amount: i === 0 ? perPerson + remainder : perPerson,
+          })),
         },
       },
-    },
+      select: expenseSelect,
+    });
+
+    return NextResponse.json(expense, { status: 201 });
+  }
+
+  // ── ITEMIZED ────────────────────────────────────────────────────────────────
+
+  const { description, currency, paidByParticipantId, expenseDate, items } = data;
+
+  // Collect all unique participantIds across all items
+  const allParticipantIds = [...new Set(items.flatMap((i) => i.participantIds))];
+
+  const participantCount = await prisma.tripParticipant.count({
+    where: { id: { in: allParticipantIds }, tripId },
+  });
+  if (participantCount !== allParticipantIds.length) {
+    return NextResponse.json(
+      { error: "Uno o más participantes no pertenecen al viaje" },
+      { status: 400 },
+    );
+  }
+
+  const totalAmount = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
+
+  // Calculate per-participant amounts from items
+  const amountByParticipant = new Map<string, number>();
+  for (const item of items) {
+    const share = item.amount / item.participantIds.length;
+    for (const pid of item.participantIds) {
+      amountByParticipant.set(pid, (amountByParticipant.get(pid) ?? 0) + share);
+    }
+  }
+  // Round each participant's amount to 2 decimal places
+  for (const [pid, amt] of amountByParticipant) {
+    amountByParticipant.set(pid, Math.round(amt * 100) / 100);
+  }
+
+  const expense = await prisma.$transaction(async (tx) => {
+    return tx.expense.create({
+      data: {
+        tripId,
+        createdById: session.user.id,
+        paidByParticipantId: paidByParticipantId ?? null,
+        description,
+        amount: totalAmount,
+        currency,
+        expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
+        splitType: "ITEMIZED",
+        participants: {
+          create: Array.from(amountByParticipant.entries()).map(([pid, amt]) => ({
+            participantId: pid,
+            amount: amt,
+          })),
+        },
+        items: {
+          create: items.map((item) => ({
+            description: item.description,
+            amount: item.amount,
+            participants: {
+              create: item.participantIds.map((pid) => ({ participantId: pid })),
+            },
+          })),
+        },
+      },
+      select: expenseSelect,
+    });
   });
 
   return NextResponse.json(expense, { status: 201 });
 }
+
+// ─── Shared select shape ───────────────────────────────────────────────────────
+
+const expenseSelect = {
+  id: true,
+  description: true,
+  amount: true,
+  currency: true,
+  expenseDate: true,
+  splitType: true,
+  createdAt: true,
+  paidBy: { select: { id: true, name: true } },
+  participants: {
+    select: {
+      amount: true,
+      participant: { select: { id: true, name: true } },
+    },
+  },
+  items: {
+    select: {
+      id: true,
+      description: true,
+      amount: true,
+      participants: {
+        select: {
+          participant: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: { id: "asc" } as const,
+  },
+} as const;

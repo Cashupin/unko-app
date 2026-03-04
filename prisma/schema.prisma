@@ -62,8 +62,9 @@ enum Currency {
 }
 
 enum SplitType {
-  EQUAL  // División equitativa entre participantes
-  CUSTOM // Montos específicos por participante
+  EQUAL    // División equitativa entre participantes
+  CUSTOM   // Montos específicos por participante
+  ITEMIZED // División por ítems individuales
 }
 
 // ─── NextAuth required models ─────────────────────────────────────────────────
@@ -156,9 +157,10 @@ model Trip {
   destination     String?
   startDate       DateTime?
   endDate         DateTime?
-  defaultCurrency Currency  @default(CLP)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  defaultCurrency   Currency  @default(CLP)
+  isStandaloneGroup Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   createdById String
   createdBy   User   @relation("TripCreatedBy", fields: [createdById], references: [id])
@@ -186,8 +188,9 @@ model TripParticipant {
   trip Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user User? @relation("UserParticipant", fields: [userId], references: [id], onDelete: SetNull)
 
-  expenseParticipants ExpenseParticipant[]
-  paidExpenses        Expense[]            @relation("ExpensePaidBy")
+  expenseParticipants    ExpenseParticipant[]
+  expenseItemParticipants ExpenseItemParticipant[]
+  paidExpenses           Expense[]            @relation("ExpensePaidBy")
   paymentsMade        Payment[]            @relation("PaymentsFrom")
   paymentsReceived    Payment[]            @relation("PaymentsTo")
 
@@ -327,6 +330,7 @@ model Expense {
   paidBy   TripParticipant? @relation("ExpensePaidBy", fields: [paidByParticipantId], references: [id], onDelete: SetNull)
 
   participants ExpenseParticipant[]
+  items        ExpenseItem[]
 
   @@index([tripId])
   @@index([createdById])
@@ -345,6 +349,29 @@ model ExpenseParticipant {
 
   @@unique([expenseId, participantId])
   @@index([expenseId])
+  @@index([participantId])
+}
+
+model ExpenseItem {
+  id          String @id @default(cuid())
+  expenseId   String
+  description String
+  amount      Float
+
+  expense      Expense                  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  participants ExpenseItemParticipant[]
+
+  @@index([expenseId])
+}
+
+model ExpenseItemParticipant {
+  expenseItemId String
+  participantId String
+
+  expenseItem ExpenseItem     @relation(fields: [expenseItemId], references: [id], onDelete: Cascade)
+  participant TripParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@id([expenseItemId, participantId])
   @@index([participantId])
 }
 

@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { calculateSettlement } from "@/lib/settlement";
-import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { CreatePaymentForm } from "@/components/create-payment-form";
-import { CURRENCY_SYMBOLS } from "@/lib/constants";
+import { ExpenseCard } from "@/components/expense-card";
+import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 
 type Participant = { id: string; name: string };
@@ -35,6 +35,19 @@ export async function ExpenseList({
             amount: true,
             participant: { select: { id: true, name: true } },
           },
+        },
+        items: {
+          select: {
+            id: true,
+            description: true,
+            amount: true,
+            participants: {
+              select: {
+                participant: { select: { id: true, name: true } },
+              },
+            },
+          },
+          orderBy: { id: "asc" },
         },
       },
       orderBy: { expenseDate: "desc" },
@@ -83,9 +96,6 @@ export async function ExpenseList({
     paymentsForSettlement,
   );
 
-  const fmtDate = (d: Date) =>
-    new Date(d).toLocaleDateString("es-CL", { day: "numeric", month: "short" });
-
   const sym = (currency: string) =>
     CURRENCY_SYMBOLS[currency as Currency] ?? currency;
 
@@ -128,7 +138,7 @@ export async function ExpenseList({
                     <span className="font-semibold text-zinc-800 dark:text-zinc-200">{s.toName}</span>
                   </div>
                   <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
-                    {sym(s.currency)}{s.amount.toLocaleString("es-CL")}
+                    {sym(s.currency)}{fmtAmount(s.amount, s.currency)}
                     <span className="ml-1 text-xs font-normal text-amber-600 dark:text-amber-400">
                       {s.currency}
                     </span>
@@ -165,9 +175,7 @@ export async function ExpenseList({
                         >
                           {b.balance > 0.005 ? "+" : ""}
                           {sym(currency)}
-                          {Math.abs(b.balance).toLocaleString("es-CL", {
-                            minimumFractionDigits: 2,
-                          })}
+                          {fmtAmount(Math.abs(b.balance), currency)}
                         </span>
                       </div>
                     ))}
@@ -187,67 +195,12 @@ export async function ExpenseList({
           </h3>
           <div className="flex flex-col gap-3">
             {rawExpenses.map((expense) => (
-              <div
+              <ExpenseCard
                 key={expense.id}
-                className="group rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 hover:shadow-md hover:border-zinc-200 transition-all overflow-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5 dark:hover:border-zinc-700"
-              >
-                <div className="flex items-start justify-between gap-3 p-4">
-                  <div className="flex-1 min-w-0">
-                    {/* Title + date */}
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="font-semibold text-zinc-900 text-sm leading-snug dark:text-zinc-100">
-                        {expense.description}
-                      </p>
-                      <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
-                        {fmtDate(expense.expenseDate)}
-                      </span>
-                    </div>
-
-                    {/* Amount */}
-                    <p className="text-xl font-bold tabular-nums text-zinc-900 leading-none mb-2 dark:text-zinc-100">
-                      {sym(expense.currency)}
-                      {expense.amount.toLocaleString("es-CL")}
-                      <span className="ml-1.5 text-xs font-normal text-zinc-400 dark:text-zinc-500">
-                        {expense.currency}
-                      </span>
-                    </p>
-
-                    {/* Paid by */}
-                    {expense.paidBy && (
-                      <p className="text-xs text-zinc-500 mb-2 dark:text-zinc-400">
-                        Pagó{" "}
-                        <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                          {expense.paidBy.name}
-                        </span>
-                      </p>
-                    )}
-
-                    {/* Participant splits */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {expense.participants.map((ep) => (
-                        <span
-                          key={ep.participant.id}
-                          className="rounded-full bg-zinc-100 border border-zinc-200 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-700 dark:border-zinc-700 dark:text-zinc-400"
-                        >
-                          {ep.participant.name}
-                          <span className="ml-1 text-zinc-400 dark:text-zinc-500">
-                            {sym(expense.currency)}
-                            {ep.amount.toLocaleString("es-CL", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {canEdit && (
-                    <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <DeleteExpenseButton tripId={tripId} expenseId={expense.id} />
-                    </div>
-                  )}
-                </div>
-              </div>
+                expense={expense}
+                tripId={tripId}
+                canEdit={canEdit}
+              />
             ))}
           </div>
         </div>
@@ -274,12 +227,12 @@ export async function ExpenseList({
                     {payment.toParticipant.name}
                   </span>
                   <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                    · {fmtDate(payment.paidAt)}
+                    · {new Date(payment.paidAt).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
                   </span>
                 </div>
                 <span className="rounded-lg bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-sm font-bold text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-900/50 dark:text-emerald-400">
                   {sym(payment.currency)}
-                  {payment.amount.toLocaleString("es-CL")}
+                  {fmtAmount(payment.amount, payment.currency)}
                 </span>
               </div>
             ))}

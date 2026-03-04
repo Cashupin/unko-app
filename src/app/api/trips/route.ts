@@ -32,7 +32,10 @@ export async function GET() {
   }
 
   const participations = await prisma.tripParticipant.findMany({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      trip: { isStandaloneGroup: false },
+    },
     select: {
       role: true,
       trip: {
