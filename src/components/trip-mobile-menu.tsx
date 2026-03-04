@@ -112,7 +112,7 @@ export function TripMobileMenu({
             </div>
           )}
 
-          <div className="px-1" onClick={() => setOpen(false)}>
+          <div className="px-1">
             {signOutSlot}
           </div>
         </div>
