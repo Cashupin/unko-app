@@ -5,6 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TripMobileMenu } from "@/components/trip-mobile-menu";
+import { TripBottomNav } from "@/components/trip-bottom-nav";
 import { ItemList } from "@/components/item-list";
 import { CreateItemForm } from "@/components/create-item-form";
 import { ManageParticipantsPanel } from "@/components/manage-participants-panel";
@@ -128,7 +129,13 @@ export default async function TripPage({
               href="/dashboard"
               className="shrink-0 flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-700 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
             >
-              ← <span className="hidden sm:inline">Mis viajes</span>
+              {/* Home icon — mobile only */}
+              <svg className="sm:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
+                <path d="M9 21V12h6v9" />
+              </svg>
+              {/* Arrow + text — sm+ */}
+              <span className="hidden sm:inline">← Mis viajes</span>
             </Link>
             <span className="text-zinc-200 dark:text-zinc-700">/</span>
             <h1 className="text-base font-semibold text-zinc-900 truncate dark:text-zinc-100">
@@ -199,7 +206,7 @@ export default async function TripPage({
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8">
+      <main className="mx-auto max-w-5xl px-4 py-6 pb-24 md:px-6 md:py-8 md:pb-8">
 
         {/* ── Propuestas ──────────────────────────────────────────────────── */}
         {activeTab === "propuestas" && (
@@ -304,6 +311,8 @@ export default async function TripPage({
         )}
 
       </main>
+
+      <TripBottomNav tripId={tripId} activeTab={activeTab} />
     </div>
   );
 }
