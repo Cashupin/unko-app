@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import type { ItemType, ItemStatus } from "@/generated/prisma/client";
 import { CheckInButton } from "@/components/check-in-button";
 import { VoteButtons } from "@/components/vote-buttons";
 import { AddToItineraryButton } from "@/components/add-to-itinerary-button";
@@ -243,17 +244,15 @@ export async function ItemList({
     prisma.item.findMany({
       where: {
         tripId,
-        ...(typeFilter ? { type: typeFilter } : {}),
-        ...(statusFilter ? { status: statusFilter } : {}),
-        ...(search
-          ? {
-              OR: [
-                { title: { contains: search, mode: "insensitive" } },
-                { description: { contains: search, mode: "insensitive" } },
-                { location: { contains: search, mode: "insensitive" } },
-              ],
-            }
-          : {}),
+        type: typeFilter ? (typeFilter as ItemType) : undefined,
+        status: statusFilter ? (statusFilter as ItemStatus) : undefined,
+        OR: search
+          ? [
+              { title: { contains: search, mode: "insensitive" } },
+              { description: { contains: search, mode: "insensitive" } },
+              { location: { contains: search, mode: "insensitive" } },
+            ]
+          : undefined,
       },
       select: {
         id: true,

@@ -36,7 +36,7 @@ export default async function TripPage({
   searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; itemType?: string; itemStatus?: string; search?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
