@@ -97,6 +97,7 @@ export function CreateHotelForm({
                 </label>
                 <input
                   id="hotel-name" name="name" type="text" required
+                  minLength={1} maxLength={200}
                   placeholder="Ej: Hotel Gracery Shinjuku"
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />
@@ -137,7 +138,7 @@ export function CreateHotelForm({
                 <div className="flex flex-col gap-1">
                   <label htmlFor="pricePerNight" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Precio por noche</label>
                   <input
-                    id="pricePerNight" name="pricePerNight" type="number" min="0" step="0.01"
+                    id="pricePerNight" name="pricePerNight" type="number" min="0" max="999999999" step="0.01"
                     placeholder="0.00 (opcional)"
                     className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                   />
@@ -159,6 +160,7 @@ export function CreateHotelForm({
                 <label htmlFor="hotel-notes" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Notas</label>
                 <textarea
                   id="hotel-notes" name="notes" rows={2}
+                  maxLength={1000}
                   placeholder="Notas adicionales (opcional)"
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-none dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />

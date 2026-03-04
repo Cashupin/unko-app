@@ -13,6 +13,7 @@ type Field = {
   type?: string;
   placeholder?: string;
   required?: boolean;
+  maxLength?: number;
   as?: "textarea" | "select";
   options?: { value: string; label: string }[];
   special?: "location";
@@ -24,6 +25,7 @@ const FIELDS: Field[] = [
     label: "Título",
     placeholder: "Ej: Restaurante El Pescador",
     required: true,
+    maxLength: 255,
   },
   {
     id: "type",
@@ -40,6 +42,7 @@ const FIELDS: Field[] = [
     label: "Descripción",
     as: "textarea",
     placeholder: "Descripción breve (opcional)",
+    maxLength: 1000,
   },
   {
     id: "location",
@@ -193,6 +196,7 @@ export function CreateItemForm({ tripId }: { tripId: string }) {
                       id={field.id}
                       name={field.id}
                       rows={3}
+                      maxLength={field.maxLength}
                       placeholder={field.placeholder}
                       className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-none dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                     />
@@ -202,6 +206,7 @@ export function CreateItemForm({ tripId }: { tripId: string }) {
                       name={field.id}
                       type={field.type ?? "text"}
                       required={field.required}
+                      maxLength={field.maxLength}
                       placeholder={field.placeholder}
                       className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                     />

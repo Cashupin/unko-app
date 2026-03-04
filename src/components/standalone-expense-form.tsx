@@ -111,6 +111,14 @@ export function StandaloneExpenseForm(props: Props) {
   function addParticipant() {
     const name = newName.trim();
     if (!name) return;
+    if (name.length > 100) {
+      toast.error("El nombre no puede superar 100 caracteres");
+      return;
+    }
+    if (participants.length >= 20) {
+      toast.error("Máximo 20 participantes");
+      return;
+    }
     if (participants.includes(name)) {
       toast.error(`"${name}" ya está en la lista`);
       return;
@@ -318,6 +326,8 @@ export function StandaloneExpenseForm(props: Props) {
                   name="description"
                   type="text"
                   required
+                  minLength={1}
+                  maxLength={500}
                   defaultValue={initialValues?.description}
                   placeholder="Ej: Cena con amigos"
                   className={inputCls}
@@ -364,6 +374,7 @@ export function StandaloneExpenseForm(props: Props) {
                       name="amount"
                       type="number"
                       min="0.01"
+                      max="999999999"
                       step="0.01"
                       required
                       defaultValue={initialValues?.amount}
@@ -411,6 +422,7 @@ export function StandaloneExpenseForm(props: Props) {
                     ref={nameInputRef}
                     type="text"
                     placeholder="Nombre"
+                    maxLength={100}
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     onKeyDown={(e) => {
@@ -523,6 +535,7 @@ export function StandaloneExpenseForm(props: Props) {
                         <input
                           type="text"
                           placeholder="Descripción"
+                          maxLength={200}
                           value={item.description}
                           onChange={(e) =>
                             updateItem(item.id, { description: e.target.value })
@@ -532,6 +545,7 @@ export function StandaloneExpenseForm(props: Props) {
                         <input
                           type="number"
                           min="0.01"
+                          max="999999999"
                           step="0.01"
                           placeholder="0.00"
                           value={item.amount}

@@ -250,6 +250,8 @@ export function CreateExpenseForm({
                   name="description"
                   type="text"
                   required
+                  minLength={1}
+                  maxLength={500}
                   placeholder="Ej: Cena en Shibuya"
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />
@@ -304,6 +306,7 @@ export function CreateExpenseForm({
                       name="amount"
                       type="number"
                       min="0.01"
+                      max="999999999"
                       step="0.01"
                       required
                       placeholder="0.00"
@@ -433,6 +436,7 @@ export function CreateExpenseForm({
                         <input
                           type="text"
                           placeholder="Descripción del ítem"
+                          maxLength={200}
                           value={item.description}
                           onChange={(e) =>
                             updateItem(item.id, { description: e.target.value })
@@ -442,6 +446,7 @@ export function CreateExpenseForm({
                         <input
                           type="number"
                           min="0.01"
+                          max="999999999"
                           step="0.01"
                           placeholder="0.00"
                           value={item.amount}

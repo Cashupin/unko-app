@@ -93,6 +93,8 @@ export default function NewTripPage() {
               name="name"
               type="text"
               required
+              minLength={1}
+              maxLength={255}
               placeholder="Ej: Japón 2025"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
             />
@@ -107,6 +109,7 @@ export default function NewTripPage() {
               id="destination"
               name="destination"
               type="text"
+              maxLength={500}
               placeholder="Ej: Tokyo, Osaka, Kyoto"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
             />
@@ -163,6 +166,7 @@ export default function NewTripPage() {
               id="description"
               name="description"
               rows={3}
+              maxLength={1000}
               placeholder="Notas sobre el viaje (opcional)"
               className="resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
             />

@@ -145,6 +145,7 @@ export function InviteUserForm() {
                     name="email"
                     type="email"
                     required
+                    maxLength={254}
                     placeholder="usuario@ejemplo.com"
                     autoComplete="off"
                     className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400"
