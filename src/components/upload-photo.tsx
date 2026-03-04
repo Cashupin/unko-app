@@ -97,6 +97,7 @@ export function UploadPhoto({
         ref={inputRef}
         type="file"
         accept={ALLOWED_MIME_TYPES.join(",")}
+        capture="environment"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
