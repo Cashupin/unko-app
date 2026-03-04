@@ -8,8 +8,7 @@ self.addEventListener("activate", (event) => {
   console.log("Service Worker de FinWise activado.");
 });
 
-// Intercepta las peticiones de red (necesario para la PWA)
-self.addEventListener("fetch", (event) => {
-  // Por ahora, solo deja pasar las peticiones normalmente
-  event.respondWith(fetch(event.request));
-});
+// No fetch handler — the browser handles all network requests natively.
+// A fetch listener is not required for PWA installability; adding one that
+// only calls fetch(event.request) causes CSP connect-src violations when the
+// SW re-fetches external URLs (e.g. Cloudinary images) from its own context.
