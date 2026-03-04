@@ -294,14 +294,14 @@ export function StandaloneExpenseForm(props: Props) {
             if (e.target === e.currentTarget) closeModal();
           }}
         >
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-4 sm:p-6 shadow-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                 {isEdit ? "Editar gasto" : "Nuevo gasto independiente"}
               </h2>
               <button
                 onClick={closeModal}
-                className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+                className="p-2 -mr-2 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                 aria-label="Cerrar"
               >
                 ✕
@@ -480,7 +480,7 @@ export function StandaloneExpenseForm(props: Props) {
                         key={name}
                         type="button"
                         onClick={() => toggleSplitName(name)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                           splitNames.includes(name)
                             ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                             : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400"
@@ -519,7 +519,7 @@ export function StandaloneExpenseForm(props: Props) {
                           </button>
                         )}
                       </div>
-                      <div className="grid grid-cols-[1fr_auto] gap-2">
+                      <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[1fr_auto]">
                         <input
                           type="text"
                           placeholder="Descripción"
@@ -538,7 +538,7 @@ export function StandaloneExpenseForm(props: Props) {
                           onChange={(e) =>
                             updateItem(item.id, { amount: e.target.value })
                           }
-                          className={`w-28 ${inputCls}`}
+                          className={`sm:w-28 ${inputCls}`}
                         />
                       </div>
                       {participants.length > 0 && (
@@ -548,7 +548,7 @@ export function StandaloneExpenseForm(props: Props) {
                               key={name}
                               type="button"
                               onClick={() => toggleItemParticipant(item.id, name)}
-                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                                 item.participantNames.includes(name)
                                   ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                                   : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400"

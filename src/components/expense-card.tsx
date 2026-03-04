@@ -155,7 +155,7 @@ export function ExpenseCard({
         </div>
 
         {canEdit && (
-          <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <DeleteExpenseButton tripId={tripId} expenseId={expense.id} />
           </div>
         )}
