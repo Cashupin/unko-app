@@ -324,7 +324,7 @@ export default async function TripPage({
         {/* ── Galería ─────────────────────────────────────────────────────── */}
         {activeTab === "galería" && (
           <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando galería...</div>}>
-            <GalleryView tripId={tripId} />
+            <GalleryView tripId={tripId} tripName={trip.name} />
           </Suspense>
         )}
 

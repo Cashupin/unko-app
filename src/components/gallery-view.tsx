@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { GalleryClient } from "@/components/gallery-client";
 
-export async function GalleryView({ tripId }: { tripId: string }) {
+export async function GalleryView({ tripId, tripName }: { tripId: string; tripName: string }) {
   const checks = await prisma.check.findMany({
     where: {
       photoUrl: { not: null },
@@ -49,7 +49,7 @@ export async function GalleryView({ tripId }: { tripId: string }) {
           </p>
         </div>
       ) : (
-        <GalleryClient photos={photos} />
+        <GalleryClient photos={photos} tripName={tripName} />
       )}
     </div>
   );
