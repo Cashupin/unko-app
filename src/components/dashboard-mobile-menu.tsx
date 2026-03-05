@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CurrencySelector } from "@/components/currency-selector";
 
 export function DashboardMobileMenu({
   signOutSlot,
@@ -46,6 +47,11 @@ export function DashboardMobileMenu({
               {inviteSlot}
             </div>
           )}
+
+          <div className="flex items-center justify-between px-4 py-2.5">
+            <span className="text-sm text-zinc-700 dark:text-zinc-300">Moneda</span>
+            <CurrencySelector />
+          </div>
 
           <div className="flex items-center justify-between px-4 py-2.5">
             <span className="text-sm text-zinc-700 dark:text-zinc-300">Tema</span>

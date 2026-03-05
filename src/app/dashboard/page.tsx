@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateSettlement } from "@/lib/settlement";
 import { InviteUserForm } from "@/components/invite-user-form";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CurrencySelector } from "@/components/currency-selector";
 import { DashboardMobileMenu } from "@/components/dashboard-mobile-menu";
 import { StandaloneExpenseForm } from "@/components/standalone-expense-form";
 import { StandaloneExpenseCard } from "@/components/standalone-expense-card";
@@ -146,6 +147,7 @@ export default async function DashboardPage() {
           <div className="hidden md:flex items-center gap-3">
             <span className="text-sm text-zinc-500 dark:text-zinc-400">{session.user.email}</span>
             <InviteUserForm />
+            <CurrencySelector />
             <ThemeToggle />
             <form
               action={async () => {

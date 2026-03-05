@@ -1,32 +1,55 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrency } from "@/components/currency-provider";
+import { CURRENCY_SYMBOLS, CURRENCY_DECIMALS } from "@/lib/constants";
+import type { Currency } from "@/lib/constants";
 
-type Props = {
-  totalSum: number;
-  avgPricePerNight: number | null;
-  totalNights: number;
-  participantCount: number;
-  currencySymbol: string;
+type HotelItem = {
+  pricePerNight: number | null;
+  totalPrice: number | null;
+  numberOfNights: number;
+  currency: string;
 };
 
-export function HotelSummaryPanel({
-  totalSum,
-  avgPricePerNight,
-  totalNights,
-  participantCount,
-  currencySymbol,
-}: Props) {
+type Props = {
+  hotels: HotelItem[];
+  participantCount: number;
+};
+
+export function HotelSummaryPanel({ hotels, participantCount }: Props) {
   const [open, setOpen] = useState(false);
+  const { displayCurrency, convert, exchangeRates } = useCurrency();
+
+  const ready = exchangeRates.status === "ready";
+
+  const symbol = CURRENCY_SYMBOLS[displayCurrency as Currency] ?? displayCurrency;
+  const decimals = CURRENCY_DECIMALS[displayCurrency as Currency] ?? 0;
+  const fmt = (n: number) =>
+    `${symbol}${n.toLocaleString("es-CL", { maximumFractionDigits: decimals, minimumFractionDigits: 0 })}`;
+
+  // Convert each hotel's amounts to displayCurrency before summing
+  const totalSum = hotels.reduce((acc, h) => {
+    if (h.totalPrice == null) return acc;
+    return acc + (ready ? convert(h.totalPrice, h.currency) : h.totalPrice);
+  }, 0);
+
+  const totalNights = hotels.reduce((acc, h) => acc + h.numberOfNights, 0);
+
+  const hotelsWithPrice = hotels.filter((h) => h.pricePerNight != null);
+  const avgPricePerNight =
+    hotelsWithPrice.length > 0
+      ? hotelsWithPrice.reduce((acc, h) => {
+          const converted = ready ? convert(h.pricePerNight!, h.currency) : h.pricePerNight!;
+          return acc + converted;
+        }, 0) / hotelsWithPrice.length
+      : null;
 
   const totalPerParticipant = participantCount > 0 ? totalSum / participantCount : null;
   const totalPerParticipantPerNight =
     totalPerParticipant != null && totalNights > 0
       ? totalPerParticipant / totalNights
       : null;
-
-  const fmt = (n: number) =>
-    n.toLocaleString("es-CL", { maximumFractionDigits: 0 });
 
   return (
     <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5">
@@ -55,7 +78,7 @@ export function HotelSummaryPanel({
                   Promedio / noche
                 </p>
                 <p className="mt-0.5 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                  {currencySymbol}{fmt(avgPricePerNight)}
+                  {fmt(avgPricePerNight)}
                 </p>
               </div>
             )}
@@ -64,7 +87,7 @@ export function HotelSummaryPanel({
                 Total alojamientos
               </p>
               <p className="mt-0.5 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                {currencySymbol}{fmt(totalSum)}
+                {fmt(totalSum)}
               </p>
             </div>
             {totalPerParticipant != null && (
@@ -73,7 +96,7 @@ export function HotelSummaryPanel({
                   Total / persona
                 </p>
                 <p className="mt-0.5 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                  {currencySymbol}{fmt(totalPerParticipant)}
+                  {fmt(totalPerParticipant)}
                 </p>
               </div>
             )}
@@ -83,16 +106,18 @@ export function HotelSummaryPanel({
                   Total / persona / noche
                 </p>
                 <p className="mt-0.5 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                  {currencySymbol}{fmt(totalPerParticipantPerNight)}
+                  {fmt(totalPerParticipantPerNight)}
                 </p>
               </div>
             )}
           </div>
-          <div className="px-5 pb-3">
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-600">
-              * Los montos de distintas monedas se suman sin conversión.
-            </p>
-          </div>
+          {!ready && (
+            <div className="px-5 pb-3">
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-600">
+                Cargando tasas de cambio...
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>

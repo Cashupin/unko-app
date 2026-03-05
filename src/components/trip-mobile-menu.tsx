@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CurrencySelector } from "@/components/currency-selector";
 
 const TABS = [
   { id: "propuestas", label: "Propuestas", icon: "💡" },
@@ -101,6 +102,11 @@ export function TripMobileMenu({
           <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Opciones
           </p>
+
+          <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+            <span className="text-sm text-zinc-700 dark:text-zinc-300">Moneda</span>
+            <CurrencySelector />
+          </div>
 
           <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
             <span className="text-sm text-zinc-700 dark:text-zinc-300">Tema</span>

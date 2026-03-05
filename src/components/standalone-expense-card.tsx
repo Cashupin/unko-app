@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
+import { ConvertedAmount } from "@/components/converted-amount";
+import { useCurrency } from "@/components/currency-provider";
 import { ExpenseCard } from "@/components/expense-card";
 import type { ExpenseCardData } from "@/components/expense-card";
 import { StandaloneExpenseForm } from "@/components/standalone-expense-form";
@@ -49,14 +51,23 @@ function toInitialValues(expense: StandaloneExpenseData): StandaloneInitialValue
   };
 }
 
-function buildExportText(expense: StandaloneExpenseData): string {
+function buildExportText(
+  expense: StandaloneExpenseData,
+  displayCurrency: string,
+  convert: (amount: number, from: string) => number,
+): string {
   const sym = (c: string) => CURRENCY_SYMBOLS[c as Currency] ?? c;
-  const fmt = (amount: number, currency = expense.currency) =>
-    `${sym(currency)} ${fmtAmount(amount, currency)}`;
+
+  const fmtWithConversion = (amount: number, currency = expense.currency) => {
+    const original = `${sym(currency)} ${fmtAmount(amount, currency)}`;
+    if (currency === displayCurrency) return original;
+    const converted = convert(amount, currency);
+    return `${original} → ${sym(displayCurrency)} ${fmtAmount(converted, displayCurrency)}`;
+  };
 
   const lines: string[] = [];
 
-  lines.push(`${expense.description} — ${fmt(expense.amount)}`);
+  lines.push(`${expense.description} — ${fmtWithConversion(expense.amount)}`);
   if (expense.paidBy) lines.push(`Pagó: ${expense.paidBy.name}`);
 
   if (expense.splitType === "ITEMIZED" && expense.items.length > 0) {
@@ -64,7 +75,7 @@ function buildExportText(expense: StandaloneExpenseData): string {
     lines.push("Ítems:");
     for (const item of expense.items) {
       const names = item.participants.map((p) => p.participant.name).join(", ");
-      lines.push(`  ${item.description} (${names})   ${fmt(item.amount)}`);
+      lines.push(`  ${item.description} (${names})   ${fmtWithConversion(item.amount)}`);
     }
   }
 
@@ -72,7 +83,7 @@ function buildExportText(expense: StandaloneExpenseData): string {
     lines.push("");
     lines.push("Desglose:");
     for (const ep of expense.participants) {
-      lines.push(`  ${ep.participant.name}   ${fmt(ep.amount)}`);
+      lines.push(`  ${ep.participant.name}   ${fmtWithConversion(ep.amount)}`);
     }
   }
 
@@ -80,7 +91,7 @@ function buildExportText(expense: StandaloneExpenseData): string {
     lines.push("");
     lines.push("Liquidación:");
     for (const s of expense.settlement) {
-      lines.push(`  ${s.fromName} → ${s.toName}   ${fmt(s.amount, s.currency)}`);
+      lines.push(`  ${s.fromName} → ${s.toName}   ${fmtWithConversion(s.amount, s.currency)}`);
     }
   }
 
@@ -102,12 +113,13 @@ export function StandaloneExpenseCard({ expense }: { expense: StandaloneExpenseD
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const { displayCurrency, convert } = useCurrency();
 
   const sym = (c: string) => CURRENCY_SYMBOLS[c as Currency] ?? c;
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(buildExportText(expense));
+      await navigator.clipboard.writeText(buildExportText(expense, displayCurrency, convert));
       toast.success("Copiado al portapapeles");
     } catch {
       toast.error("No se pudo copiar");
@@ -160,8 +172,7 @@ export function StandaloneExpenseCard({ expense }: { expense: StandaloneExpenseD
                   </span>
                 </div>
                 <span className="font-semibold tabular-nums text-amber-600 dark:text-amber-400">
-                  {sym(s.currency)}
-                  {fmtAmount(s.amount, s.currency)}
+                  <ConvertedAmount amount={s.amount} currency={s.currency} />
                 </span>
               </div>
             ))}

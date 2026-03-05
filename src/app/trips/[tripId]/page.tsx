@@ -4,6 +4,7 @@ import { auth, signOut } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CurrencySelector } from "@/components/currency-selector";
 import { TripMobileMenu } from "@/components/trip-mobile-menu";
 import { TripBottomNav } from "@/components/trip-bottom-nav";
 import { AutoRefresh } from "@/components/auto-refresh";
@@ -162,6 +163,7 @@ export default async function TripPage({
           {/* Desktop action buttons — hidden on mobile */}
           <div className="hidden md:flex shrink-0 items-center gap-2">
             {isAdmin && <EditTripForm trip={trip} />}
+            <CurrencySelector />
             <ThemeToggle />
             <form
               action={async () => {

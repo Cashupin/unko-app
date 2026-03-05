@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
+import { ConvertedAmount } from "@/components/converted-amount";
 
 type ParticipantTotal = {
   id: string;
@@ -70,8 +71,7 @@ export function ExpenseSummary({ rows }: { rows: ParticipantTotal[] }) {
                   <div className="flex items-center gap-2">
                     {row.totals.map((t) => (
                       <span key={t.currency} className="text-sm font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
-                        {sym(t.currency)}{fmtAmount(t.amount, t.currency)}
-                        <span className="ml-0.5 text-xs font-normal text-zinc-400 dark:text-zinc-500">{t.currency}</span>
+                        <ConvertedAmount amount={t.amount} currency={t.currency} />
                       </span>
                     ))}
                     {row.totals.length === 0 && (

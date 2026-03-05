@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
+import { ConvertedAmount } from "@/components/converted-amount";
 
 type ExpenseParticipantRow = {
   amount: number;
@@ -71,11 +72,7 @@ export function ExpenseCard({
 
           {/* Amount */}
           <p className="text-xl font-bold tabular-nums text-zinc-900 leading-none mb-2 dark:text-zinc-100">
-            {sym(expense.currency)}
-            {fmtAmount(expense.amount, expense.currency)}
-            <span className="ml-1.5 text-xs font-normal text-zinc-400 dark:text-zinc-500">
-              {expense.currency}
-            </span>
+            <ConvertedAmount amount={expense.amount} currency={expense.currency} />
           </p>
 
           {/* Paid by */}
@@ -132,8 +129,7 @@ export function ExpenseCard({
                           {item.description}
                         </span>
                         <span className="text-xs font-semibold tabular-nums text-zinc-700 dark:text-zinc-300">
-                          {sym(expense.currency)}
-                          {fmtAmount(item.amount, expense.currency)}
+                          <ConvertedAmount amount={item.amount} currency={expense.currency} />
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1">

@@ -5,6 +5,7 @@ import { ExpenseCard } from "@/components/expense-card";
 import { ExpenseSummary } from "@/components/expense-summary";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
+import { ConvertedAmount } from "@/components/converted-amount";
 
 type Participant = { id: string; name: string };
 
@@ -163,10 +164,7 @@ export async function ExpenseList({
                     <span className="font-semibold text-zinc-800 dark:text-zinc-200">{s.toName}</span>
                   </div>
                   <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
-                    {sym(s.currency)}{fmtAmount(s.amount, s.currency)}
-                    <span className="ml-1 text-xs font-normal text-amber-600 dark:text-amber-400">
-                      {s.currency}
-                    </span>
+                    <ConvertedAmount amount={s.amount} currency={s.currency} />
                   </span>
                 </div>
               ))}
@@ -198,9 +196,8 @@ export async function ExpenseList({
                                 : "text-zinc-400 dark:text-zinc-500"
                           }`}
                         >
-                          {b.balance > 0.005 ? "+" : ""}
-                          {sym(currency)}
-                          {fmtAmount(Math.abs(b.balance), currency)}
+                          {b.balance > 0.005 ? "+" : b.balance < -0.005 ? "−" : ""}
+                          <ConvertedAmount amount={Math.abs(b.balance)} currency={currency} />
                         </span>
                       </div>
                     ))}
@@ -256,8 +253,7 @@ export async function ExpenseList({
                   </span>
                 </div>
                 <span className="rounded-lg bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-sm font-bold text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-900/50 dark:text-emerald-400">
-                  {sym(payment.currency)}
-                  {fmtAmount(payment.amount, payment.currency)}
+                  <ConvertedAmount amount={payment.amount} currency={payment.currency} />
                 </span>
               </div>
             ))}
