@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
+import { LocationInput } from "@/components/location-input";
 import { toast } from "sonner";
 
 function toYMD(d: Date | string | null | undefined): string | undefined {
@@ -19,6 +20,7 @@ type Hotel = {
   checkOutDate: Date;
   pricePerNight: number | null;
   currency: string;
+  address: string | null;
   notes: string | null;
   reserved: boolean;
 };
@@ -51,6 +53,7 @@ export function EditHotelForm({
       currency: fd.get("currency") as string,
       reserved: fd.get("reserved") === "on",
       link: (fd.get("link") as string).trim() || null,
+      address: (fd.get("address") as string).trim() || null,
       notes: (fd.get("notes") as string).trim() || null,
       pricePerNight: rawPrice ? parseFloat(rawPrice) : null,
     };
@@ -119,6 +122,18 @@ export function EditHotelForm({
                   defaultValue={hotel.link ?? ""}
                   placeholder="https://... (opcional)"
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label htmlFor="edit-hotel-address" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Dirección</label>
+                <LocationInput
+                  id="edit-hotel-address"
+                  name="address"
+                  nameLat="address_lat"
+                  nameLng="address_lng"
+                  defaultValue={hotel.address ?? ""}
+                  placeholder="Buscar dirección... (opcional)"
                 />
               </div>
 

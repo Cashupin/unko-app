@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DeleteHotelButton } from "@/components/delete-hotel-button";
 import { EditHotelForm } from "@/components/edit-hotel-form";
 import { HotelReservedToggle } from "@/components/hotel-reserved-toggle";
+import { HotelScrollTarget } from "@/components/hotel-scroll-target";
 import { CURRENCY_SYMBOLS } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 
@@ -10,11 +11,13 @@ export async function HotelList({
   canEdit,
   tripStartDate,
   tripEndDate,
+  highlightHotelId,
 }: {
   tripId: string;
   canEdit: boolean;
   tripStartDate?: Date | null;
   tripEndDate?: Date | null;
+  highlightHotelId?: string | null;
 }) {
   const [hotels, participantCount] = await Promise.all([
     prisma.hotel.findMany({
@@ -29,6 +32,7 @@ export async function HotelList({
         totalPrice: true,
         numberOfNights: true,
         currency: true,
+        address: true,
         notes: true,
         reserved: true,
       },
@@ -47,12 +51,15 @@ export async function HotelList({
     );
   }
 
-  const fmtDate = (d: Date) =>
-    new Date(d).toLocaleDateString("es-CL", {
+  // Parse UTC date string to avoid timezone offset shifting the day
+  const fmtDate = (d: Date) => {
+    const [y, m, day] = new Date(d).toISOString().slice(0, 10).split("-").map(Number);
+    return new Date(y, m - 1, day).toLocaleDateString("es-CL", {
       day: "numeric",
       month: "short",
       year: "numeric",
     });
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -63,8 +70,8 @@ export async function HotelList({
             ? hotel.totalPrice / participantCount
             : null;
         return (
+          <HotelScrollTarget key={hotel.id} hotelId={hotel.id} highlightId={highlightHotelId ?? null}>
           <div
-            key={hotel.id}
             className="group rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 hover:shadow-md hover:border-zinc-200 transition-all overflow-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5 dark:hover:border-zinc-700"
           >
             {/* Card header strip */}
@@ -174,12 +181,25 @@ export async function HotelList({
               )}
             </div>
 
-            {hotel.notes && (
-              <div className="px-5 pb-4">
-                <p className="text-xs text-zinc-400 italic dark:text-zinc-500">{hotel.notes}</p>
+            {(hotel.notes || hotel.address) && (
+              <div className="px-5 pb-4 flex flex-col gap-0.5">
+                {hotel.address && (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-zinc-500 hover:text-blue-500 hover:underline underline-offset-2 transition-colors dark:text-zinc-400 dark:hover:text-blue-400"
+                  >
+                    📍 {hotel.address}
+                  </a>
+                )}
+                {hotel.notes && (
+                  <p className="text-xs text-zinc-400 italic dark:text-zinc-500">{hotel.notes}</p>
+                )}
               </div>
             )}
           </div>
+          </HotelScrollTarget>
         );
       })}
     </div>

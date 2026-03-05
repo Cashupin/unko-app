@@ -38,6 +38,13 @@ function parseDateHeader(dateStr: string) {
   };
 }
 
+type HotelForItinerary = {
+  id: string;
+  name: string;
+  checkInDate: Date;
+  checkOutDate: Date;
+};
+
 export async function ActivityList({
   tripId,
   canEdit,
@@ -49,24 +56,31 @@ export async function ActivityList({
   startDate?: Date | null;
   endDate?: Date | null;
 }) {
-  const activities = await prisma.activity.findMany({
-    where: { tripId },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      location: true,
-      locationLat: true,
-      locationLng: true,
-      activityDate: true,
-      activityTime: true,
-      notes: true,
-      photoUrl: true,
-      createdAt: true,
-      item: { select: { id: true, title: true } },
-    },
-    orderBy: [{ activityDate: "asc" }, { activityTime: "asc" }, { createdAt: "asc" }],
-  });
+  const [activities, hotels] = await Promise.all([
+    prisma.activity.findMany({
+      where: { tripId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        location: true,
+        locationLat: true,
+        locationLng: true,
+        activityDate: true,
+        activityTime: true,
+        notes: true,
+        photoUrl: true,
+        createdAt: true,
+        item: { select: { id: true, title: true } },
+      },
+      orderBy: [{ activityDate: "asc" }, { activityTime: "asc" }, { createdAt: "asc" }],
+    }),
+    prisma.hotel.findMany({
+      where: { tripId },
+      select: { id: true, name: true, checkInDate: true, checkOutDate: true },
+      orderBy: { checkInDate: "asc" },
+    }),
+  ]);
 
   const byDate = new Map<string, typeof activities>();
   const noDateActivities: typeof activities = [];
@@ -79,6 +93,15 @@ export async function ActivityList({
     } else {
       noDateActivities.push(act);
     }
+  }
+
+  // Build hotels-per-day lookup (checkIn <= day <= checkOut)
+  function hotelsForDay(dateStr: string): HotelForItinerary[] {
+    return hotels.filter((h) => {
+      const checkIn = toDateStr(new Date(h.checkInDate));
+      const checkOut = toDateStr(new Date(h.checkOutDate));
+      return checkIn <= dateStr && dateStr <= checkOut;
+    });
   }
 
   const dateRange =
@@ -108,6 +131,7 @@ export async function ActivityList({
           key={dateStr}
           dateStr={dateStr}
           acts={byDate.get(dateStr) ?? []}
+          hotels={hotelsForDay(dateStr)}
           tripId={tripId}
           canEdit={canEdit}
         />
@@ -118,6 +142,7 @@ export async function ActivityList({
           key={dateStr}
           dateStr={dateStr}
           acts={byDate.get(dateStr) ?? []}
+          hotels={hotelsForDay(dateStr)}
           tripId={tripId}
           canEdit={canEdit}
         />
@@ -171,11 +196,13 @@ type Activity = {
 function DayCard({
   dateStr,
   acts,
+  hotels,
   tripId,
   canEdit,
 }: {
   dateStr: string;
   acts: Activity[];
+  hotels: HotelForItinerary[];
   tripId: string;
   canEdit: boolean;
 }) {
@@ -186,14 +213,14 @@ function DayCard({
     <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 overflow-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5">
       {/* Card header */}
       <div className="flex items-center justify-between gap-3 px-4 py-3.5 border-b border-zinc-100 md:px-5 md:py-4 dark:border-zinc-700">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
             <span className="text-[9px] font-semibold leading-none tracking-widest opacity-60">
               {weekday}
             </span>
             <span className="text-base font-bold leading-tight">{dayNum}</span>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-semibold text-zinc-800 capitalize dark:text-zinc-200">
               {monthYear}
             </p>
@@ -205,9 +232,43 @@ function DayCard({
           </div>
         </div>
 
-        {canEdit && (
-          <CreateActivityForm tripId={tripId} defaultDate={dateStr} compact />
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {hotels.length > 0 && (
+            <div className="flex items-center gap-1">
+              {hotels.length === 1 ? (
+                <a
+                  href={`/trips/${tripId}?tab=hoteles&hotelId=${hotels[0].id}`}
+                  className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-600 hover:bg-blue-100 transition-colors dark:bg-blue-950 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-900/60"
+                >
+                  <span>🏨</span>
+                  <span className="max-w-30 truncate">
+                    {hotels[0].name}
+                  </span>
+                </a>
+              ) : (
+                <div className="flex items-center gap-1">
+                  {hotels.map((h, i) => (
+                    <span key={h.id} className="flex items-center gap-1">
+                      {i > 0 && <span className="text-zinc-300 dark:text-zinc-600 text-xs">→</span>}
+                      <a
+                        href={`/trips/${tripId}?tab=hoteles&hotelId=${h.id}`}
+                        className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-600 hover:bg-blue-100 transition-colors dark:bg-blue-950 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-900/60"
+                      >
+                        {i === 0 && <span>🏨</span>}
+                        <span className="max-w-20 truncate">
+                          {h.name}
+                        </span>
+                      </a>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {canEdit && (
+            <CreateActivityForm tripId={tripId} defaultDate={dateStr} compact />
+          )}
+        </div>
       </div>
 
       {/* Body */}

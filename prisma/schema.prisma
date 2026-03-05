@@ -300,6 +300,7 @@ model Hotel {
   totalPrice     Float?
   numberOfNights Int
   currency       Currency @default(CLP)
+  address        String?
   notes          String?
   reserved       Boolean  @default(false)
   createdAt      DateTime @default(now())

@@ -17,6 +17,7 @@ const createHotelSchema = z.object({
   checkOutDate: z.string().min(1),
   pricePerNight: z.number().positive().optional(),
   currency: z.enum(["CLP", "JPY", "USD", "EUR", "GBP", "KRW", "CNY", "THB"]).optional(),
+  address: z.string().trim().max(500).optional(),
   notes: z.string().trim().max(1000).optional(),
   reserved: z.boolean().optional(),
 });
@@ -76,7 +77,7 @@ export async function POST(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  const { name, link, checkInDate, checkOutDate, pricePerNight, currency, notes, reserved } = result.data;
+  const { name, link, checkInDate, checkOutDate, pricePerNight, currency, address, notes, reserved } = result.data;
 
   const checkIn = new Date(checkInDate);
   const checkOut = new Date(checkOutDate);
@@ -102,6 +103,7 @@ export async function POST(
       totalPrice,
       numberOfNights,
       currency: resolvedCurrency as "CLP" | "JPY" | "USD" | "EUR" | "GBP" | "KRW" | "CNY" | "THB",
+      address: address ?? null,
       notes: notes ?? null,
       reserved: reserved ?? false,
     },
