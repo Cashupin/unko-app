@@ -27,7 +27,7 @@ type Tab = "propuestas" | "itinerario" | "hoteles" | "gastos" | "galería";
 const TABS: { id: Tab; label: string }[] = [
   { id: "propuestas", label: "Propuestas" },
   { id: "itinerario", label: "Itinerario" },
-  { id: "hoteles", label: "Hoteles" },
+  { id: "hoteles", label: "Alojamiento" },
   { id: "gastos", label: "Gastos" },
   { id: "galería", label: "Galería" },
 ];
@@ -279,20 +279,27 @@ export default async function TripPage({
           </div>
         )}
 
-        {/* ── Hoteles ─────────────────────────────────────────────────────── */}
+        {/* ── Alojamiento ──────────────────────────────────────────────────── */}
         {activeTab === "hoteles" && (
           <div>
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Hoteles</h2>
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Alojamiento</h2>
               {canEdit && (
                 <CreateHotelForm
                   tripId={tripId}
                   defaultCurrency={trip.defaultCurrency}
+                  tripStartDate={trip.startDate}
+                  tripEndDate={trip.endDate}
                 />
               )}
             </div>
-            <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando hoteles...</div>}>
-              <HotelList tripId={tripId} canEdit={canEdit} />
+            <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando alojamiento...</div>}>
+              <HotelList
+                tripId={tripId}
+                canEdit={canEdit}
+                tripStartDate={trip.startDate}
+                tripEndDate={trip.endDate}
+              />
             </Suspense>
           </div>
         )}

@@ -301,6 +301,7 @@ model Hotel {
   numberOfNights Int
   currency       Currency @default(CLP)
   notes          String?
+  reserved       Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

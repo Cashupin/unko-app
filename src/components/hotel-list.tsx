@@ -1,37 +1,47 @@
 import { prisma } from "@/lib/prisma";
 import { DeleteHotelButton } from "@/components/delete-hotel-button";
+import { EditHotelForm } from "@/components/edit-hotel-form";
+import { HotelReservedToggle } from "@/components/hotel-reserved-toggle";
 import { CURRENCY_SYMBOLS } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 
 export async function HotelList({
   tripId,
   canEdit,
+  tripStartDate,
+  tripEndDate,
 }: {
   tripId: string;
   canEdit: boolean;
+  tripStartDate?: Date | null;
+  tripEndDate?: Date | null;
 }) {
-  const hotels = await prisma.hotel.findMany({
-    where: { tripId },
-    select: {
-      id: true,
-      name: true,
-      link: true,
-      checkInDate: true,
-      checkOutDate: true,
-      pricePerNight: true,
-      totalPrice: true,
-      numberOfNights: true,
-      currency: true,
-      notes: true,
-    },
-    orderBy: { checkInDate: "asc" },
-  });
+  const [hotels, participantCount] = await Promise.all([
+    prisma.hotel.findMany({
+      where: { tripId },
+      select: {
+        id: true,
+        name: true,
+        link: true,
+        checkInDate: true,
+        checkOutDate: true,
+        pricePerNight: true,
+        totalPrice: true,
+        numberOfNights: true,
+        currency: true,
+        notes: true,
+        reserved: true,
+      },
+      orderBy: { checkInDate: "asc" },
+    }),
+    prisma.tripParticipant.count({ where: { tripId } }),
+  ]);
 
   if (hotels.length === 0) {
     return (
       <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white/60 p-14 text-center dark:border-zinc-700 dark:bg-zinc-800/60">
         <p className="text-sm text-zinc-400 dark:text-zinc-500">
-          No hay hoteles todavía. ¡Agrega el primero!
+          No hay alojamientos todavía. ¡Agrega el primero!
         </p>
       </div>
     );
@@ -48,6 +58,10 @@ export async function HotelList({
     <div className="flex flex-col gap-4">
       {hotels.map((hotel) => {
         const symbol = CURRENCY_SYMBOLS[hotel.currency as Currency] ?? hotel.currency;
+        const pricePerPerson =
+          hotel.totalPrice != null && participantCount > 0
+            ? hotel.totalPrice / participantCount
+            : null;
         return (
           <div
             key={hotel.id}
@@ -65,7 +79,7 @@ export async function HotelList({
                       href={hotel.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-semibold text-zinc-900 hover:underline underline-offset-2 leading-snug dark:text-zinc-100"
+                      className="block font-semibold text-zinc-900 hover:underline underline-offset-2 leading-snug dark:text-zinc-100"
                     >
                       {hotel.name}
                     </a>
@@ -74,14 +88,27 @@ export async function HotelList({
                       {hotel.name}
                     </p>
                   )}
-                  <span className="mt-1 inline-block rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-950 dark:border-blue-900 dark:text-blue-400">
-                    {hotel.numberOfNights} noche{hotel.numberOfNights !== 1 ? "s" : ""}
-                  </span>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-950 dark:border-blue-900 dark:text-blue-400">
+                      {hotel.numberOfNights} noche{hotel.numberOfNights !== 1 ? "s" : ""}
+                    </span>
+                    <HotelReservedToggle
+                      tripId={tripId}
+                      hotelId={hotel.id}
+                      reserved={hotel.reserved}
+                    />
+                  </div>
                 </div>
               </div>
 
               {canEdit && (
-                <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <EditHotelForm
+                    tripId={tripId}
+                    hotel={hotel}
+                    tripStartDate={tripStartDate}
+                    tripEndDate={tripEndDate}
+                  />
                   <DeleteHotelButton tripId={tripId} hotelId={hotel.id} />
                 </div>
               )}
@@ -132,6 +159,14 @@ export async function HotelList({
                         <span className="ml-1 text-xs font-normal text-zinc-400 dark:text-zinc-600">
                           {hotel.currency}
                         </span>
+                      </p>
+                    </div>
+                  )}
+                  {pricePerPerson != null && (
+                    <div className="text-right">
+                      <p className="text-xs text-zinc-400 dark:text-zinc-500">Por persona</p>
+                      <p className="font-semibold text-zinc-700 dark:text-zinc-300">
+                        {symbol}{pricePerPerson.toLocaleString("es-CL", { maximumFractionDigits: 0 })}
                       </p>
                     </div>
                   )}

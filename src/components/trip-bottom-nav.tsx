@@ -5,7 +5,7 @@ import Link from "next/link";
 const TABS = [
   { id: "propuestas", label: "Propuestas", icon: "💡" },
   { id: "itinerario", label: "Itinerario", icon: "🗓️" },
-  { id: "hoteles", label: "Hoteles", icon: "🏨" },
+  { id: "hoteles", label: "Alojamiento", icon: "🏨" },
   { id: "gastos", label: "Gastos", icon: "💰" },
   { id: "galería", label: "Galería", icon: "📸" },
 ] as const;

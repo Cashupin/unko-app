@@ -18,6 +18,7 @@ const createHotelSchema = z.object({
   pricePerNight: z.number().positive().optional(),
   currency: z.enum(["CLP", "JPY", "USD", "EUR", "GBP", "KRW", "CNY", "THB"]).optional(),
   notes: z.string().trim().max(1000).optional(),
+  reserved: z.boolean().optional(),
 });
 
 // ─── GET /api/trips/[id]/hotels ───────────────────────────────────────────────
@@ -75,7 +76,7 @@ export async function POST(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  const { name, link, checkInDate, checkOutDate, pricePerNight, currency, notes } = result.data;
+  const { name, link, checkInDate, checkOutDate, pricePerNight, currency, notes, reserved } = result.data;
 
   const checkIn = new Date(checkInDate);
   const checkOut = new Date(checkOutDate);
@@ -102,6 +103,7 @@ export async function POST(
       numberOfNights,
       currency: resolvedCurrency as "CLP" | "JPY" | "USD" | "EUR" | "GBP" | "KRW" | "CNY" | "THB",
       notes: notes ?? null,
+      reserved: reserved ?? false,
     },
     select: {
       id: true, name: true, link: true,

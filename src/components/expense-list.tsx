@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateSettlement } from "@/lib/settlement";
 import { CreatePaymentForm } from "@/components/create-payment-form";
 import { ExpenseCard } from "@/components/expense-card";
+import { ExpenseSummary } from "@/components/expense-summary";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 
@@ -90,6 +91,27 @@ export async function ExpenseList({
     name: p.name,
   }));
 
+  // ── Compute per-participant spending totals ─────────────────────────────────
+  // For each participant, sum their share across all expenses grouped by currency
+  const spendingMap = new Map<string, { name: string; byCurrency: Map<string, number> }>();
+  for (const p of participants) {
+    spendingMap.set(p.id, { name: p.name, byCurrency: new Map() });
+  }
+  for (const expense of rawExpenses) {
+    for (const ep of expense.participants) {
+      const pid = ep.participant.id;
+      if (!spendingMap.has(pid)) continue;
+      const entry = spendingMap.get(pid)!;
+      const prev = entry.byCurrency.get(expense.currency) ?? 0;
+      entry.byCurrency.set(expense.currency, prev + ep.amount);
+    }
+  }
+  const summaryRows = Array.from(spendingMap.entries()).map(([id, { name, byCurrency }]) => ({
+    id,
+    name,
+    totals: Array.from(byCurrency.entries()).map(([currency, amount]) => ({ currency, amount })),
+  }));
+
   const { settlements, balances, currencies } = calculateSettlement(
     expensesForSettlement,
     participantsForSettlement,
@@ -101,6 +123,9 @@ export async function ExpenseList({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* ── Spending summary per participant ─────────────────────────────────── */}
+      <ExpenseSummary rows={summaryRows} />
+
       {/* ── Settlement card ─────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 overflow-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5">
         {/* Card header */}

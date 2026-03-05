@@ -20,7 +20,7 @@ export function DeleteHotelButton({
       const res = await fetch(`/api/trips/${tripId}/hotels/${hotelId}`, { method: "DELETE" });
       if (res.ok || res.status === 204) {
         router.refresh();
-        toast.success("Hotel eliminado");
+        toast.success("Alojamiento eliminado");
       } else {
         const data = (await res.json()) as { error?: string };
         toast.error(data.error ?? "Error al eliminar el hotel");
@@ -33,7 +33,7 @@ export function DeleteHotelButton({
   }
 
   function handleDelete() {
-    toast("¿Eliminar este hotel?", {
+    toast("¿Eliminar este alojamiento?", {
       position: "top-center",
       action: { label: "Eliminar", onClick: doDelete },
       cancel: { label: "Cancelar", onClick: () => {} },
@@ -45,7 +45,7 @@ export function DeleteHotelButton({
       onClick={handleDelete}
       disabled={loading}
       className="shrink-0 text-xs text-zinc-400 hover:text-red-500 disabled:opacity-50 transition-colors"
-      aria-label="Eliminar hotel"
+      aria-label="Eliminar alojamiento"
     >
       {loading ? "..." : "✕"}
     </button>
