@@ -342,6 +342,9 @@ export default async function TripPage({
                 participants={participantOptions}
                 defaultCurrency={trip.defaultCurrency}
                 canEdit={canEdit}
+                myParticipantId={myParticipant.id}
+                myUserId={session.user.id!}
+                isAdmin={isAdmin}
               />
             </Suspense>
           </div>

@@ -54,12 +54,15 @@ async function getStandaloneExpenses(userId: string): Promise<StandaloneExpenseD
       currency: true,
       expenseDate: true,
       splitType: true,
+      isActive: true,
       createdById: true,
       trip: { select: { id: true } },
       paidBy: { select: { id: true, name: true } },
       participants: {
         select: {
+          participantId: true,
           amount: true,
+          paid: true,
           participant: { select: { id: true, name: true } },
         },
       },

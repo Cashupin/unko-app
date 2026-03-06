@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { calculateSettlement } from "@/lib/settlement";
-import { ConvertedAmount } from "@/components/converted-amount";
+import { MySettlementBanner } from "@/components/my-settlement-banner";
 import { getMapsUrl } from "@/lib/maps-url";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ export async function TripHome({
           },
           orderBy: [{ activityDate: "asc" }, { activityTime: "asc" }],
         })
-      : Promise.resolve([]),
+      : Promise.resolve([] as { id: string; title: string; description: string | null; location: string | null; locationLat: number | null; locationLng: number | null; activityDate: Date | null; activityTime: string | null }[]),
 
     // Hotels (for badge in day cards)
     prisma.hotel.findMany({
@@ -112,15 +112,15 @@ export async function TripHome({
       take: 10,
     }),
 
-    // Expenses for settlement
+    // Expenses for settlement (active only)
     prisma.expense.findMany({
-      where: { tripId },
+      where: { tripId, isActive: true },
       select: {
         id: true,
         amount: true,
         currency: true,
         paidBy: { select: { id: true } },
-        participants: { select: { amount: true, participant: { select: { id: true } } } },
+        participants: { select: { participantId: true, amount: true, paid: true, participant: { select: { id: true } } } },
       },
     }),
 
@@ -138,25 +138,44 @@ export async function TripHome({
   ]);
 
   // Build settlement
+  const expensesForSettlement = rawExpenses.map((e) => ({
+    id: e.id,
+    amount: e.amount,
+    currency: e.currency,
+    paidByParticipantId: e.paidBy?.id ?? null,
+    participants: e.participants.map((ep) => ({
+      participantId: ep.participant.id,
+      amount: ep.amount,
+    })),
+  }));
+
+  const paymentsForSettlement = rawPayments.map((p) => ({
+    id: p.id,
+    fromParticipantId: p.fromParticipant.id,
+    toParticipantId: p.toParticipant.id,
+    amount: p.amount,
+    currency: p.currency,
+  }));
+
+  // Paid splits count as implicit payments from debtor → payer
+  const paidSplitPayments = rawExpenses
+    .filter((e) => e.paidBy)
+    .flatMap((e) =>
+      e.participants
+        .filter((ep) => ep.paid && ep.participantId !== e.paidBy!.id)
+        .map((ep) => ({
+          id: `split-${e.id}-${ep.participantId}`,
+          fromParticipantId: ep.participantId,
+          toParticipantId: e.paidBy!.id,
+          amount: ep.amount,
+          currency: e.currency,
+        })),
+    );
+
   const { settlements } = calculateSettlement(
-    rawExpenses.map((e) => ({
-      id: e.id,
-      amount: e.amount,
-      currency: e.currency,
-      paidByParticipantId: e.paidBy?.id ?? null,
-      participants: e.participants.map((ep) => ({
-        participantId: ep.participant.id,
-        amount: ep.amount,
-      })),
-    })),
+    expensesForSettlement,
     participants,
-    rawPayments.map((p) => ({
-      id: p.id,
-      fromParticipantId: p.fromParticipant.id,
-      toParticipantId: p.toParticipant.id,
-      amount: p.amount,
-      currency: p.currency,
-    })),
+    [...paymentsForSettlement, ...paidSplitPayments],
   );
 
   const mySettlements = settlements.filter(
@@ -382,57 +401,7 @@ export async function TripHome({
             Ver gastos →
           </Link>
         </div>
-
-        {mySettlements.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 px-6 py-8 text-center dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5">
-            <p className="text-2xl mb-2">🎉</p>
-            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">¡Todo al día!</p>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">No tienes deudas pendientes.</p>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 overflow-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5">
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-700">
-              {mySettlements.map((s, i) => {
-                const iOwe = s.fromId === myParticipantId;
-                return (
-                  <Link
-                    key={i}
-                    href={`/trips/${tripId}?tab=gastos`}
-                    className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-zinc-50 transition-colors dark:hover:bg-zinc-700/50"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-base shrink-0">{iOwe ? "↗️" : "↙️"}</span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                          {iOwe ? (
-                            <>
-                              Debo a{" "}
-                              <span className="font-semibold">{s.toName}</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="font-semibold">{s.fromName}</span>{" "}
-                              me debe
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-bold ${
-                        iOwe
-                          ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400"
-                          : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                      }`}
-                    >
-                      <ConvertedAmount amount={s.amount} currency={s.currency} />
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        <MySettlementBanner settlements={mySettlements} myParticipantId={myParticipantId} />
       </section>
     </div>
   );

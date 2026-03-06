@@ -324,6 +324,7 @@ model Expense {
   currency            Currency  @default(CLP)
   expenseDate         DateTime  @default(now())
   splitType           SplitType @default(EQUAL)
+  isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -341,10 +342,11 @@ model Expense {
 }
 
 model ExpenseParticipant {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   expenseId     String
   participantId String
   amount        Float
+  paid          Boolean @default(false)
 
   expense     Expense         @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   participant TripParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
