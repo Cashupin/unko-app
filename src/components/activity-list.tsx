@@ -237,7 +237,7 @@ function DayCard({
             <div className="flex items-center gap-1">
               {hotels.length === 1 ? (
                 <a
-                  href={`/trips/${tripId}?tab=hoteles&hotelId=${hotels[0].id}`}
+                  href={`/trips/${tripId}?tab=itinerario&hotelId=${hotels[0].id}`}
                   className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-600 hover:bg-blue-100 transition-colors dark:bg-blue-950 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-900/60"
                 >
                   <span>🏨</span>
@@ -251,7 +251,7 @@ function DayCard({
                     <span key={h.id} className="flex items-center gap-1">
                       {i > 0 && <span className="text-zinc-300 dark:text-zinc-600 text-xs">→</span>}
                       <a
-                        href={`/trips/${tripId}?tab=hoteles&hotelId=${h.id}`}
+                        href={`/trips/${tripId}?tab=itinerario&hotelId=${h.id}`}
                         className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-600 hover:bg-blue-100 transition-colors dark:bg-blue-950 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-900/60"
                       >
                         {i === 0 && <span>🏨</span>}

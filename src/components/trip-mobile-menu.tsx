@@ -6,9 +6,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { CurrencySelector } from "@/components/currency-selector";
 
 const TABS = [
+  { id: "home", label: "Inicio", icon: "🏠" },
   { id: "propuestas", label: "Propuestas", icon: "💡" },
   { id: "itinerario", label: "Itinerario", icon: "🗓️" },
-  { id: "hoteles", label: "Alojamiento", icon: "🏨" },
   { id: "gastos", label: "Gastos", icon: "💰" },
   { id: "galería", label: "Galería", icon: "📸" },
 ] as const;

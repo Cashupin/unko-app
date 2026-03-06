@@ -16,7 +16,9 @@ import { EditTripForm } from "@/components/edit-trip-form";
 import { ActivityList } from "@/components/activity-list";
 import { CreateActivityForm } from "@/components/create-activity-form";
 import { HotelList } from "@/components/hotel-list";
+import { HotelCollapsible } from "@/components/hotel-collapsible";
 import { CreateHotelForm } from "@/components/create-hotel-form";
+import { TripHome } from "@/components/trip-home";
 import { ExpenseList } from "@/components/expense-list";
 import { CreateExpenseForm } from "@/components/create-expense-form";
 import { ItemFilterChips } from "@/components/item-filter-chips";
@@ -24,11 +26,11 @@ import type { ParticipantSummary } from "@/types/trip";
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
 
-type Tab = "propuestas" | "itinerario" | "hoteles" | "gastos" | "galería";
+type Tab = "home" | "propuestas" | "itinerario" | "gastos" | "galería";
 const TABS: { id: Tab; label: string }[] = [
+  { id: "home", label: "Inicio" },
   { id: "propuestas", label: "Propuestas" },
   { id: "itinerario", label: "Itinerario" },
-  { id: "hoteles", label: "Alojamiento" },
   { id: "gastos", label: "Gastos" },
   { id: "galería", label: "Galería" },
 ];
@@ -67,7 +69,7 @@ export default async function TripPage({
     }),
     prisma.tripParticipant.findFirst({
       where: { tripId, userId: session.user.id },
-      select: { role: true },
+      select: { role: true, id: true },
     }),
   ]);
 
@@ -214,6 +216,20 @@ export default async function TripPage({
       {/* Content */}
       <main className="mx-auto max-w-5xl px-4 py-6 pb-24 md:px-6 md:py-8 md:pb-8">
 
+        {/* ── Home ──────────────────────────────────────────────────────── */}
+        {activeTab === "home" && (
+          <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando...</div>}>
+            <TripHome
+              tripId={tripId}
+              tripStartDate={trip.startDate}
+              tripEndDate={trip.endDate}
+              myParticipantId={myParticipant.id}
+              participants={participantOptions}
+              defaultCurrency={trip.defaultCurrency}
+            />
+          </Suspense>
+        )}
+
         {/* ── Propuestas ──────────────────────────────────────────────────── */}
         {activeTab === "propuestas" && (
           <div className="flex flex-col gap-6">
@@ -261,9 +277,34 @@ export default async function TripPage({
         {/* ── Itinerario ──────────────────────────────────────────────────── */}
         {activeTab === "itinerario" && (
           <div>
+            {/* Alojamiento collapsible */}
+            <HotelCollapsible
+              autoOpen={!!hotelId}
+              createSlot={
+                canEdit ? (
+                  <CreateHotelForm
+                    tripId={tripId}
+                    defaultCurrency={trip.defaultCurrency}
+                    tripStartDate={trip.startDate}
+                    tripEndDate={trip.endDate}
+                  />
+                ) : null
+              }
+              hotelListSlot={
+                <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando alojamiento...</div>}>
+                  <HotelList
+                    tripId={tripId}
+                    canEdit={canEdit}
+                    tripStartDate={trip.startDate}
+                    tripEndDate={trip.endDate}
+                    highlightHotelId={hotelId}
+                  />
+                </Suspense>
+              }
+            />
+
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Itinerario</h2>
-              {/* Hidden on mobile — each day card has its own add button */}
               {canEdit && (
                 <div className="hidden md:block">
                   <CreateActivityForm tripId={tripId} />
@@ -281,31 +322,6 @@ export default async function TripPage({
           </div>
         )}
 
-        {/* ── Alojamiento ──────────────────────────────────────────────────── */}
-        {activeTab === "hoteles" && (
-          <div>
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Alojamiento</h2>
-              {canEdit && (
-                <CreateHotelForm
-                  tripId={tripId}
-                  defaultCurrency={trip.defaultCurrency}
-                  tripStartDate={trip.startDate}
-                  tripEndDate={trip.endDate}
-                />
-              )}
-            </div>
-            <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando alojamiento...</div>}>
-              <HotelList
-                tripId={tripId}
-                canEdit={canEdit}
-                tripStartDate={trip.startDate}
-                tripEndDate={trip.endDate}
-                highlightHotelId={hotelId}
-              />
-            </Suspense>
-          </div>
-        )}
 
         {/* ── Gastos ──────────────────────────────────────────────────────── */}
         {activeTab === "gastos" && (
