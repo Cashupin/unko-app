@@ -238,7 +238,7 @@ model Vote {
   user   User   @relation(fields: [userId], references: [id])
 
   itemId String
-  item   Item   @relation(fields: [itemId], references: [id])
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
 }
@@ -254,7 +254,7 @@ model Check {
   user   User   @relation(fields: [userId], references: [id])
 
   itemId String
-  item   Item   @relation(fields: [itemId], references: [id])
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
 }
