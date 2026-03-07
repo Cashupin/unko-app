@@ -327,6 +327,7 @@ export async function TripHome({
         <NearbyActivities
           items={items}
           itemsHref={`/trips/${tripId}?tab=actividades`}
+          viewAllHref={`/trips/${tripId}?tab=actividades`}
           alwaysOpen
         />
       </section>

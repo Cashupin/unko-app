@@ -4,10 +4,12 @@ import { NearbyActivities } from "@/components/nearby-activities";
 export async function NearbyActivitiesServer({
   tripId,
   alwaysOpen = false,
+  expandable = false,
   itemsHref,
 }: {
   tripId: string;
   alwaysOpen?: boolean;
+  expandable?: boolean;
   itemsHref?: string;
 }) {
   const items = await prisma.item.findMany({
@@ -23,5 +25,5 @@ export async function NearbyActivitiesServer({
     orderBy: { createdAt: "desc" },
   });
 
-  return <NearbyActivities items={items} alwaysOpen={alwaysOpen} itemsHref={itemsHref} />;
+  return <NearbyActivities items={items} alwaysOpen={alwaysOpen} expandable={expandable} itemsHref={itemsHref} />;
 }

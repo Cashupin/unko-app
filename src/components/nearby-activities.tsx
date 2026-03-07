@@ -40,19 +40,28 @@ function distanceColor(km: number): string {
 
 const TYPE_ICONS: Record<string, string> = { PLACE: "🏛️", FOOD: "🍜" };
 
+const PAGE_SIZE = 5;
+
 export function NearbyActivities({
   items,
   itemsHref,
   alwaysOpen = false,
+  expandable = false,
+  viewAllHref,
 }: {
   items: NearbyItem[];
   /** When provided, "Ver →" navigates to this URL with #item-{id} hash */
   itemsHref?: string;
   /** When true, panel is always expanded and cannot be collapsed */
   alwaysOpen?: boolean;
+  /** When true, shows a "Ver más" button to load more items beyond the first 5 */
+  expandable?: boolean;
+  /** When provided, shows a "Ver todas" link in the header */
+  viewAllHref?: string;
 }) {
   const [collapsed, setCollapsed] = useState(!alwaysOpen);
   const [radius, setRadius] = useState(5);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<
     "idle" | "loading" | "ready" | "denied" | "unavailable" | "timeout" | "unsupported"
@@ -97,6 +106,11 @@ export function NearbyActivities({
     );
   }, [collapsed, geoStatus]);
 
+  // Reset visible count when radius changes so the list starts fresh
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [radius]);
+
   const itemsWithCoords = items.filter((i) => i.locationLat != null && i.locationLng != null);
 
   const nearbyItems: NearbyItemWithDistance[] =
@@ -131,7 +145,7 @@ export function NearbyActivities({
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-100 text-sm dark:bg-zinc-700">
             📍
           </span>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Cerca de ti</p>
             {geoStatus === "ready" && (
               <p className="text-xs text-zinc-400 dark:text-zinc-500">
@@ -139,6 +153,14 @@ export function NearbyActivities({
               </p>
             )}
           </div>
+          {viewAllHref && (
+            <Link
+              href={viewAllHref}
+              className="shrink-0 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+            >
+              Ver todas →
+            </Link>
+          )}
         </div>
       ) : (
         <button
@@ -247,7 +269,7 @@ export function NearbyActivities({
           {/* Nearby items list */}
           {nearbyItems.length > 0 && (
             <div className="divide-y divide-zinc-100 dark:divide-zinc-700">
-              {nearbyItems.map((item) => (
+              {nearbyItems.slice(0, expandable ? visibleCount : PAGE_SIZE).map((item) => (
                 <div key={item.id} className="flex items-center gap-3 px-4 py-3">
                   <span className="shrink-0 text-base">{TYPE_ICONS[item.type] ?? "💡"}</span>
                   <div className="flex-1 min-w-0">
@@ -289,6 +311,15 @@ export function NearbyActivities({
                   )}
                 </div>
               ))}
+              {expandable && nearbyItems.length > visibleCount && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                  className="w-full px-4 py-3 text-sm text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-700/50 transition-colors"
+                >
+                  Ver más ({nearbyItems.length - visibleCount} restantes)
+                </button>
+              )}
             </div>
           )}
         </div>

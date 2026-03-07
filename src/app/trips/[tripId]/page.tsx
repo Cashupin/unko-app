@@ -246,7 +246,7 @@ export default async function TripPage({
             <HashHighlight />
             {/* Nearby activities */}
             <Suspense fallback={null}>
-              <NearbyActivitiesServer tripId={tripId} alwaysOpen />
+              <NearbyActivitiesServer tripId={tripId} alwaysOpen expandable />
             </Suspense>
 
             {/* Items list */}
