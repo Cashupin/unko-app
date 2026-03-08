@@ -147,7 +147,7 @@ export async function POST(
 
   if (!targetUser) {
     return NextResponse.json(
-      { error: "No existe ningún usuario con ese email. Invítalo primero al sistema." },
+      { error: "No existe ningún usuario con ese email.", notInSystem: true },
       { status: 404 },
     );
   }

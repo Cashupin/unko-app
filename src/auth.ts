@@ -66,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           status: "PENDING",
           expiresAt: { gt: new Date() },
         },
+        select: { id: true, tripId: true, tripRole: true },
       });
 
       if (!invitation) return false;
@@ -90,6 +91,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             acceptedById: activatedUser.id,
           },
         });
+
+        // If this was a trip invitation, auto-join the trip
+        if (invitation.tripId) {
+          const alreadyMember = await tx.tripParticipant.findFirst({
+            where: { tripId: invitation.tripId, userId: activatedUser.id },
+            select: { id: true },
+          });
+          if (!alreadyMember) {
+            await tx.tripParticipant.create({
+              data: {
+                tripId: invitation.tripId,
+                userId: activatedUser.id,
+                name: activatedUser.name ?? user.email!.toLowerCase(),
+                type: "REGISTERED",
+                role: invitation.tripRole,
+              },
+            });
+          }
+        }
       });
 
       return true;
