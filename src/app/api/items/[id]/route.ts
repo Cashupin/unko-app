@@ -13,6 +13,7 @@ const patchSchema = z.object({
   location: z.string().trim().max(500).nullable().optional(),
   locationLat: z.number().nullable().optional(),
   locationLng: z.number().nullable().optional(),
+  address: z.string().trim().max(500).nullable().optional(),
   externalUrl: z.string().url().nullable().optional().or(z.literal("").transform(() => null)),
   imageUrl: z.string().url().nullable().optional(),
 });
@@ -76,7 +77,7 @@ export async function PATCH(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  const { title, type, description, location, locationLat, locationLng, externalUrl, imageUrl } = result.data;
+  const { title, type, description, location, locationLat, locationLng, address, externalUrl, imageUrl } = result.data;
 
   // If image changed, delete old one from Cloudinary
   if (imageUrl !== item.imageUrl) {
@@ -92,6 +93,7 @@ export async function PATCH(
       location: location ?? null,
       locationLat: locationLat ?? null,
       locationLng: locationLng ?? null,
+      address: address ?? null,
       externalUrl: externalUrl ?? null,
       imageUrl: imageUrl ?? null,
     },

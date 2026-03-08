@@ -215,6 +215,7 @@ model Item {
   location    String?
   locationLat Float?
   locationLng Float?
+  address     String?
   externalUrl String?
   imageUrl    String?
   status          ItemStatus @default(PENDING)

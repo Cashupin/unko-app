@@ -15,6 +15,7 @@ type ItemData = {
   location: string | null;
   locationLat: number | null;
   locationLng: number | null;
+  address: string | null;
   externalUrl: string | null;
   imageUrl: string | null;
 };
@@ -47,6 +48,7 @@ export function EditItemForm({ item }: { item: ItemData }) {
     const lngRaw = (fd.get("locationLng") as string).trim();
     const locationLat = latRaw ? parseFloat(latRaw) : null;
     const locationLng = lngRaw ? parseFloat(lngRaw) : null;
+    const address = (fd.get("address") as string | null)?.trim() || null;
     const rawUrl = (fd.get("externalUrl") as string).trim();
     const externalUrl = rawUrl && !/^https?:\/\//i.test(rawUrl) ? `https://${rawUrl}` : rawUrl || null;
 
@@ -54,6 +56,7 @@ export function EditItemForm({ item }: { item: ItemData }) {
     body.location = location || null;
     body.locationLat = locationLat;
     body.locationLng = locationLng;
+    body.address = address;
     body.externalUrl = externalUrl;
     body.imageUrl = imageUrl;
 
@@ -174,9 +177,11 @@ export function EditItemForm({ item }: { item: ItemData }) {
                   name="location"
                   nameLat="locationLat"
                   nameLng="locationLng"
+                  nameAddress="address"
                   defaultValue={item.location ?? ""}
                   defaultLat={item.locationLat}
                   defaultLng={item.locationLng}
+                  defaultAddress={item.address}
                   placeholder="Ej: Cartagena, Colombia (opcional)"
                 />
               </div>

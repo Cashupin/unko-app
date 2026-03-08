@@ -91,6 +91,7 @@ export function CreateItemForm({ tripId }: { tripId: string }) {
     const lngRaw = (fd.get("locationLng") as string).trim();
     const locationLat = latRaw ? parseFloat(latRaw) : null;
     const locationLng = lngRaw ? parseFloat(lngRaw) : null;
+    const address = (fd.get("address") as string | null)?.trim() || undefined;
     const rawUrl = (fd.get("externalUrl") as string).trim();
     const externalUrl = rawUrl && !/^https?:\/\//i.test(rawUrl) ? `https://${rawUrl}` : rawUrl;
 
@@ -98,6 +99,7 @@ export function CreateItemForm({ tripId }: { tripId: string }) {
     if (location) body.location = location;
     if (locationLat != null) body.locationLat = locationLat;
     if (locationLng != null) body.locationLng = locationLng;
+    if (address) body.address = address;
     if (externalUrl) body.externalUrl = externalUrl;
     if (imageUrl) body.imageUrl = imageUrl;
 
@@ -176,6 +178,7 @@ export function CreateItemForm({ tripId }: { tripId: string }) {
                       name="location"
                       nameLat="locationLat"
                       nameLng="locationLng"
+                      nameAddress="address"
                       placeholder={field.placeholder}
                     />
                   ) : field.as === "select" ? (
