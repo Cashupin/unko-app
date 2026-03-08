@@ -18,6 +18,24 @@ export type ImportKmlResult = {
   errors: { name: string; reason: string }[];
 };
 
+async function reverseGeocodeAddress(lat: number, lng: number): Promise<string | null> {
+  try {
+    const params = new URLSearchParams({ lat: String(lat), lon: String(lng), lang: "en" });
+    const res = await fetch(`https://photon.komoot.io/reverse?${params}`, {
+      headers: { "Accept": "application/json" },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      features?: { properties?: { name?: string; city?: string; state?: string; country?: string } }[];
+    };
+    const p = data.features?.[0]?.properties;
+    if (!p) return null;
+    return [p.name, p.city, p.state, p.country].filter(Boolean).join(", ") || null;
+  } catch {
+    return null;
+  }
+}
+
 function haversineMeters(
   lat1: number,
   lng1: number,
@@ -114,6 +132,11 @@ export async function importKmlItems(
         }
       }
 
+      const address =
+        item.lat != null && item.lng != null
+          ? await reverseGeocodeAddress(item.lat, item.lng)
+          : null;
+
       await prisma.$transaction(async (tx) => {
         const created = await tx.item.create({
           data: {
@@ -123,6 +146,7 @@ export async function importKmlItems(
             location: item.location ?? null,
             locationLat: item.lat ?? null,
             locationLng: item.lng ?? null,
+            address,
             externalUrl: null,
             imageUrl: item.imageUrl ?? null,
             status: "PENDING",

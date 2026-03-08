@@ -24,9 +24,11 @@ export function LocationInput({
   name,
   nameLat,
   nameLng,
+  nameAddress,
   defaultValue = "",
   defaultLat,
   defaultLng,
+  defaultAddress,
   onChange,
   placeholder = "Buscar ubicación...",
   id,
@@ -34,9 +36,11 @@ export function LocationInput({
   name: string;
   nameLat: string;
   nameLng: string;
+  nameAddress?: string;
   defaultValue?: string;
   defaultLat?: number | null;
   defaultLng?: number | null;
+  defaultAddress?: string | null;
   onChange?: (text: string, lat: number | null, lng: number | null) => void;
   placeholder?: string;
   id?: string;
@@ -46,6 +50,7 @@ export function LocationInput({
   const [displayValue, setDisplayValue] = useState(defaultValue);
   const [lat, setLat] = useState<number | null>(defaultLat ?? null);
   const [lng, setLng] = useState<number | null>(defaultLng ?? null);
+  const [address, setAddress] = useState<string>(defaultAddress ?? "");
   const [suggestions, setSuggestions] = useState<PhotonFeature[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -71,6 +76,7 @@ export function LocationInput({
     setDisplayValue(value);
     setLat(null);
     setLng(null);
+    setAddress("");
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -118,6 +124,7 @@ export function LocationInput({
     setDisplayValue(label);
     setLat(featureLat);
     setLng(featureLng);
+    setAddress(label);
     setSuggestions([]);
     setOpen(false);
     onChange?.(label, featureLat, featureLng);
@@ -128,6 +135,7 @@ export function LocationInput({
     setDisplayValue("");
     setLat(null);
     setLng(null);
+    setAddress("");
     setSuggestions([]);
     setOpen(false);
     onChange?.("", null, null);
@@ -168,6 +176,7 @@ export function LocationInput({
       <input type="hidden" name={name} value={displayValue} />
       <input type="hidden" name={nameLat} value={lat ?? ""} />
       <input type="hidden" name={nameLng} value={lng ?? ""} />
+      {nameAddress && <input type="hidden" name={nameAddress} value={address} />}
 
       {/* Pin icon */}
       <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">

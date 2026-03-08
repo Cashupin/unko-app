@@ -22,6 +22,7 @@ const createItemSchema = z.object({
   location: z.string().trim().max(500).optional(),
   locationLat: z.number().min(-90).max(90).optional().nullable(),
   locationLng: z.number().min(-180).max(180).optional().nullable(),
+  address: z.string().trim().max(500).optional(),
   externalUrl: z
     .string()
     .trim()
@@ -49,6 +50,7 @@ const itemSelect = {
   location: true,
   locationLat: true,
   locationLng: true,
+  address: true,
   externalUrl: true,
   imageUrl: true,
   createdAt: true,
@@ -97,7 +99,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { title, type, tripId, description, location, locationLat, locationLng, externalUrl, imageUrl } = result.data;
+  const { title, type, tripId, description, location, locationLat, locationLng, address, externalUrl, imageUrl } = result.data;
 
   // ── Double-submit protection ──────────────────────────────────────────────────
   // Reject if the same user created an identical title+type within the last 30s.
@@ -136,6 +138,7 @@ export async function POST(req: NextRequest) {
         location: location ?? null,
         locationLat: locationLat ?? null,
         locationLng: locationLng ?? null,
+        address: address ?? null,
         externalUrl: externalUrl || null,
         imageUrl: imageUrl ?? null,
         status: "PENDING",

@@ -114,6 +114,13 @@ function ItemCard({
           </p>
         )}
 
+        {/* City */}
+        {item.address && (
+          <p className="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            🏙️ {item.address}
+          </p>
+        )}
+
         {/* Location */}
         {item.location && (
           <a
@@ -259,6 +266,7 @@ export async function ItemList({
               { title: { contains: search, mode: "insensitive" } },
               { description: { contains: search, mode: "insensitive" } },
               { location: { contains: search, mode: "insensitive" } },
+              { address: { contains: search, mode: "insensitive" } },
             ]
           : undefined,
       },
@@ -271,6 +279,7 @@ export async function ItemList({
         location: true,
         locationLat: true,
         locationLng: true,
+        address: true,
         externalUrl: true,
         imageUrl: true,
         tripId: true,
