@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { CurrencySelector } from "@/components/currency-selector";
+import { useCurrency } from "@/components/currency-provider";
+import { CURRENCIES, CURRENCY_NAMES } from "@/lib/constants";
+import type { Currency } from "@/lib/constants";
 
 export function DashboardMobileMenu({
   signOutSlot,
@@ -13,6 +15,7 @@ export function DashboardMobileMenu({
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { displayCurrency, setDisplayCurrency } = useCurrency();
 
   // Close on click outside
   useEffect(() => {
@@ -48,9 +51,17 @@ export function DashboardMobileMenu({
             </div>
           )}
 
-          <div className="flex items-center justify-between px-4 py-2.5">
-            <span className="text-sm text-zinc-700 dark:text-zinc-300">Moneda</span>
-            <CurrencySelector />
+          <div className="px-3 py-2">
+            <p className="mb-1.5 text-xs font-medium text-zinc-400 dark:text-zinc-500">Moneda</p>
+            <select
+              value={displayCurrency}
+              onChange={(e) => setDisplayCurrency(e.target.value as Currency)}
+              className="w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:focus:ring-zinc-500"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>{c} — {CURRENCY_NAMES[c]}</option>
+              ))}
+            </select>
           </div>
 
           <div className="flex items-center justify-between px-4 py-2.5">
@@ -62,7 +73,7 @@ export function DashboardMobileMenu({
             <div className="my-1 mx-2 border-t border-zinc-100 dark:border-zinc-700" />
           )}
 
-          <div className="px-2" onClick={() => setOpen(false)}>
+          <div className="px-2">
             {signOutSlot}
           </div>
         </div>
