@@ -7,6 +7,7 @@ import Google from "next-auth/providers/google";
  * Used by middleware.ts to read JWT without touching the DB.
  */
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
