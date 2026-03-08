@@ -31,7 +31,7 @@ export async function deleteCloudinaryImage(url: string | null | undefined): Pro
 // so it cannot be enforced via signature. For server-side enforcement,
 // configure max_file_size in your Cloudinary upload preset instead.
 
-export const UPLOAD_FOLDER = "travel-checks";
+export const UPLOAD_FOLDER = process.env.CLOUDINARY_FOLDER ?? "travel-checks";
 export const UPLOAD_ALLOWED_FORMATS = "jpg,jpeg,png,webp";
 export const UPLOAD_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB — client-side limit
 
