@@ -53,7 +53,7 @@ export default async function TripPage({
   const { tripId } = await params;
   const { tab: tabParam, itemType, itemStatus, search, hotelId } = await searchParams;
   const activeTab: Tab =
-    TABS.find((t) => t.id === tabParam)?.id ?? "actividades";
+    TABS.find((t) => t.id === tabParam)?.id ?? "home";
 
   // ── Fetch trip + verify membership ──────────────────────────────────────────
   const [trip, myParticipant] = await Promise.all([
@@ -127,7 +127,7 @@ export default async function TripPage({
     </form>
   );
 
-  const editSlot = isAdmin ? <EditTripForm trip={trip} /> : null;
+  const editSlot = isAdmin ? <EditTripForm trip={trip} variant="menu" /> : null;
   const deleteSlot = isAdmin ? <DeleteTripButton tripId={tripId} tripName={trip.name} /> : null;
 
   return (
@@ -168,7 +168,7 @@ export default async function TripPage({
 
           {/* Desktop action buttons — hidden on mobile */}
           <div className="hidden md:flex shrink-0 items-center gap-2">
-            {isAdmin && <DeleteTripButton tripId={tripId} tripName={trip.name} />}
+            {isAdmin && <DeleteTripButton tripId={tripId} tripName={trip.name} variant="header" />}
             {isAdmin && <EditTripForm trip={trip} />}
             <CurrencySelector />
             <ThemeToggle />

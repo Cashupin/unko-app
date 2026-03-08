@@ -22,7 +22,14 @@ function toDateInput(d: string | Date | null): string {
   return date.toISOString().split("T")[0];
 }
 
-export function EditTripForm({ trip }: { trip: TripData }) {
+export function EditTripForm({
+  trip,
+  variant = "header",
+}: {
+  trip: TripData;
+  /** "header" = bordered compact button; "menu" = full-width menu item */
+  variant?: "header" | "menu";
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -84,7 +91,11 @@ export function EditTripForm({ trip }: { trip: TripData }) {
     <>
       <button
         onClick={openModal}
-        className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-50 transition-colors dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700"
+        className={
+          variant === "menu"
+            ? "w-full rounded-lg px-4 py-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            : "rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-50 transition-colors dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700"
+        }
       >
         Editar viaje
       </button>

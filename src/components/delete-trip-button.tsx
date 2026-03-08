@@ -4,7 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-export function DeleteTripButton({ tripId, tripName }: { tripId: string; tripName: string }) {
+export function DeleteTripButton({
+  tripId,
+  tripName,
+  variant = "menu",
+}: {
+  tripId: string;
+  tripName: string;
+  /** "header" = bordered compact button; "menu" = full-width menu item */
+  variant?: "header" | "menu";
+}) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -32,7 +41,11 @@ export function DeleteTripButton({ tripId, tripName }: { tripId: string; tripNam
     <>
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-lg px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+        className={
+          variant === "header"
+            ? "rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors dark:border-zinc-700 dark:text-red-400 dark:hover:bg-red-950/40"
+            : "w-full rounded-lg px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+        }
       >
         Eliminar viaje
       </button>
