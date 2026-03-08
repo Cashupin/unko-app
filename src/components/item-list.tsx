@@ -5,6 +5,7 @@ import { CheckInButton } from "@/components/check-in-button";
 import { VoteButtons } from "@/components/vote-buttons";
 import { AddToItineraryButton } from "@/components/add-to-itinerary-button";
 import { DeleteItemButton } from "@/components/delete-item-button";
+import { EditItemForm } from "@/components/edit-item-form";
 import { PhotoThumbnail } from "@/components/photo-thumbnail";
 import { getMapsUrl } from "@/lib/maps-url";
 import type { ItemSummary } from "@/types/item";
@@ -34,6 +35,7 @@ function ItemCard({
   required,
   isOwner,
   isAdmin,
+  canEdit,
   tripId,
   tripStartDate,
   tripEndDate,
@@ -42,6 +44,7 @@ function ItemCard({
   required: number;
   isOwner: boolean;
   isAdmin: boolean;
+  canEdit: boolean;
   tripId: string;
   tripStartDate?: Date | null;
   tripEndDate?: Date | null;
@@ -91,9 +94,14 @@ function ItemCard({
             >
               {STATUS_LABELS[item.status]}
             </span>
-            {canDelete && (
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <DeleteItemButton itemId={item.id} />
+            {(canEdit || canDelete) && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+              {canEdit && (
+                <EditItemForm item={item} />
+              )}
+              {canDelete && (
+                <DeleteItemButton itemId={item.id} />
+              )}
             </div>
           )}
           </div>
@@ -192,7 +200,7 @@ function ItemCard({
                 <div key={c.id} className="flex flex-col items-center gap-1 shrink-0">
                   <PhotoThumbnail url={c.photoUrl!} alt={`Foto de ${c.userName ?? "visita"}`} />
                   {c.userName && (
-                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate max-w-[64px] text-center">
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate max-w-16 text-center">
                       {c.userName}
                     </span>
                   )}
@@ -300,8 +308,10 @@ export async function ItemList({
 
   const required = Math.floor(registeredParticipants / 2) + 1;
 
-  const items: ItemSummary[] = rawItems.map((item) => {
+  const items: (ItemSummary & { canEdit: boolean })[] = rawItems.map((item) => {
     const myRawCheck = item.checks.find((c) => c.userId === currentUserId);
+    const isOwner = item.createdBy.id === currentUserId;
+    const otherVoteCount = item.votes.filter((v) => v.userId !== item.createdBy.id).length;
     return {
       ...item,
       approvals: item.votes.filter((v) => v.value === "APPROVE").length,
@@ -315,6 +325,7 @@ export async function ItemList({
         ? { id: myRawCheck.id, photoUrl: myRawCheck.photoUrl, userName: myRawCheck.user?.name ?? null }
         : null,
       checks: item.checks.map(({ id, photoUrl, user }) => ({ id, photoUrl, userName: user?.name ?? null })),
+      canEdit: (isOwner && otherVoteCount === 0) || isAdmin,
     };
   });
 
@@ -335,6 +346,7 @@ export async function ItemList({
           required={required}
           isOwner={item.createdBy.id === currentUserId}
           isAdmin={isAdmin}
+          canEdit={item.canEdit}
           tripId={tripId}
           tripStartDate={tripStartDate}
           tripEndDate={tripEndDate}
