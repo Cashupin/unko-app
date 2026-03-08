@@ -145,6 +145,11 @@ model Invitation {
   acceptedById String? @unique
   acceptedBy   User?   @relation("AcceptedBy", fields: [acceptedById], references: [id])
 
+  // Optional: invitation linked to a specific trip (auto-joins on signup)
+  tripId   String?
+  tripRole TripRole @default(VIEWER)
+  trip     Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
   @@index([email])
 }
 
@@ -171,6 +176,7 @@ model Trip {
   hotels       Hotel[]
   expenses     Expense[]
   payments     Payment[]
+  invitations  Invitation[]
 
   @@index([createdById])
   @@index([startDate, endDate])

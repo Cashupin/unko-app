@@ -11,6 +11,8 @@ const createInvitationSchema = z.object({
     .toLowerCase()
     .email("Invalid email address")
     .max(254, "Email address is too long"),
+  tripId: z.string().cuid().optional(),
+  tripRole: z.enum(["EDITOR", "VIEWER"]).optional().default("VIEWER"),
 });
 
 export async function POST(req: NextRequest) {
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { email } = result.data;
+  const { email, tripId, tripRole } = result.data;
 
   // Cannot invite yourself
   if (email === session.user.email?.toLowerCase()) {
@@ -51,14 +53,36 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ── Trip validation (when tripId provided) ──────────────────────────────────
+  if (tripId) {
+    const callerMembership = await prisma.tripParticipant.findFirst({
+      where: { tripId, userId: session.user.id, role: "ADMIN" },
+      select: { id: true },
+    });
+    if (!callerMembership) {
+      return NextResponse.json(
+        { error: "Solo los administradores pueden invitar al viaje" },
+        { status: 403 },
+      );
+    }
+  }
+
   // ── Business rules ──────────────────────────────────────────────────────────
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
-    select: { status: true },
+    select: { id: true, status: true },
   });
 
   if (existingUser?.status === "ACTIVE") {
+    // If this is a trip invitation and the user is already active,
+    // they should be added directly via the participants endpoint
+    if (tripId) {
+      return NextResponse.json(
+        { error: "Este usuario ya tiene cuenta. Agrégalo directamente desde el panel de participantes.", alreadyActive: true },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { error: "This user already has access" },
       { status: 409 },
@@ -70,12 +94,17 @@ export async function POST(req: NextRequest) {
       email,
       status: "PENDING",
       expiresAt: { gt: new Date() },
+      // For trip invitations, only block duplicates for the same trip
+      ...(tripId ? { tripId } : { tripId: null }),
     },
   });
 
   if (activeInvitation) {
     return NextResponse.json(
-      { error: "A pending invitation already exists for this email" },
+      { error: tripId
+          ? "Ya existe una invitación pendiente para este email en este viaje"
+          : "A pending invitation already exists for this email"
+      },
       { status: 409 },
     );
   }
@@ -88,6 +117,7 @@ export async function POST(req: NextRequest) {
       email,
       invitedById: session.user.id,
       expiresAt,
+      ...(tripId ? { tripId, tripRole } : {}),
     },
     select: {
       id: true,

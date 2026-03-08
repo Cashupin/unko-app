@@ -143,6 +143,8 @@ function AddParticipantSection({ tripId }: { tripId: string }) {
   const [mode, setMode] = useState<"email" | "ghost">("email");
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingInviteEmail, setPendingInviteEmail] = useState<string | null>(null);
+  const [inviting, setInviting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -161,9 +163,13 @@ function AddParticipantSection({ tripId }: { tripId: string }) {
         body: JSON.stringify(body),
       });
 
-      const data = (await res.json()) as { name?: string; error?: string };
+      const data = (await res.json()) as { name?: string; error?: string; notInSystem?: boolean };
 
       if (!res.ok) {
+        if (data.notInSystem) {
+          setPendingInviteEmail(value.trim().toLowerCase());
+          return;
+        }
         toast.error(data.error ?? "Error al agregar participante");
         return;
       }
@@ -180,6 +186,60 @@ function AddParticipantSection({ tripId }: { tripId: string }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSendTripInvite() {
+    if (!pendingInviteEmail) return;
+    setInviting(true);
+    try {
+      const res = await fetch("/api/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingInviteEmail, tripId, tripRole: "VIEWER" }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        toast.error(data.error ?? "Error al enviar invitación");
+        return;
+      }
+      toast.success(`Invitación enviada a ${pendingInviteEmail}. Se unirá al viaje cuando se registre.`);
+      setPendingInviteEmail(null);
+      setValue("");
+    } catch {
+      toast.error("Error de red. Intenta de nuevo.");
+    } finally {
+      setInviting(false);
+    }
+  }
+
+  // Invite confirmation card
+  if (pendingInviteEmail) {
+    return (
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
+        <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-semibold">{pendingInviteEmail}</span> no tiene cuenta aún.
+        </p>
+        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+          ¿Enviar una invitación al viaje? Se unirá automáticamente cuando se registre.
+        </p>
+        <div className="mt-2.5 flex gap-2">
+          <button
+            onClick={() => setPendingInviteEmail(null)}
+            disabled={inviting}
+            className="rounded-lg px-3 py-1.5 text-xs text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSendTripInvite}
+            disabled={inviting}
+            className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            {inviting ? "Enviando..." : "Enviar invitación"}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
