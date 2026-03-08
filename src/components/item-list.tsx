@@ -6,6 +6,7 @@ import { VoteButtons } from "@/components/vote-buttons";
 import { AddToItineraryButton } from "@/components/add-to-itinerary-button";
 import { DeleteItemButton } from "@/components/delete-item-button";
 import { EditItemForm } from "@/components/edit-item-form";
+import { ResetVotesButton } from "@/components/reset-votes-button";
 import { PhotoThumbnail } from "@/components/photo-thumbnail";
 import { getMapsUrl } from "@/lib/maps-url";
 import type { ItemSummary } from "@/types/item";
@@ -94,13 +95,16 @@ function ItemCard({
             >
               {STATUS_LABELS[item.status]}
             </span>
-            {(canEdit || canDelete) && (
+            {(canEdit || canDelete || (isAdmin && item.status !== "PENDING")) && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
               {canEdit && (
                 <EditItemForm item={item} />
               )}
               {canDelete && (
                 <DeleteItemButton itemId={item.id} />
+              )}
+              {isAdmin && item.status !== "PENDING" && (
+                <ResetVotesButton itemId={item.id} />
               )}
             </div>
           )}
