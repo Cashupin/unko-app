@@ -25,6 +25,7 @@ import { CreateExpenseForm } from "@/components/create-expense-form";
 import { ItemFilterChips } from "@/components/item-filter-chips";
 import { NearbyActivitiesServer } from "@/components/nearby-activities-server";
 import { HashHighlight } from "@/components/hash-highlight";
+import { KmlImport } from "@/components/kml-import";
 import type { ParticipantSummary } from "@/types/trip";
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
@@ -259,7 +260,10 @@ export default async function TripPage({
                 <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                   Actividades del grupo
                 </h2>
-                <CreateItemForm tripId={tripId} />
+                <div className="flex items-center gap-2">
+                  {isAdmin && <KmlImport tripId={tripId} />}
+                  <CreateItemForm tripId={tripId} />
+                </div>
               </div>
 
               <div className="mb-4">
