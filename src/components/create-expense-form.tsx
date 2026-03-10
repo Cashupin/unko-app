@@ -2,9 +2,32 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CURRENCY_OPTIONS, fmtAmount } from "@/lib/constants";
+import { CURRENCY_OPTIONS, CURRENCY_DECIMALS, fmtAmount } from "@/lib/constants";
+import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
+
+// Format raw numeric string for display inside the input (es-CL thousands separator)
+function fmtInput(raw: string, cur: string): string {
+  if (!raw) return "";
+  const decimals = CURRENCY_DECIMALS[cur as Currency] ?? 2;
+  if (decimals === 0) {
+    const n = parseInt(raw.replace(/\D/g, ""), 10);
+    return isNaN(n) ? "" : n.toLocaleString("es-CL");
+  }
+  const [intPart, ...decParts] = raw.split(".");
+  const intN = parseInt(intPart || "0", 10);
+  const intFmt = isNaN(intN) ? "" : intN.toLocaleString("es-CL");
+  const dec = decParts.join("").slice(0, decimals);
+  return raw.includes(".") ? `${intFmt},${dec}` : intFmt;
+}
+
+// Strip formatting from typed input, returning raw value for state (period as decimal sep)
+function parseInputVal(input: string, cur: string): string {
+  const decimals = CURRENCY_DECIMALS[cur as Currency] ?? 2;
+  if (decimals === 0) return input.replace(/\D/g, "");
+  return input.replace(/\./g, "").replace(",", ".");
+}
 
 type Participant = { id: string; name: string };
 
@@ -38,6 +61,8 @@ export function CreateExpenseForm({
   const [loading, setLoading] = useState(false);
   const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">("EQUAL");
   const [currency, setCurrency] = useState(defaultCurrency);
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [amountValue, setAmountValue] = useState("");
 
   // EQUAL mode state
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
@@ -51,6 +76,8 @@ export function CreateExpenseForm({
     setSelectedParticipants(participants.map((p) => p.id));
     setSplitMode("EQUAL");
     setCurrency(defaultCurrency);
+    setPaymentMethod("CASH");
+    setAmountValue("");
     setItems([newItem(participants)]);
     setOpen(true);
   }
@@ -115,12 +142,19 @@ export function CreateExpenseForm({
         return;
       }
 
+      const amountNum = parseFloat(amountValue);
+      if (!amountValue || isNaN(amountNum) || amountNum <= 0) {
+        toast.error("El monto debe ser mayor a 0");
+        return;
+      }
+
       setLoading(true);
       const body = {
         splitType: "EQUAL",
         description: (fd.get("description") as string).trim(),
-        amount: parseFloat(fd.get("amount") as string),
+        amount: amountNum,
         currency: fd.get("currency") as string,
+        paymentMethod,
         paidByParticipantId: (fd.get("paidBy") as string) || undefined,
         expenseDate: (fd.get("expenseDate") as string) || undefined,
         participantIds: selectedParticipants,
@@ -176,6 +210,7 @@ export function CreateExpenseForm({
       splitType: "ITEMIZED",
       description: (fd.get("description") as string).trim(),
       currency: fd.get("currency") as string,
+      paymentMethod,
       paidByParticipantId: (fd.get("paidBy") as string) || undefined,
       expenseDate: (fd.get("expenseDate") as string) || undefined,
       items: items.map((item) => ({
@@ -291,6 +326,31 @@ export function CreateExpenseForm({
                 </div>
               </div>
 
+              {/* Payment method */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Tipo de pago</span>
+                <div className="flex gap-2">
+                  {[
+                    { value: "CASH", label: "💵 Efectivo" },
+                    { value: "DEBIT", label: "💳 Débito" },
+                    { value: "CREDIT", label: "💳 Crédito" },
+                  ].map((pm) => (
+                    <button
+                      key={pm.value}
+                      type="button"
+                      onClick={() => setPaymentMethod(pm.value)}
+                      className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                        paymentMethod === pm.value
+                          ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                          : "border border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      {pm.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Currency */}
               <div className="grid grid-cols-2 gap-3">
                 {splitMode === "EQUAL" && (
@@ -303,13 +363,11 @@ export function CreateExpenseForm({
                     </label>
                     <input
                       id="expense-amount"
-                      name="amount"
-                      type="number"
-                      min="0.01"
-                      max="999999999"
-                      step="0.01"
-                      required
-                      placeholder="0.00"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={fmtInput(amountValue, currency)}
+                      onChange={(e) => setAmountValue(parseInputVal(e.target.value, currency))}
                       className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                     />
                   </div>
@@ -436,7 +494,7 @@ export function CreateExpenseForm({
                         <input
                           type="text"
                           placeholder="Descripción del ítem"
-                          maxLength={200}
+                          maxLength={50}
                           value={item.description}
                           onChange={(e) =>
                             updateItem(item.id, { description: e.target.value })
@@ -444,14 +502,12 @@ export function CreateExpenseForm({
                           className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                         />
                         <input
-                          type="number"
-                          min="0.01"
-                          max="999999999"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={item.amount}
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={fmtInput(item.amount, currency)}
                           onChange={(e) =>
-                            updateItem(item.id, { amount: e.target.value })
+                            updateItem(item.id, { amount: parseInputVal(e.target.value, currency) })
                           }
                           className="w-28 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                         />

@@ -324,6 +324,7 @@ model Expense {
   currency            Currency  @default(CLP)
   expenseDate         DateTime  @default(now())
   splitType           SplitType @default(EQUAL)
+  paymentMethod       String    @default("CASH")
   isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

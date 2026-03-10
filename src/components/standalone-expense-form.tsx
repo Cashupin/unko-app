@@ -2,7 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CURRENCY_OPTIONS, fmtAmount } from "@/lib/constants";
+import { CURRENCY_OPTIONS, CURRENCY_DECIMALS, fmtAmount } from "@/lib/constants";
+import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 
@@ -27,6 +28,28 @@ export type StandaloneInitialValues = {
   splitParticipantNames: string[];
   items: ItemDraft[];
 };
+
+// ─── Format helpers ────────────────────────────────────────────────────────────
+
+function fmtInput(raw: string, cur: string): string {
+  if (!raw) return "";
+  const decimals = CURRENCY_DECIMALS[cur as Currency] ?? 2;
+  if (decimals === 0) {
+    const n = parseInt(raw.replace(/\D/g, ""), 10);
+    return isNaN(n) ? "" : n.toLocaleString("es-CL");
+  }
+  const [intPart, ...decParts] = raw.split(".");
+  const intN = parseInt(intPart || "0", 10);
+  const intFmt = isNaN(intN) ? "" : intN.toLocaleString("es-CL");
+  const dec = decParts.join("").slice(0, decimals);
+  return raw.includes(".") ? `${intFmt},${dec}` : intFmt;
+}
+
+function parseInputVal(input: string, cur: string): string {
+  const decimals = CURRENCY_DECIMALS[cur as Currency] ?? 2;
+  if (decimals === 0) return input.replace(/\D/g, "");
+  return input.replace(/\./g, "").replace(",", ".");
+}
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -87,6 +110,9 @@ export function StandaloneExpenseForm(props: Props) {
   // ITEMIZED items
   const [items, setItems] = useState<ItemDraft[]>(initialValues?.items ?? []);
 
+  // EQUAL amount (formatted input)
+  const [amountValue, setAmountValue] = useState(initialValues?.amount ?? "");
+
   function resetState() {
     const s = blankState();
     setParticipants(s.participants);
@@ -96,6 +122,7 @@ export function StandaloneExpenseForm(props: Props) {
     setSplitMode(s.splitMode);
     setItems(s.items);
     setNewName("");
+    setAmountValue("");
   }
 
   function openModal() {
@@ -208,8 +235,8 @@ export function StandaloneExpenseForm(props: Props) {
     const method = isEdit ? "PATCH" : "POST";
 
     if (splitMode === "EQUAL") {
-      const amount = parseFloat(fd.get("amount") as string);
-      if (!amount || amount <= 0) { toast.error("Ingresa un monto válido"); return; }
+      const amount = parseFloat(amountValue);
+      if (!amountValue || isNaN(amount) || amount <= 0) { toast.error("Ingresa un monto válido"); return; }
       if (splitNames.length === 0) { toast.error("Selecciona al menos un participante para dividir"); return; }
 
       setLoading(true);
@@ -371,14 +398,11 @@ export function StandaloneExpenseForm(props: Props) {
                       Monto <span className="text-red-500">*</span>
                     </label>
                     <input
-                      name="amount"
-                      type="number"
-                      min="0.01"
-                      max="999999999"
-                      step="0.01"
-                      required
-                      defaultValue={initialValues?.amount}
-                      placeholder="0.00"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={fmtInput(amountValue, currency)}
+                      onChange={(e) => setAmountValue(parseInputVal(e.target.value, currency))}
                       className={inputCls}
                     />
                   </div>
@@ -535,7 +559,7 @@ export function StandaloneExpenseForm(props: Props) {
                         <input
                           type="text"
                           placeholder="Descripción"
-                          maxLength={200}
+                          maxLength={50}
                           value={item.description}
                           onChange={(e) =>
                             updateItem(item.id, { description: e.target.value })
@@ -543,14 +567,12 @@ export function StandaloneExpenseForm(props: Props) {
                           className={inputCls}
                         />
                         <input
-                          type="number"
-                          min="0.01"
-                          max="999999999"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={item.amount}
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={fmtInput(item.amount, currency)}
                           onChange={(e) =>
-                            updateItem(item.id, { amount: e.target.value })
+                            updateItem(item.id, { amount: parseInputVal(e.target.value, currency) })
                           }
                           className={`sm:w-28 ${inputCls}`}
                         />
