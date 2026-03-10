@@ -5,7 +5,7 @@ export async function GalleryView({ tripId, tripName }: { tripId: string; tripNa
   const checks = await prisma.check.findMany({
     where: {
       photoUrl: { not: null },
-      item: { tripId, status: "APPROVED" },
+      item: { tripId },
     },
     select: {
       id: true,

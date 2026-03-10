@@ -82,11 +82,11 @@ export async function POST(
   // If created from an Item, inherit its data as defaults
   if (itemId) {
     const item = await prisma.item.findFirst({
-      where: { id: itemId, tripId, status: "APPROVED" },
+      where: { id: itemId, tripId },
       select: { title: true, description: true, location: true, locationLat: true, locationLng: true, imageUrl: true },
     });
     if (!item) {
-      return NextResponse.json({ error: "Item no encontrado o no aprobado" }, { status: 404 });
+      return NextResponse.json({ error: "Item no encontrado" }, { status: 404 });
     }
     if (!title || title === item.title) title = item.title;
     if (!description) description = item.description ?? undefined;

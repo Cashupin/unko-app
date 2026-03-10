@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { recalculatePendingItems } from "@/lib/recalculate";
 import { logger } from "@/lib/logger";
 
 // ─── Validation ────────────────────────────────────────────────────────────────
@@ -82,9 +81,6 @@ export async function PATCH(
     );
   }
 
-  // ── Atomic: update user + recalculate pending items ───────────────────────────
-  // Deactivating a user reduces the active count → threshold decreases →
-  // some PENDING items may now have enough votes to be APPROVED or REJECTED.
   const output = await prisma.$transaction(async (tx) => {
     const updatedUser = await tx.user.update({
       where: { id: targetUserId },
@@ -92,9 +88,7 @@ export async function PATCH(
       select: { id: true, email: true, name: true, status: true },
     });
 
-    const itemsRecalculated = await recalculatePendingItems(tx);
-
-    return { user: updatedUser, itemsRecalculated };
+    return { user: updatedUser };
   });
 
   logger.info("user.status.changed", {
@@ -102,7 +96,6 @@ export async function PATCH(
     from: targetUser.status,
     to: newStatus,
     by: session.user.id,
-    itemsRecalculated: output.itemsRecalculated,
   });
 
   return NextResponse.json(output);
