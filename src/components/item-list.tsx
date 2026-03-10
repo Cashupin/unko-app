@@ -70,25 +70,25 @@ function ItemCard({
       )}
 
       <div className="p-5 flex flex-col flex-1 gap-0">
-        {/* Title + badges */}
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <h3 className="font-semibold text-zinc-900 leading-snug dark:text-zinc-100">
-            {item.title}
-          </h3>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_COLORS[item.type]}`}
-            >
-              {TYPE_LABELS[item.type]}
-            </span>
-            {(canEdit || canDelete) && (
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
-                {canEdit && <EditItemForm item={item} />}
-                {canDelete && <DeleteItemButton itemId={item.id} />}
-              </div>
-            )}
-          </div>
+        {/* Badges + actions */}
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_COLORS[item.type]}`}
+          >
+            {TYPE_LABELS[item.type]}
+          </span>
+          {(canEdit || canDelete) && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+              {canEdit && <EditItemForm item={item} />}
+              {canDelete && <DeleteItemButton itemId={item.id} />}
+            </div>
+          )}
         </div>
+
+        {/* Title */}
+        <h3 className="mb-3 font-semibold text-zinc-900 leading-snug dark:text-zinc-100">
+          {item.title}
+        </h3>
 
         {/* Description */}
         {item.description && (

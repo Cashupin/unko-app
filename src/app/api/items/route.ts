@@ -26,15 +26,15 @@ const createItemSchema = z.object({
   externalUrl: z
     .string()
     .trim()
-    .url("externalUrl must be a valid URL")
+    .url("El enlace externo debe ser una URL válida")
     .optional()
     .or(z.literal("")),
   imageUrl: z
     .string()
-    .url("imageUrl must be a valid URL")
+    .url("La imagen debe ser una URL válida")
     .refine(
       (url) => url.startsWith("https://res.cloudinary.com/"),
-      "imageUrl must be a Cloudinary URL",
+      "La imagen debe ser una URL de Cloudinary",
     )
     .optional(),
 });
