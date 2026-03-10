@@ -145,29 +145,31 @@ export function LocationInput({
     }
   }
 
-  async function handleBlur() {
-    // Close dropdown after a short delay (allows click on suggestion to register first)
+  function handleBlur() {
+    // Cancel any pending autocomplete search so it can't reopen the dropdown after blur
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setTimeout(() => setOpen(false), 150);
 
-    // Auto-geocode: if the user typed text but never picked a suggestion, try the first Photon result
+    // Auto-geocode: if the user typed/pasted text without selecting a suggestion, resolve coords silently
     if (!displayValue.trim() || lat != null) return;
-
-    try {
-      const params = new URLSearchParams({ q: displayValue.trim(), limit: "1", lang: "en" });
-      const res = await fetch(`https://photon.komoot.io/api/?${params}`, {
-        headers: { Accept: "application/json" },
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as { features: PhotonFeature[] };
-      const first = data.features?.[0];
-      if (!first) return;
-      const [featureLng, featureLat] = first.geometry.coordinates;
-      setLat(featureLat);
-      setLng(featureLng);
-      onChange?.(displayValue, featureLat, featureLng);
-    } catch {
-      // silently ignore — coordinates remain null
-    }
+    void (async () => {
+      try {
+        const params = new URLSearchParams({ q: displayValue.trim(), limit: "1", lang: "en" });
+        const res = await fetch(`https://photon.komoot.io/api/?${params}`, {
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { features: PhotonFeature[] };
+        const first = data.features?.[0];
+        if (!first) return;
+        const [featureLng, featureLat] = first.geometry.coordinates;
+        setLat(featureLat);
+        setLng(featureLng);
+        onChange?.(displayValue, featureLat, featureLng);
+      } catch {
+        // silently ignore — coordinates remain null
+      }
+    })();
   }
 
   return (

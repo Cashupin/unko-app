@@ -39,6 +39,8 @@ const ChevronRight = () => (
 
 const navBtn = "flex items-center justify-center h-7 w-7 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 transition-colors";
 
+type DropdownPos = { top: number; left: number; width: number };
+
 export function DatePicker({
   name,
   value: valueProp,
@@ -64,19 +66,30 @@ export function DatePicker({
 
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<CalendarView>("day");
+  const [dropdownPos, setDropdownPos] = useState<DropdownPos | null>(null);
 
   const initialDate = value ? new Date(value + "T00:00:00") : new Date();
   const [viewYear, setViewYear] = useState(initialDate.getFullYear());
   const [viewMonth, setViewMonth] = useState(initialDate.getMonth());
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  function computePos() {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 280) });
+  }
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        setView("day");
-      }
+      const target = e.target as Node;
+      if (
+        buttonRef.current?.contains(target) ||
+        calendarRef.current?.contains(target)
+      ) return;
+      setOpen(false);
+      setView("day");
     }
     if (open) {
       document.addEventListener("pointerdown", onPointerDown);
@@ -121,14 +134,18 @@ export function DatePicker({
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
-    <div ref={containerRef}>
+    <div>
       {name && <input type="hidden" name={name} value={value} />}
 
       {/* Trigger */}
       <button
+        ref={buttonRef}
         type="button"
         id={id}
-        onClick={() => { setOpen(v => !v); setView("day"); }}
+        onClick={() => {
+          if (!open) { computePos(); setView("day"); setOpen(true); }
+          else setOpen(false);
+        }}
         className={`w-full flex items-center gap-2 rounded-lg border px-3 py-2 text-sm text-left transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 ${
           value
             ? "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100"
@@ -149,9 +166,19 @@ export function DatePicker({
         </svg>
       </button>
 
-      {/* Calendar */}
-      {open && (
-        <div className="mt-1.5 rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800 p-3">
+      {/* Calendar — fixed positioned to avoid pushing form content */}
+      {open && dropdownPos && (
+        <div
+          ref={calendarRef}
+          style={{
+            position: "fixed",
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            width: dropdownPos.width,
+            zIndex: 9999,
+          }}
+          className="rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-800 p-3"
+        >
 
           {/* ── DAY VIEW ── */}
           {view === "day" && (

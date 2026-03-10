@@ -46,13 +46,13 @@ export default async function TripPage({
   searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ tab?: string; itemType?: string; itemStatus?: string; search?: string; hotelId?: string }>;
+  searchParams: Promise<{ tab?: string; itemType?: string; search?: string; hotelId?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
   const { tripId } = await params;
-  const { tab: tabParam, itemType, itemStatus, search, hotelId } = await searchParams;
+  const { tab: tabParam, itemType, search, hotelId } = await searchParams;
   const activeTab: Tab =
     TABS.find((t) => t.id === tabParam)?.id ?? "home";
 
@@ -282,7 +282,6 @@ export default async function TripPage({
                   tripStartDate={trip.startDate}
                   tripEndDate={trip.endDate}
                   typeFilter={itemType}
-                  statusFilter={itemStatus}
                   search={search}
                 />
               </Suspense>

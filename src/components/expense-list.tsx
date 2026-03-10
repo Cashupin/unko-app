@@ -32,6 +32,7 @@ export async function ExpenseList({
         description: true,
         amount: true,
         currency: true,
+        paymentMethod: true,
         expenseDate: true,
         splitType: true,
         isActive: true,

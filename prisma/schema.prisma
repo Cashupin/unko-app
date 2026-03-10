@@ -28,12 +28,6 @@ enum ItemType {
   FOOD
 }
 
-enum ItemStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 enum VoteValue {
   APPROVE
   REJECT
@@ -218,7 +212,6 @@ model Item {
   address     String?
   externalUrl String?
   imageUrl    String?
-  status          ItemStatus @default(PENDING)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -331,6 +324,7 @@ model Expense {
   currency            Currency  @default(CLP)
   expenseDate         DateTime  @default(now())
   splitType           SplitType @default(EQUAL)
+  paymentMethod       String    @default("CASH")
   isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

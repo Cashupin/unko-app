@@ -30,6 +30,7 @@ export type ExpenseCardData = {
   description: string;
   amount: number;
   currency: string;
+  paymentMethod: string;
   expenseDate: Date;
   splitType: string;
   isActive: boolean;
@@ -65,6 +66,12 @@ export function ExpenseCard({
   const hasPaidSplits = expense.participants.some((ep) => ep.paid);
   const isCreditor = expense.paidBy?.id === myParticipantId;
 
+  const PAYMENT_METHOD_LABELS: Record<string, string> = {
+    CASH: "💵 Efectivo",
+    DEBIT: "💳 Débito",
+    CREDIT: "💳 Crédito",
+  };
+
   const sym = (currency: string) => CURRENCY_SYMBOLS[currency as Currency] ?? currency;
   const fmtDate = (d: Date) =>
     new Date(d).toLocaleDateString("es-CL", { day: "numeric", month: "short" });
@@ -75,6 +82,7 @@ export function ExpenseCard({
     description: expense.description,
     amount: expense.amount,
     currency: expense.currency,
+    paymentMethod: expense.paymentMethod,
     expenseDate: expense.expenseDate,
     splitType: expense.splitType,
     paidByParticipantId: expense.paidBy?.id ?? null,
@@ -186,6 +194,11 @@ export function ExpenseCard({
               {isItemized && (
                 <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">
                   por ítems
+                </span>
+              )}
+              {expense.paymentMethod && expense.paymentMethod !== "CASH" && (
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
+                  {PAYMENT_METHOD_LABELS[expense.paymentMethod] ?? expense.paymentMethod}
                 </span>
               )}
               <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">

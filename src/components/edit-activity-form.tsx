@@ -135,6 +135,7 @@ export function EditActivityForm({
                   name="title"
                   type="text"
                   required
+                  maxLength={200}
                   defaultValue={activity.title}
                   placeholder="Ej: Visita al Templo Sensoji"
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"

@@ -12,7 +12,7 @@ export function HashHighlight() {
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     el.style.transition = "box-shadow 0.1s ease-in";
-    el.style.boxShadow = "0 0 0 3px rgb(113 113 122 / 0.7), 0 0 0 6px rgb(113 113 122 / 0.15)";
+    el.style.boxShadow = "0 0 0 3px rgb(59 130 246 / 0.7), 0 0 0 8px rgb(59 130 246 / 0.15)";
     const timer = setTimeout(() => {
       el.style.transition = "box-shadow 0.8s ease-out";
       el.style.boxShadow = "";

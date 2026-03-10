@@ -137,40 +137,20 @@ export async function importKmlItems(
           ? await reverseGeocodeAddress(item.lat, item.lng)
           : null;
 
-      await prisma.$transaction(async (tx) => {
-        const created = await tx.item.create({
-          data: {
-            title: item.name,
-            type: item.type,
-            description: item.description ?? null,
-            location: item.location ?? null,
-            locationLat: item.lat ?? null,
-            locationLng: item.lng ?? null,
-            address,
-            externalUrl: null,
-            imageUrl: item.imageUrl ?? null,
-            status: "PENDING",
-            createdById: userId,
-            tripId,
-          },
-          select: { id: true },
-        });
-
-        await tx.vote.create({
-          data: { userId, itemId: created.id, value: "APPROVE" },
-        });
-
-        const registeredParticipants = await tx.tripParticipant.count({
-          where: { tripId, type: "REGISTERED", user: { status: "ACTIVE" } },
-        });
-        const threshold = Math.floor(registeredParticipants / 2) + 1;
-
-        if (threshold === 1) {
-          await tx.item.update({
-            where: { id: created.id },
-            data: { status: "APPROVED" },
-          });
-        }
+      await prisma.item.create({
+        data: {
+          title: item.name,
+          type: item.type,
+          description: item.description ?? null,
+          location: item.location ?? null,
+          locationLat: item.lat ?? null,
+          locationLng: item.lng ?? null,
+          address,
+          externalUrl: null,
+          imageUrl: item.imageUrl ?? null,
+          createdById: userId,
+          tripId,
+        },
       });
 
       // Add to in-memory existing list so subsequent items in this batch dedup against it

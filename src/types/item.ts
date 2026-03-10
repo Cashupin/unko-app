@@ -8,7 +8,6 @@ export type ItemSummary = {
   id: string;
   title: string;
   type: "PLACE" | "FOOD";
-  status: "PENDING" | "APPROVED" | "REJECTED";
   description: string | null;
   location: string | null;
   locationLat: number | null;
@@ -33,4 +32,6 @@ export type ItemSummary = {
   myCheck: CheckSummary | null;
   // All check-ins (latest 20), for the photo gallery
   checks: CheckSummary[];
+  // Whether this item already has an activity in the itinerary
+  inItinerary?: boolean;
 };

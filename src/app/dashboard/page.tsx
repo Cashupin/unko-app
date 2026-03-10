@@ -52,6 +52,7 @@ async function getStandaloneExpenses(userId: string): Promise<StandaloneExpenseD
       description: true,
       amount: true,
       currency: true,
+      paymentMethod: true,
       expenseDate: true,
       splitType: true,
       isActive: true,
