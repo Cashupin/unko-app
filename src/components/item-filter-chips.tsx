@@ -51,23 +51,16 @@ const TYPE_CHIPS = [
   { value: "PLACE", label: "🏛️ Lugares" },
 ] as const;
 
-const STATUS_CHIPS = [
-  { value: "", label: "Cualquier estado" },
-  { value: "PENDING", label: "⏳ Pendientes" },
-  { value: "APPROVED", label: "✅ Aprobados" },
-] as const;
-
 export function ItemFilterChips() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const currentType = searchParams.get("itemType") ?? "";
-  const currentStatus = searchParams.get("itemStatus") ?? "";
   const [searchValue, setSearchValue] = useState(searchParams.get("search") ?? "");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const hasActiveFilters = !!currentType || !!currentStatus || searchParams.has("search");
+  const hasActiveFilters = !!currentType || searchParams.has("search");
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -116,7 +109,7 @@ export function ItemFilterChips() {
           Filtros
           {hasActiveFilters && (
             <span className="rounded-full bg-zinc-900 px-1.5 py-0.5 text-[10px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
-              {[currentType, currentStatus, searchParams.has("search") ? "1" : ""].filter(Boolean).length}
+              {[currentType, searchParams.has("search") ? "1" : ""].filter(Boolean).length}
             </span>
           )}
         </div>
@@ -175,17 +168,6 @@ export function ItemFilterChips() {
             ))}
           </div>
 
-          {/* Status chips */}
-          <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
-            {STATUS_CHIPS.map((chip) => (
-              <Chip
-                key={chip.value}
-                label={chip.label}
-                active={currentStatus === chip.value}
-                onClick={() => setFilter("itemStatus", chip.value)}
-              />
-            ))}
-          </div>
         </div>
       )}
     </div>

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(node -e \":*)",
       "Bash(mkdir -p \"c:\\\\Users\\\\jalva\\\\Projects\\\\unko-app\\\\src\\\\app\\\\api\\\\trips\\\\[id]\\\\expenses\\\\[expenseId]\\\\disable\")",
-      "Bash(mkdir -p \"c:\\\\Users\\\\jalva\\\\Projects\\\\unko-app\\\\src\\\\app\\\\api\\\\trips\\\\[id]\\\\expenses\\\\[expenseId]\\\\splits\\\\[participantId]\")"
+      "Bash(mkdir -p \"c:\\\\Users\\\\jalva\\\\Projects\\\\unko-app\\\\src\\\\app\\\\api\\\\trips\\\\[id]\\\\expenses\\\\[expenseId]\\\\splits\\\\[participantId]\")",
+      "Bash(PRISMA_FORCE_TRANSACTIONS=1 npx prisma migrate dev --name remove-item-status --create-only)",
+      "Bash(rm \"c:/Users/jalva/Projects/unko-app/src/app/api/items/[id]/reset-votes/route.ts\")",
+      "Bash(rmdir \"c:/Users/jalva/Projects/unko-app/src/app/api/items/[id]/reset-votes\")"
     ]
   }
 }

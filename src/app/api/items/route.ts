@@ -45,7 +45,6 @@ const itemSelect = {
   id: true,
   title: true,
   type: true,
-  status: true,
   description: true,
   location: true,
   locationLat: true,
@@ -128,55 +127,21 @@ export async function POST(req: NextRequest) {
 
   const userId = session.user.id;
 
-  const item = await prisma.$transaction(async (tx) => {
-    // 1. Create the item.
-    const newItem = await tx.item.create({
-      data: {
-        title,
-        type,
-        description: description ?? null,
-        location: location ?? null,
-        locationLat: locationLat ?? null,
-        locationLng: locationLng ?? null,
-        address: address ?? null,
-        externalUrl: externalUrl || null,
-        imageUrl: imageUrl ?? null,
-        status: "PENDING",
-        createdById: userId,
-        tripId,
-      },
-      select: itemSelect,
-    });
-
-    // 2. Auto-register the creator's APPROVE vote.
-    await tx.vote.create({
-      data: { userId, itemId: newItem.id, value: "APPROVE" },
-    });
-
-    // 3. Check whether the single auto-vote already meets the threshold.
-    //    This happens when the trip has only one registered participant (the creator).
-    const registeredParticipants = await tx.tripParticipant.count({
-      where: { tripId, type: "REGISTERED", user: { status: "ACTIVE" } },
-    });
-    const threshold = Math.floor(registeredParticipants / 2) + 1;
-
-    let finalStatus = newItem.status;
-    if (threshold === 1) {
-      await tx.item.update({
-        where: { id: newItem.id },
-        data: { status: "APPROVED" },
-      });
-      finalStatus = "APPROVED";
-      logger.info("item.status.changed", {
-        itemId: newItem.id,
-        status: "APPROVED",
-        triggeredBy: userId,
-        reason: "auto_vote_threshold",
-        summary: { approvals: 1, rejections: 0, required: threshold, registeredParticipants },
-      });
-    }
-
-    return { ...newItem, status: finalStatus };
+  const item = await prisma.item.create({
+    data: {
+      title,
+      type,
+      description: description ?? null,
+      location: location ?? null,
+      locationLat: locationLat ?? null,
+      locationLng: locationLng ?? null,
+      address: address ?? null,
+      externalUrl: externalUrl || null,
+      imageUrl: imageUrl ?? null,
+      createdById: userId,
+      tripId,
+    },
+    select: itemSelect,
   });
 
   logger.info("item.created", { itemId: item.id, type, userId });

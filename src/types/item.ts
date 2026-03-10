@@ -8,7 +8,6 @@ export type ItemSummary = {
   id: string;
   title: string;
   type: "PLACE" | "FOOD";
-  status: "PENDING" | "APPROVED" | "REJECTED";
   description: string | null;
   location: string | null;
   locationLat: number | null;

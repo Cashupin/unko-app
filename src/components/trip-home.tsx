@@ -108,7 +108,7 @@ export async function TripHome({
     // First 10 proposals
     prisma.item.findMany({
       where: { tripId },
-      select: { id: true, title: true, type: true, status: true, location: true, locationLat: true, locationLng: true },
+      select: { id: true, title: true, type: true, location: true, locationLat: true, locationLng: true },
       orderBy: { createdAt: "asc" },
       take: 10,
     }),

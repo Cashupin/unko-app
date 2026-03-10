@@ -1,12 +1,11 @@
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import type { ItemType, ItemStatus } from "@/generated/prisma/client";
+import type { ItemType } from "@/generated/prisma/client";
 import { CheckInButton } from "@/components/check-in-button";
 import { VoteButtons } from "@/components/vote-buttons";
 import { AddToItineraryButton } from "@/components/add-to-itinerary-button";
 import { DeleteItemButton } from "@/components/delete-item-button";
 import { EditItemForm } from "@/components/edit-item-form";
-import { ResetVotesButton } from "@/components/reset-votes-button";
 import { PhotoThumbnail } from "@/components/photo-thumbnail";
 import { getMapsUrl } from "@/lib/maps-url";
 import type { ItemSummary } from "@/types/item";
@@ -17,16 +16,6 @@ const TYPE_LABELS = { PLACE: "Lugar", FOOD: "Comida" } as const;
 const TYPE_COLORS = {
   PLACE: "bg-blue-100 text-blue-700",
   FOOD: "bg-orange-100 text-orange-700",
-} as const;
-const STATUS_COLORS = {
-  PENDING: "bg-zinc-100 text-zinc-600",
-  APPROVED: "bg-green-100 text-green-700",
-  REJECTED: "bg-red-100 text-red-600",
-} as const;
-const STATUS_LABELS = {
-  PENDING: "Pendiente",
-  APPROVED: "Aprobado",
-  REJECTED: "Rechazado",
 } as const;
 
 // ─── Item Card ─────────────────────────────────────────────────────────────────
@@ -51,6 +40,8 @@ function ItemCard({
   tripEndDate?: Date | null;
 }) {
   const canDelete = isOwner || isAdmin;
+  const hasMajority = item.approvals >= required;
+  const canAddToItinerary = isAdmin || hasMajority;
 
   return (
     <div id={`item-${item.id}`} className="group rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 hover:shadow-md hover:border-zinc-200 transition-all flex flex-col overflow-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5 dark:hover:border-zinc-700">
@@ -90,24 +81,12 @@ function ItemCard({
             >
               {TYPE_LABELS[item.type]}
             </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[item.status]}`}
-            >
-              {STATUS_LABELS[item.status]}
-            </span>
-            {(canEdit || canDelete || (isAdmin && item.status !== "PENDING")) && (
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
-              {canEdit && (
-                <EditItemForm item={item} />
-              )}
-              {canDelete && (
-                <DeleteItemButton itemId={item.id} />
-              )}
-              {isAdmin && item.status !== "PENDING" && (
-                <ResetVotesButton itemId={item.id} />
-              )}
-            </div>
-          )}
+            {(canEdit || canDelete) && (
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                {canEdit && <EditItemForm item={item} />}
+                {canDelete && <DeleteItemButton itemId={item.id} />}
+              </div>
+            )}
           </div>
         </div>
 
@@ -118,7 +97,7 @@ function ItemCard({
           </p>
         )}
 
-        {/* City */}
+        {/* Address */}
         {item.address && (
           <p className="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
             🏙️ {item.address}
@@ -151,17 +130,7 @@ function ItemCard({
 
         {/* Stats row */}
         <div className="mt-auto flex items-center gap-3 border-t border-zinc-100 pt-3 text-xs text-zinc-400 dark:border-zinc-700 dark:text-zinc-500">
-          {item.status !== "PENDING" && (
-            <span>
-              ✓ {item.approvals} · ✗ {item.rejections}
-            </span>
-          )}
-          {item.status === "APPROVED" && (
-            <span>
-              · {item._count.checks} visita
-              {item._count.checks !== 1 ? "s" : ""}
-            </span>
-          )}
+          <span>{item._count.checks} visita{item._count.checks !== 1 ? "s" : ""}</span>
           <span className="ml-auto">
             {new Date(item.createdAt).toLocaleDateString()}
           </span>
@@ -183,27 +152,18 @@ function ItemCard({
           </span>
         </div>
 
-        {/* Vote buttons — only for PENDING items that the user didn't create */}
-        {item.status === "PENDING" && (
-          <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-700">
-            {isOwner ? (
-              <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
-                ✓ Tu voto de aprobación se registró al crear el ítem
-              </p>
-            ) : (
-              <VoteButtons
-                itemId={item.id}
-                myVote={item.myVote}
-                approvals={item.approvals}
-                rejections={item.rejections}
-                required={required}
-              />
-            )}
-          </div>
-        )}
+        {/* Vote buttons — always visible, subtle */}
+        <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-700">
+          <VoteButtons
+            itemId={item.id}
+            myVote={item.myVote}
+            approvals={item.approvals}
+            rejections={item.rejections}
+          />
+        </div>
 
         {/* Check-in photos from all users */}
-        {item.status === "APPROVED" && item.checks.some((c) => c.photoUrl) && (
+        {item.checks.some((c) => c.photoUrl) && (
           <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
             {item.checks
               .filter((c) => c.photoUrl)
@@ -220,10 +180,10 @@ function ItemCard({
           </div>
         )}
 
-        {/* APPROVED actions: check-in + add to itinerary */}
-        {item.status === "APPROVED" && (
-          <div className="mt-3 border-t border-zinc-100 pt-3 flex items-center justify-between gap-2 dark:border-zinc-700">
-            <CheckInButton itemId={item.id} myCheck={item.myCheck} />
+        {/* Check-in + add to itinerary */}
+        <div className="mt-3 border-t border-zinc-100 pt-3 flex items-center justify-between gap-2 dark:border-zinc-700">
+          <CheckInButton itemId={item.id} myCheck={item.myCheck} />
+          {canAddToItinerary && (
             <AddToItineraryButton
               tripId={tripId}
               itemId={item.id}
@@ -231,8 +191,8 @@ function ItemCard({
               tripStartDate={tripStartDate}
               tripEndDate={tripEndDate}
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -247,7 +207,6 @@ export async function ItemList({
   tripStartDate,
   tripEndDate,
   typeFilter,
-  statusFilter,
   search,
 }: {
   currentUserId: string;
@@ -256,7 +215,6 @@ export async function ItemList({
   tripStartDate?: Date | null;
   tripEndDate?: Date | null;
   typeFilter?: string;
-  statusFilter?: string;
   search?: string;
 }) {
   const [rawItems, registeredParticipants] = await Promise.all([
@@ -264,7 +222,6 @@ export async function ItemList({
       where: {
         tripId,
         type: typeFilter ? (typeFilter as ItemType) : undefined,
-        status: statusFilter ? (statusFilter as ItemStatus) : undefined,
         OR: search
           ? [
               { title: { contains: search, mode: "insensitive" } },
@@ -278,7 +235,6 @@ export async function ItemList({
         id: true,
         title: true,
         type: true,
-        status: true,
         description: true,
         location: true,
         locationLat: true,
@@ -295,11 +251,9 @@ export async function ItemList({
         _count: {
           select: { checks: true },
         },
-        // All votes — used to compute approvals, rejections, and myVote
         votes: {
           select: { userId: true, value: true },
         },
-        // All check-ins (latest 20) — used for the photo gallery and to derive myCheck
         checks: {
           select: {
             id: true,
@@ -313,7 +267,6 @@ export async function ItemList({
       },
       orderBy: { createdAt: "desc" },
     }),
-    // Threshold is based on REGISTERED active participants of this trip
     prisma.tripParticipant.count({
       where: { tripId, type: "REGISTERED", user: { status: "ACTIVE" } },
     }),

@@ -9,7 +9,6 @@ interface VoteButtonsProps {
   myVote: "APPROVE" | "REJECT" | null;
   approvals: number;
   rejections: number;
-  required: number;
 }
 
 function ThumbUpIcon({ className }: { className?: string }) {
@@ -35,7 +34,6 @@ export function VoteButtons({
   myVote,
   approvals,
   rejections,
-  required,
 }: VoteButtonsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState<"APPROVE" | "REJECT" | null>(null);
@@ -64,84 +62,46 @@ export function VoteButtons({
   const isApproved = myVote === "APPROVE";
   const isRejected = myVote === "REJECT";
   const busy = loading !== null;
-  const total = approvals + rejections;
-  const approvalPct = total > 0 ? Math.round((approvals / total) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Progress bar */}
-      <div className="flex flex-col gap-1">
-        <div className="flex h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">
-          {total > 0 ? (
-            <>
-              <div
-                className="h-full bg-green-500 transition-all duration-300"
-                style={{ width: `${approvalPct}%` }}
-              />
-              <div
-                className="h-full bg-red-400 transition-all duration-300"
-                style={{ width: `${100 - approvalPct}%` }}
-              />
-            </>
-          ) : (
-            <div className="h-full w-full rounded-full bg-zinc-200 dark:bg-zinc-600" />
-          )}
-        </div>
-        <div className="flex justify-between text-[10px] text-zinc-400 dark:text-zinc-500">
-          <span className="text-green-600 dark:text-green-500">{approvals} a favor</span>
-          <span>
-            {required} necesario{required !== 1 ? "s" : ""}
-          </span>
-          <span className="text-red-500 dark:text-red-400">{rejections} en contra</span>
-        </div>
-      </div>
+    <div className="flex items-center justify-between gap-2">
+      {/* Vote counts */}
+      <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+        <span className={approvals > 0 ? "text-green-600 dark:text-green-500 font-medium" : ""}>{approvals} ✓</span>
+        {" · "}
+        <span className={rejections > 0 ? "text-red-500 dark:text-red-400 font-medium" : ""}>{rejections} ✗</span>
+      </span>
 
-      {/* Thumb buttons */}
-      <div className="flex items-center justify-center gap-4">
+      {/* Compact thumb buttons */}
+      <div className="flex items-center gap-1.5">
         <button
           onClick={() => vote("APPROVE")}
           disabled={busy}
           aria-label="Aprobar"
-          className={`flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all disabled:opacity-50 ${
+          title="Aprobar"
+          className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all disabled:opacity-40 ${
             isApproved
-              ? "border-green-500 bg-green-500 text-white shadow-md shadow-green-200 dark:shadow-green-900/40"
-              : "border-zinc-200 text-zinc-400 hover:border-green-400 hover:bg-green-50 hover:text-green-600 dark:border-zinc-600 dark:text-zinc-500 dark:hover:border-green-500 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+              ? "border-green-500 bg-green-500 text-white"
+              : "border-zinc-200 text-zinc-400 hover:border-green-400 hover:text-green-600 dark:border-zinc-600 dark:text-zinc-500 dark:hover:border-green-500 dark:hover:text-green-400"
           }`}
         >
-          {loading === "APPROVE" ? (
-            <span className="text-xs">…</span>
-          ) : (
-            <ThumbUpIcon />
-          )}
+          {loading === "APPROVE" ? <span className="text-[10px]">…</span> : <ThumbUpIcon className="w-3 h-3" />}
         </button>
 
         <button
           onClick={() => vote("REJECT")}
           disabled={busy}
           aria-label="Rechazar"
-          className={`flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all disabled:opacity-50 ${
+          title="Rechazar"
+          className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all disabled:opacity-40 ${
             isRejected
-              ? "border-red-500 bg-red-500 text-white shadow-md shadow-red-200 dark:shadow-red-900/40"
-              : "border-zinc-200 text-zinc-400 hover:border-red-400 hover:bg-red-50 hover:text-red-600 dark:border-zinc-600 dark:text-zinc-500 dark:hover:border-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+              ? "border-red-500 bg-red-500 text-white"
+              : "border-zinc-200 text-zinc-400 hover:border-red-400 hover:text-red-600 dark:border-zinc-600 dark:text-zinc-500 dark:hover:border-red-500 dark:hover:text-red-400"
           }`}
         >
-          {loading === "REJECT" ? (
-            <span className="text-xs">…</span>
-          ) : (
-            <ThumbDownIcon />
-          )}
+          {loading === "REJECT" ? <span className="text-[10px]">…</span> : <ThumbDownIcon className="w-3 h-3" />}
         </button>
       </div>
-
-      {myVote && (
-        <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
-          Votaste{" "}
-          <span className={isApproved ? "font-medium text-green-600 dark:text-green-500" : "font-medium text-red-500 dark:text-red-400"}>
-            {isApproved ? "a favor" : "en contra"}
-          </span>
-          {" · toca de nuevo para cambiar"}
-        </p>
-      )}
     </div>
   );
 }
