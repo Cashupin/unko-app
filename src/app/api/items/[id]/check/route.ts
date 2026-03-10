@@ -25,7 +25,7 @@ const checkSelect = {
   createdAt: true,
   updatedAt: true,
   user: { select: { id: true, name: true, image: true } },
-  item: { select: { id: true, title: true, status: true } },
+  item: { select: { id: true, title: true } },
 } as const;
 
 // ─── POST /api/items/[id]/check ────────────────────────────────────────────────
@@ -62,21 +62,14 @@ export async function POST(
 
   const { photoUrl } = result.data;
 
-  // ── Business rule: item must exist and be APPROVED ───────────────────────────
+  // ── Business rule: item must exist ───────────────────────────────────────────
   const item = await prisma.item.findUnique({
     where: { id: itemId },
-    select: { status: true },
+    select: { id: true },
   });
 
   if (!item) {
     return NextResponse.json({ error: "Item not found" }, { status: 404 });
-  }
-
-  if (item.status !== "APPROVED") {
-    return NextResponse.json(
-      { error: `Cannot check an item with status ${item.status.toLowerCase()}` },
-      { status: 409 },
-    );
   }
 
   // ── Upsert: create check or update photoUrl ───────────────────────────────────
