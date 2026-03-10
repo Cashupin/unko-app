@@ -190,6 +190,7 @@ function ItemCard({
               title={item.title}
               tripStartDate={tripStartDate}
               tripEndDate={tripEndDate}
+              inItinerary={item.inItinerary}
             />
           )}
         </div>
@@ -264,6 +265,7 @@ export async function ItemList({
           orderBy: { createdAt: "desc" },
           take: 20,
         },
+        activities: { select: { id: true }, take: 1 },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -292,6 +294,7 @@ export async function ItemList({
         : null,
       checks: item.checks.map(({ id, photoUrl, user }) => ({ id, photoUrl, userName: user?.name ?? null })),
       canEdit: (isOwner && otherVoteCount === 0) || isAdmin,
+      inItinerary: item.activities.length > 0,
     };
   });
 

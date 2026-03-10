@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { DeleteActivityButton } from "@/components/delete-activity-button";
 import { CreateActivityForm } from "@/components/create-activity-form";
@@ -71,7 +72,7 @@ export async function ActivityList({
         notes: true,
         photoUrl: true,
         createdAt: true,
-        item: { select: { id: true, title: true } },
+        item: { select: { id: true, title: true, imageUrl: true, address: true } },
       },
       orderBy: [{ activityDate: "asc" }, { activityTime: "asc" }, { createdAt: "asc" }],
     }),
@@ -190,7 +191,7 @@ type Activity = {
   notes: string | null;
   photoUrl: string | null;
   createdAt: Date;
-  item: { id: string; title: string } | null;
+  item: { id: string; title: string; imageUrl: string | null; address: string | null } | null;
 };
 
 function DayCard({
@@ -335,9 +336,12 @@ function ActivityRow({
           {act.title}
         </p>
         {act.item && (
-          <span className="mt-0.5 inline-block rounded-full bg-violet-50 border border-violet-100 px-2 py-0.5 text-xs font-medium text-violet-600 dark:bg-violet-950 dark:border-violet-900 dark:text-violet-400">
-            {act.item.title}
-          </span>
+          <a
+            href={`/trips/${tripId}?tab=actividades#item-${act.item.id}`}
+            className="mt-0.5 inline-block rounded-full bg-violet-50 border border-violet-100 px-2 py-0.5 text-xs font-medium text-violet-600 hover:bg-violet-100 transition-colors dark:bg-violet-950 dark:border-violet-900 dark:text-violet-400 dark:hover:bg-violet-900/60"
+          >
+            ↗ Ver propuesta
+          </a>
         )}
         {act.description && (
           <p className="mt-1.5 text-sm text-zinc-600 leading-relaxed dark:text-zinc-400">
@@ -356,6 +360,17 @@ function ActivityRow({
               {act.location}
             </a>
           )}
+          {!act.location && act.item?.address && (
+            <a
+              href={getMapsUrl(act.item.address)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-700 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+            >
+              <span>📍</span>
+              {act.item.address}
+            </a>
+          )}
           {act.notes && (
             <span className="text-xs text-zinc-500 italic dark:text-zinc-400">{act.notes}</span>
           )}
@@ -372,6 +387,18 @@ function ActivityRow({
             </div>
           )}
           <PhotoThumbnail url={act.photoUrl} alt={act.title} />
+        </div>
+      ) : act.item?.imageUrl ? (
+        <div className="flex shrink-0 flex-col items-center gap-1.5 self-start pt-0.5">
+          {canEdit && (
+            <div className="flex items-center justify-center gap-0.5">
+              <EditActivityForm tripId={tripId} activity={activityForEdit} />
+              <DeleteActivityButton tripId={tripId} activityId={act.id} />
+            </div>
+          )}
+          <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-700">
+            <Image src={act.item.imageUrl} alt={act.title} fill className="object-cover" />
+          </div>
         </div>
       ) : canEdit ? (
         <div className="flex shrink-0 items-center gap-1 self-start pt-0.5">

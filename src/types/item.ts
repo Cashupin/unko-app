@@ -32,4 +32,6 @@ export type ItemSummary = {
   myCheck: CheckSummary | null;
   // All check-ins (latest 20), for the photo gallery
   checks: CheckSummary[];
+  // Whether this item already has an activity in the itinerary
+  inItinerary?: boolean;
 };
