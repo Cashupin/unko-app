@@ -213,7 +213,7 @@ export async function POST(
   }
 
   const expense = await prisma.$transaction(async (tx) => {
-    return tx.expense.create({
+    const created = await tx.expense.create({
       data: {
         tripId,
         createdById: session.user.id,
@@ -231,21 +231,30 @@ export async function POST(
             amount: amt,
           })),
         },
-        items: {
-          create: items.map((item) => ({
-            description: item.description,
-            amount: item.amount,
-            groupKey: item.groupKey ?? null,
-            groupQty: item.groupQty ?? null,
-            itemQty: item.itemQty ?? null,
-            participants: {
-              create: item.participantIds.map((pid) => ({ participantId: pid })),
-            },
-          })),
-        },
       },
-      select: expenseSelect,
+      select: { id: true },
     });
+
+    for (const item of items) {
+      const createdItem = await tx.expenseItem.create({
+        data: {
+          expenseId: created.id,
+          description: item.description,
+          amount: item.amount,
+          groupKey: item.groupKey ?? null,
+          groupQty: item.groupQty ?? null,
+          itemQty: item.itemQty ?? null,
+        },
+        select: { id: true },
+      });
+      if (item.participantIds.length > 0) {
+        await tx.expenseItemParticipant.createMany({
+          data: item.participantIds.map((pid) => ({ expenseItemId: createdItem.id, participantId: pid })),
+        });
+      }
+    }
+
+    return tx.expense.findUniqueOrThrow({ where: { id: created.id }, select: expenseSelect });
   });
 
   return NextResponse.json(expense, { status: 201 });

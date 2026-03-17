@@ -254,7 +254,7 @@ export async function POST(req: NextRequest) {
       amountByParticipant.set(pid, Math.round(amt * 100) / 100);
     }
 
-    return tx.expense.create({
+    const created = await tx.expense.create({
       data: {
         tripId: trip.id,
         createdById: userId,
@@ -271,24 +271,33 @@ export async function POST(req: NextRequest) {
             amount: amt,
           })),
         },
-        items: {
-          create: data.items.map((item) => {
-            const ids = item.participantNames
-              .map((n) => nameToId.get(n))
-              .filter((id): id is string => !!id);
-            return {
-              description: item.description,
-              amount: item.amount,
-              groupKey: item.groupKey ?? null,
-              groupQty: item.groupQty ?? null,
-              itemQty: item.itemQty ?? null,
-              participants: { create: ids.map((pid) => ({ participantId: pid })) },
-            };
-          }),
-        },
       },
-      select: expenseSelect,
+      select: { id: true },
     });
+
+    for (const item of data.items) {
+      const ids = item.participantNames
+        .map((n) => nameToId.get(n))
+        .filter((id): id is string => !!id);
+      const createdItem = await tx.expenseItem.create({
+        data: {
+          expenseId: created.id,
+          description: item.description,
+          amount: item.amount,
+          groupKey: item.groupKey ?? null,
+          groupQty: item.groupQty ?? null,
+          itemQty: item.itemQty ?? null,
+        },
+        select: { id: true },
+      });
+      if (ids.length > 0) {
+        await tx.expenseItemParticipant.createMany({
+          data: ids.map((pid) => ({ expenseItemId: createdItem.id, participantId: pid })),
+        });
+      }
+    }
+
+    return tx.expense.findUniqueOrThrow({ where: { id: created.id }, select: expenseSelect });
   });
 
   // Attach settlement to response

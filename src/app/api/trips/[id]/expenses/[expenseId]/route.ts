@@ -163,7 +163,8 @@ export async function PATCH(
   const updated = await prisma.$transaction(async (tx) => {
     await tx.expenseParticipant.deleteMany({ where: { expenseId } });
     await tx.expenseItem.deleteMany({ where: { expenseId } });
-    return tx.expense.update({
+
+    await tx.expense.update({
       where: { id: expenseId },
       data: {
         description,
@@ -180,21 +181,29 @@ export async function PATCH(
             amount: amt,
           })),
         },
-        items: {
-          create: items.map((item) => ({
-            description: item.description,
-            amount: item.amount,
-            groupKey: item.groupKey ?? null,
-            groupQty: item.groupQty ?? null,
-            itemQty: item.itemQty ?? null,
-            participants: {
-              create: item.participantIds.map((pid) => ({ participantId: pid })),
-            },
-          })),
-        },
       },
-      select: { id: true },
     });
+
+    for (const item of items) {
+      const createdItem = await tx.expenseItem.create({
+        data: {
+          expenseId,
+          description: item.description,
+          amount: item.amount,
+          groupKey: item.groupKey ?? null,
+          groupQty: item.groupQty ?? null,
+          itemQty: item.itemQty ?? null,
+        },
+        select: { id: true },
+      });
+      if (item.participantIds.length > 0) {
+        await tx.expenseItemParticipant.createMany({
+          data: item.participantIds.map((pid) => ({ expenseItemId: createdItem.id, participantId: pid })),
+        });
+      }
+    }
+
+    return tx.expense.findUniqueOrThrow({ where: { id: expenseId }, select: { id: true } });
   });
   return NextResponse.json(updated);
 }
