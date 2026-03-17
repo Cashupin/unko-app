@@ -20,6 +20,7 @@ const equalSchema = z.object({
   amount: z.number().positive(),
   currency: z.enum(CURRENCIES),
   paymentMethod: z.enum(PAYMENT_METHODS).optional(),
+  receiptUrl: z.string().url().optional(),
   paidByParticipantId: z.string().cuid().optional(),
   expenseDate: z.string().optional(),
   participantIds: z.array(z.string().cuid()).min(1),
@@ -30,6 +31,7 @@ const itemizedSchema = z.object({
   description: z.string().trim().min(1).max(500),
   currency: z.enum(CURRENCIES),
   paymentMethod: z.enum(PAYMENT_METHODS).optional(),
+  receiptUrl: z.string().url().optional(),
   paidByParticipantId: z.string().cuid().optional(),
   expenseDate: z.string().optional(),
   items: z
@@ -38,6 +40,9 @@ const itemizedSchema = z.object({
         description: z.string().trim().min(1).max(50),
         amount: z.number().positive(),
         participantIds: z.array(z.string().cuid()).min(1),
+        groupKey: z.string().optional(),
+        groupQty: z.number().int().positive().optional(),
+        itemQty: z.number().int().positive().optional(),
       }),
     )
     .min(1),
@@ -134,7 +139,7 @@ export async function POST(
   const data = result.data;
 
   if (data.splitType === "EQUAL") {
-    const { description, amount, currency, paymentMethod, paidByParticipantId, expenseDate, participantIds } = data;
+    const { description, amount, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, participantIds } = data;
 
     const participantCount = await prisma.tripParticipant.count({
       where: { id: { in: participantIds }, tripId },
@@ -159,6 +164,7 @@ export async function POST(
         amount,
         currency,
         paymentMethod: paymentMethod ?? "CASH",
+        receiptUrl: receiptUrl ?? null,
         expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
         splitType: "EQUAL",
         participants: {
@@ -176,7 +182,7 @@ export async function POST(
 
   // ── ITEMIZED ────────────────────────────────────────────────────────────────
 
-  const { description, currency, paymentMethod, paidByParticipantId, expenseDate, items } = data;
+  const { description, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, items } = data;
 
   // Collect all unique participantIds across all items
   const allParticipantIds = [...new Set(items.flatMap((i) => i.participantIds))];
@@ -207,7 +213,7 @@ export async function POST(
   }
 
   const expense = await prisma.$transaction(async (tx) => {
-    return tx.expense.create({
+    const created = await tx.expense.create({
       data: {
         tripId,
         createdById: session.user.id,
@@ -216,6 +222,7 @@ export async function POST(
         amount: totalAmount,
         currency,
         paymentMethod: paymentMethod ?? "CASH",
+        receiptUrl: receiptUrl ?? null,
         expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
         splitType: "ITEMIZED",
         participants: {
@@ -224,18 +231,30 @@ export async function POST(
             amount: amt,
           })),
         },
-        items: {
-          create: items.map((item) => ({
-            description: item.description,
-            amount: item.amount,
-            participants: {
-              create: item.participantIds.map((pid) => ({ participantId: pid })),
-            },
-          })),
-        },
       },
-      select: expenseSelect,
+      select: { id: true },
     });
+
+    for (const item of items) {
+      const createdItem = await tx.expenseItem.create({
+        data: {
+          expenseId: created.id,
+          description: item.description,
+          amount: item.amount,
+          groupKey: item.groupKey ?? null,
+          groupQty: item.groupQty ?? null,
+          itemQty: item.itemQty ?? null,
+        },
+        select: { id: true },
+      });
+      if (item.participantIds.length > 0) {
+        await tx.expenseItemParticipant.createMany({
+          data: item.participantIds.map((pid) => ({ expenseItemId: createdItem.id, participantId: pid })),
+        });
+      }
+    }
+
+    return tx.expense.findUniqueOrThrow({ where: { id: created.id }, select: expenseSelect });
   });
 
   return NextResponse.json(expense, { status: 201 });
@@ -249,6 +268,7 @@ const expenseSelect = {
   amount: true,
   currency: true,
   paymentMethod: true,
+  receiptUrl: true,
   expenseDate: true,
   splitType: true,
   createdAt: true,

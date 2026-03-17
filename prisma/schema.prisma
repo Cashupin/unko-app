@@ -325,6 +325,7 @@ model Expense {
   expenseDate         DateTime  @default(now())
   splitType           SplitType @default(EQUAL)
   paymentMethod       String    @default("CASH")
+  receiptUrl          String?
   isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -358,15 +359,19 @@ model ExpenseParticipant {
 }
 
 model ExpenseItem {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   expenseId   String
   description String
   amount      Float
+  groupKey    String? // groups items from the same receipt line
+  groupQty    Int?    // total units on that receipt line (e.g. 16 shots)
+  itemQty     Int?    // units this specific item represents (e.g. Juan took 6)
 
   expense      Expense                  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   participants ExpenseItemParticipant[]
 
   @@index([expenseId])
+  @@index([groupKey])
 }
 
 model ExpenseItemParticipant {

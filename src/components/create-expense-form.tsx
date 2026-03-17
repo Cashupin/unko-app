@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS, CURRENCY_DECIMALS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
+import { UploadPhoto } from "@/components/upload-photo";
+import { ReceiptButton } from "@/components/receipt-button";
+import { ReceiptAiButton, type ParsedReceiptItem } from "@/components/receipt-ai-button";
 import { toast } from "sonner";
 
 // Format raw numeric string for display inside the input (es-CL thousands separator)
@@ -36,6 +39,9 @@ type ExpenseItemDraft = {
   description: string;
   amount: string;
   participantIds: string[];
+  groupKey?: string;
+  groupQty?: number;
+  itemQty?: number;
 };
 
 function newItem(participants: Participant[]): ExpenseItemDraft {
@@ -59,9 +65,10 @@ export function CreateExpenseForm({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">("EQUAL");
+  const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">("ITEMIZED");
   const [currency, setCurrency] = useState(defaultCurrency);
   const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [amountValue, setAmountValue] = useState("");
 
   // EQUAL mode state
@@ -77,6 +84,7 @@ export function CreateExpenseForm({
     setSplitMode("EQUAL");
     setCurrency(defaultCurrency);
     setPaymentMethod("CASH");
+    setReceiptUrl(null);
     setAmountValue("");
     setItems([newItem(participants)]);
     setOpen(true);
@@ -118,6 +126,24 @@ export function CreateExpenseForm({
     );
   }
 
+  function applyAiItems(parsed: ParsedReceiptItem[]) {
+    setSplitMode("ITEMIZED");
+    setItems(
+      parsed.map((p) => ({
+        id: crypto.randomUUID(),
+        description: p.description,
+        amount: String(p.amount),
+        participantIds:
+          p.assignees.length > 0
+            ? participants.filter((pt) => p.assignees.includes(pt.name)).map((pt) => pt.id)
+            : participants.map((pt) => pt.id),
+        groupKey: p.groupKey,
+        groupQty: p.groupQty,
+        itemQty: p.itemQty,
+      })),
+    );
+  }
+
   // Real-time per-participant totals for ITEMIZED mode
   const perParticipantTotals = participants.map((p) => {
     const total = items.reduce((sum, item) => {
@@ -155,6 +181,7 @@ export function CreateExpenseForm({
         amount: amountNum,
         currency: fd.get("currency") as string,
         paymentMethod,
+        receiptUrl: receiptUrl ?? null,
         paidByParticipantId: (fd.get("paidBy") as string) || undefined,
         expenseDate: (fd.get("expenseDate") as string) || undefined,
         participantIds: selectedParticipants,
@@ -211,12 +238,16 @@ export function CreateExpenseForm({
       description: (fd.get("description") as string).trim(),
       currency: fd.get("currency") as string,
       paymentMethod,
+      receiptUrl: receiptUrl ?? null,
       paidByParticipantId: (fd.get("paidBy") as string) || undefined,
       expenseDate: (fd.get("expenseDate") as string) || undefined,
       items: items.map((item) => ({
         description: item.description.trim(),
         amount: parseFloat(item.amount),
         participantIds: item.participantIds,
+        groupKey: item.groupKey,
+        groupQty: item.groupQty,
+        itemQty: item.itemQty,
       })),
     };
 
@@ -349,6 +380,30 @@ export function CreateExpenseForm({
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Receipt photo */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
+                {receiptUrl ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
+                      <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
+                        Quitar
+                      </button>
+                    </div>
+                    {splitMode === "ITEMIZED" && (
+                      <ReceiptAiButton
+                        receiptUrl={receiptUrl}
+                        participants={participants.map((p) => p.name)}
+                        onApply={applyAiItems}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
+                )}
               </div>
 
               {/* Currency */}

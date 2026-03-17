@@ -20,6 +20,7 @@ const equalSchema = z.object({
   amount: z.number().positive(),
   currency: z.enum(CURRENCIES),
   paymentMethod: z.enum(PAYMENT_METHODS).optional(),
+  receiptUrl: z.string().url().optional().nullable(),
   paidByParticipantId: z.string().cuid().optional(),
   expenseDate: z.string().optional(),
   participantIds: z.array(z.string().cuid()).min(1),
@@ -30,6 +31,7 @@ const itemizedSchema = z.object({
   description: z.string().trim().min(1).max(500),
   currency: z.enum(CURRENCIES),
   paymentMethod: z.enum(PAYMENT_METHODS).optional(),
+  receiptUrl: z.string().url().optional().nullable(),
   paidByParticipantId: z.string().cuid().optional(),
   expenseDate: z.string().optional(),
   items: z
@@ -38,6 +40,9 @@ const itemizedSchema = z.object({
         description: z.string().trim().min(1).max(50),
         amount: z.number().positive(),
         participantIds: z.array(z.string().cuid()).min(1),
+        groupKey: z.string().optional(),
+        groupQty: z.number().int().positive().optional(),
+        itemQty: z.number().int().positive().optional(),
       }),
     )
     .min(1),
@@ -97,7 +102,7 @@ export async function PATCH(
   const data = result.data;
 
   if (data.splitType === "EQUAL") {
-    const { description, amount, currency, paymentMethod, paidByParticipantId, expenseDate, participantIds } = data;
+    const { description, amount, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, participantIds } = data;
     const participantCount = await prisma.tripParticipant.count({
       where: { id: { in: participantIds }, tripId },
     });
@@ -117,6 +122,7 @@ export async function PATCH(
           amount,
           currency,
           paymentMethod: paymentMethod ?? "CASH",
+          receiptUrl: receiptUrl ?? null,
           paidByParticipantId: paidByParticipantId ?? null,
           expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
           splitType: "EQUAL",
@@ -134,7 +140,7 @@ export async function PATCH(
   }
 
   // ITEMIZED
-  const { description, currency, paymentMethod, paidByParticipantId, expenseDate, items } = data;
+  const { description, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, items } = data;
   const allParticipantIds = [...new Set(items.flatMap((i) => i.participantIds))];
   const participantCount = await prisma.tripParticipant.count({
     where: { id: { in: allParticipantIds }, tripId },
@@ -157,13 +163,15 @@ export async function PATCH(
   const updated = await prisma.$transaction(async (tx) => {
     await tx.expenseParticipant.deleteMany({ where: { expenseId } });
     await tx.expenseItem.deleteMany({ where: { expenseId } });
-    return tx.expense.update({
+
+    await tx.expense.update({
       where: { id: expenseId },
       data: {
         description,
         amount: totalAmount,
         currency,
         paymentMethod: paymentMethod ?? "CASH",
+        receiptUrl: receiptUrl ?? null,
         paidByParticipantId: paidByParticipantId ?? null,
         expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
         splitType: "ITEMIZED",
@@ -173,18 +181,29 @@ export async function PATCH(
             amount: amt,
           })),
         },
-        items: {
-          create: items.map((item) => ({
-            description: item.description,
-            amount: item.amount,
-            participants: {
-              create: item.participantIds.map((pid) => ({ participantId: pid })),
-            },
-          })),
-        },
       },
-      select: { id: true },
     });
+
+    for (const item of items) {
+      const createdItem = await tx.expenseItem.create({
+        data: {
+          expenseId,
+          description: item.description,
+          amount: item.amount,
+          groupKey: item.groupKey ?? null,
+          groupQty: item.groupQty ?? null,
+          itemQty: item.itemQty ?? null,
+        },
+        select: { id: true },
+      });
+      if (item.participantIds.length > 0) {
+        await tx.expenseItemParticipant.createMany({
+          data: item.participantIds.map((pid) => ({ expenseItemId: createdItem.id, participantId: pid })),
+        });
+      }
+    }
+
+    return tx.expense.findUniqueOrThrow({ where: { id: expenseId }, select: { id: true } });
   });
   return NextResponse.json(updated);
 }

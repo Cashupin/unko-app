@@ -39,6 +39,7 @@ function toInitialValues(expense: StandaloneExpenseData): StandaloneInitialValue
       : "",
     splitType: expense.splitType as "EQUAL" | "ITEMIZED",
     amount: String(expense.amount),
+    receiptUrl: expense.receiptUrl ?? null,
     participants: Array.from(allNames),
     paidByName: expense.paidBy?.name ?? "",
     splitParticipantNames: participantNames,
@@ -113,7 +114,28 @@ export function StandaloneExpenseCard({ expense }: { expense: StandaloneExpenseD
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [togglingPaid, setTogglingPaid] = useState<string | null>(null);
   const { displayCurrency, convert } = useCurrency();
+
+  async function togglePaid(participantId: string) {
+    setTogglingPaid(participantId);
+    try {
+      const res = await fetch(
+        `/api/standalone-expenses/${expense.id}/splits/${participantId}`,
+        { method: "PATCH" },
+      );
+      if (res.ok) {
+        router.refresh();
+      } else {
+        const data = (await res.json()) as { error?: string };
+        toast.error(data.error ?? "Error al actualizar");
+      }
+    } catch {
+      toast.error("Error de red. Intenta de nuevo.");
+    } finally {
+      setTogglingPaid(null);
+    }
+  }
 
   const sym = (c: string) => CURRENCY_SYMBOLS[c as Currency] ?? c;
 
@@ -153,29 +175,61 @@ export function StandaloneExpenseCard({ expense }: { expense: StandaloneExpenseD
         <ExpenseCard expense={expense} tripId={expense.trip.id} canEdit={false} />
       </div>
 
-      {/* Settlement strip */}
+      {/* Settlement strip with paid toggles */}
       {expense.settlement.length > 0 && (
         <div className="border-t border-zinc-100 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-700/30">
           <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Liquidación
           </p>
-          <div className="flex flex-col gap-1">
-            {expense.settlement.map((s, i) => (
-              <div key={i} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    {s.fromName}
-                  </span>
-                  <span className="text-zinc-300 dark:text-zinc-600">→</span>
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    {s.toName}
-                  </span>
+          <div className="flex flex-col gap-1.5">
+            {expense.settlement.map((s, i) => {
+              // Find the participantId for the debtor (fromName)
+              const debtorSplit = expense.participants.find(
+                (ep) => ep.participant.name === s.fromName,
+              );
+              const isLoading = togglingPaid === debtorSplit?.participantId;
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                    debtorSplit?.paid
+                      ? "bg-emerald-50 dark:bg-emerald-950/30"
+                      : "bg-white dark:bg-zinc-800/60"
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 text-xs">
+                    {debtorSplit?.paid ? (
+                      <span className="text-emerald-500">✓</span>
+                    ) : (
+                      <span className="text-zinc-300 dark:text-zinc-600">○</span>
+                    )}
+                    <span className={`font-semibold ${debtorSplit?.paid ? "text-emerald-700 dark:text-emerald-400" : "text-zinc-700 dark:text-zinc-300"}`}>
+                      {s.fromName}
+                    </span>
+                    <span className="text-zinc-300 dark:text-zinc-600">→</span>
+                    <span className={`font-semibold ${debtorSplit?.paid ? "text-emerald-700 dark:text-emerald-400" : "text-zinc-700 dark:text-zinc-300"}`}>
+                      {s.toName}
+                    </span>
+                    <span className={`tabular-nums ${debtorSplit?.paid ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+                      <ConvertedAmount amount={s.amount} currency={s.currency} />
+                    </span>
+                  </div>
+                  {debtorSplit && (
+                    <button
+                      onClick={() => togglePaid(debtorSplit.participantId)}
+                      disabled={isLoading}
+                      className={`text-xs font-medium transition-colors disabled:opacity-50 ${
+                        debtorSplit.paid
+                          ? "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+                          : "text-zinc-500 hover:text-emerald-600 dark:text-zinc-400 dark:hover:text-emerald-400"
+                      }`}
+                    >
+                      {isLoading ? "..." : debtorSplit.paid ? "Anular pago" : "Pagado"}
+                    </button>
+                  )}
                 </div>
-                <span className="font-semibold tabular-nums text-amber-600 dark:text-amber-400">
-                  <ConvertedAmount amount={s.amount} currency={s.currency} />
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

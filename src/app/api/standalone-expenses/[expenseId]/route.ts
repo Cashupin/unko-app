@@ -12,6 +12,7 @@ const equalSchema = z.object({
   amount: z.number().positive(),
   currency: z.enum(CURRENCIES),
   expenseDate: z.string().optional(),
+  receiptUrl: z.string().url().optional().nullable(),
   participants: z.array(z.string().trim().min(1).max(100)).min(1).max(20),
   paidByName: z.string().trim().min(1),
   splitParticipantNames: z.array(z.string().trim().min(1)).min(1).optional(),
@@ -22,6 +23,7 @@ const itemizedSchema = z.object({
   description: z.string().trim().min(1).max(500),
   currency: z.enum(CURRENCIES),
   expenseDate: z.string().optional(),
+  receiptUrl: z.string().url().optional().nullable(),
   participants: z.array(z.string().trim().min(1).max(100)).min(1).max(20),
   paidByName: z.string().trim().min(1),
   items: z
@@ -30,6 +32,9 @@ const itemizedSchema = z.object({
         description: z.string().trim().min(1).max(200),
         amount: z.number().positive(),
         participantNames: z.array(z.string().trim().min(1)).min(1),
+        groupKey: z.string().optional(),
+        groupQty: z.number().int().positive().optional(),
+        itemQty: z.number().int().positive().optional(),
       }),
     )
     .min(1),
@@ -42,14 +47,20 @@ const expenseSelect = {
   description: true,
   amount: true,
   currency: true,
+  paymentMethod: true,
+  receiptUrl: true,
   expenseDate: true,
   splitType: true,
+  isActive: true,
+  createdById: true,
   createdAt: true,
   trip: { select: { id: true } },
   paidBy: { select: { id: true, name: true } },
   participants: {
     select: {
+      participantId: true,
       amount: true,
+      paid: true,
       participant: { select: { id: true, name: true } },
     },
   },
@@ -169,6 +180,7 @@ export async function PATCH(
           description: data.description,
           amount: data.amount,
           currency: data.currency,
+          receiptUrl: data.receiptUrl ?? null,
           expenseDate: data.expenseDate ? new Date(data.expenseDate) : new Date(),
           splitType: "EQUAL",
           paidByParticipantId,
@@ -209,7 +221,14 @@ export async function PATCH(
         .map((n) => nameToId.get(n))
         .filter((id): id is string => !!id);
       const createdItem = await tx.expenseItem.create({
-        data: { expenseId, description: item.description, amount: item.amount },
+        data: {
+          expenseId,
+          description: item.description,
+          amount: item.amount,
+          groupKey: item.groupKey ?? null,
+          groupQty: item.groupQty ?? null,
+          itemQty: item.itemQty ?? null,
+        },
         select: { id: true },
       });
       if (ids.length > 0) {
@@ -225,6 +244,7 @@ export async function PATCH(
         description: data.description,
         amount: totalAmount,
         currency: data.currency,
+        receiptUrl: data.receiptUrl ?? null,
         expenseDate: data.expenseDate ? new Date(data.expenseDate) : new Date(),
         splitType: "ITEMIZED",
         paidByParticipantId,

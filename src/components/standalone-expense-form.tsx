@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS, CURRENCY_DECIMALS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
+import { UploadPhoto } from "@/components/upload-photo";
+import { ReceiptButton } from "@/components/receipt-button";
+import { ReceiptAiButton, type ParsedReceiptItem } from "@/components/receipt-ai-button";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -14,6 +17,9 @@ type ItemDraft = {
   description: string;
   amount: string;
   participantNames: string[];
+  groupKey?: string;
+  groupQty?: number;
+  itemQty?: number;
 };
 
 export type StandaloneInitialValues = {
@@ -23,6 +29,7 @@ export type StandaloneInitialValues = {
   expenseDate: string; // ISO or ""
   splitType: "EQUAL" | "ITEMIZED";
   amount: string;      // for EQUAL
+  receiptUrl: string | null;
   participants: string[];
   paidByName: string;
   splitParticipantNames: string[];
@@ -68,7 +75,7 @@ function blankState(defaultCurrency = "CLP") {
     paidByName: "",
     splitNames: [] as string[],
     currency: defaultCurrency,
-    splitMode: "EQUAL" as "EQUAL" | "ITEMIZED",
+    splitMode: "ITEMIZED" as "EQUAL" | "ITEMIZED",
     items: [] as ItemDraft[],
   };
 }
@@ -88,7 +95,7 @@ export function StandaloneExpenseForm(props: Props) {
   const [open, setOpen] = useState(isEdit); // edit opens immediately
   const [loading, setLoading] = useState(false);
   const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">(
-    initialValues?.splitType ?? "EQUAL",
+    initialValues?.splitType ?? "ITEMIZED",
   );
   const [currency, setCurrency] = useState(initialValues?.currency ?? "CLP");
 
@@ -113,6 +120,9 @@ export function StandaloneExpenseForm(props: Props) {
   // EQUAL amount (formatted input)
   const [amountValue, setAmountValue] = useState(initialValues?.amount ?? "");
 
+  // Receipt photo
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(initialValues?.receiptUrl ?? null);
+
   function resetState() {
     const s = blankState();
     setParticipants(s.participants);
@@ -123,6 +133,7 @@ export function StandaloneExpenseForm(props: Props) {
     setItems(s.items);
     setNewName("");
     setAmountValue("");
+    setReceiptUrl(null);
   }
 
   function openModal() {
@@ -202,6 +213,21 @@ export function StandaloneExpenseForm(props: Props) {
     setItems((prev) => prev.filter((item) => item.id !== id));
   }
 
+  function applyAiItems(parsed: ParsedReceiptItem[]) {
+    setSplitMode("ITEMIZED");
+    setItems(
+      parsed.map((p) => ({
+        id: crypto.randomUUID(),
+        description: p.description,
+        amount: String(p.amount),
+        participantNames: p.assignees.length > 0 ? p.assignees : [...participants],
+        groupKey: p.groupKey,
+        groupQty: p.groupQty,
+        itemQty: p.itemQty,
+      })),
+    );
+  }
+
   // Real-time preview (ITEMIZED)
   const perPersonTotals = participants.map((name) => {
     const total = items.reduce((sum, item) => {
@@ -249,6 +275,7 @@ export function StandaloneExpenseForm(props: Props) {
             description,
             amount,
             currency,
+            receiptUrl: receiptUrl ?? null,
             expenseDate,
             participants,
             paidByName,
@@ -285,6 +312,7 @@ export function StandaloneExpenseForm(props: Props) {
           splitType: "ITEMIZED",
           description,
           currency,
+          receiptUrl: receiptUrl ?? null,
           expenseDate,
           participants,
           paidByName,
@@ -292,6 +320,9 @@ export function StandaloneExpenseForm(props: Props) {
             description: item.description.trim(),
             amount: parseFloat(item.amount),
             participantNames: item.participantNames,
+            groupKey: item.groupKey,
+            groupQty: item.groupQty,
+            itemQty: item.itemQty,
           })),
         }),
       });
@@ -367,7 +398,7 @@ export function StandaloneExpenseForm(props: Props) {
                   Modo de división
                 </span>
                 <div className="flex rounded-lg border border-zinc-200 overflow-hidden dark:border-zinc-700">
-                  {(["EQUAL", "ITEMIZED"] as const).map((mode, idx) => (
+                  {(["ITEMIZED", "EQUAL"] as const).map((mode, idx) => (
                     <button
                       key={mode}
                       type="button"
@@ -384,7 +415,7 @@ export function StandaloneExpenseForm(props: Props) {
                           : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
                       }`}
                     >
-                      {mode === "EQUAL" ? "División equitativa" : "Por ítems"}
+                      {mode === "ITEMIZED" ? "Por ítems" : "División equitativa"}
                     </button>
                   ))}
                 </div>
@@ -502,6 +533,30 @@ export function StandaloneExpenseForm(props: Props) {
                   </select>
                 </div>
               )}
+
+              {/* Receipt photo */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
+                {receiptUrl ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
+                      <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
+                        Quitar
+                      </button>
+                    </div>
+                    {splitMode === "ITEMIZED" && (
+                      <ReceiptAiButton
+                        receiptUrl={receiptUrl}
+                        participants={participants}
+                        onApply={applyAiItems}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
+                )}
+              </div>
 
               {/* EQUAL: split picker */}
               {splitMode === "EQUAL" && participants.length > 0 && (

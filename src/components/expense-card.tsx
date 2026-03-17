@@ -6,6 +6,7 @@ import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { toast } from "sonner";
 import { ConvertedAmount } from "@/components/converted-amount";
+import { ReceiptButton } from "@/components/receipt-button";
 import { EditExpenseForm } from "@/components/edit-expense-form";
 import type { EditExpenseData } from "@/components/edit-expense-form";
 
@@ -31,6 +32,7 @@ export type ExpenseCardData = {
   amount: number;
   currency: string;
   paymentMethod: string;
+  receiptUrl: string | null;
   expenseDate: Date;
   splitType: string;
   isActive: boolean;
@@ -83,6 +85,7 @@ export function ExpenseCard({
     amount: expense.amount,
     currency: expense.currency,
     paymentMethod: expense.paymentMethod,
+    receiptUrl: expense.receiptUrl,
     expenseDate: expense.expenseDate,
     splitType: expense.splitType,
     paidByParticipantId: expense.paidBy?.id ?? null,
@@ -200,6 +203,12 @@ export function ExpenseCard({
                 <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
                   {PAYMENT_METHOD_LABELS[expense.paymentMethod] ?? expense.paymentMethod}
                 </span>
+              )}
+              {expense.receiptUrl && (
+                <ReceiptButton
+                  url={expense.receiptUrl}
+                  className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 transition-colors dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600"
+                />
               )}
               <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
                 {fmtDate(expense.expenseDate)}

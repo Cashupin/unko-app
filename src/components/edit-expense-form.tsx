@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS, CURRENCY_DECIMALS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
+import { UploadPhoto } from "@/components/upload-photo";
+import { ReceiptButton } from "@/components/receipt-button";
+import { ReceiptAiButton, type ParsedReceiptItem } from "@/components/receipt-ai-button";
 import { toast } from "sonner";
 
 function fmtInput(raw: string, cur: string): string {
@@ -34,6 +37,9 @@ type ExpenseItemDraft = {
   description: string;
   amount: string;
   participantIds: string[];
+  groupKey?: string;
+  groupQty?: number;
+  itemQty?: number;
 };
 
 function newItem(participants: Participant[]): ExpenseItemDraft {
@@ -51,6 +57,7 @@ export type EditExpenseData = {
   amount: number;
   currency: string;
   paymentMethod: string;
+  receiptUrl: string | null;
   expenseDate: Date;
   splitType: string;
   paidByParticipantId: string | null;
@@ -79,6 +86,7 @@ export function EditExpenseForm({
   const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">(initialSplitMode);
   const [currency, setCurrency] = useState(expense.currency);
   const [paymentMethod, setPaymentMethod] = useState(expense.paymentMethod ?? "CASH");
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(expense.receiptUrl ?? null);
   const [amountValue, setAmountValue] = useState(String(expense.amount));
 
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
@@ -133,6 +141,24 @@ export function EditExpenseForm({
     );
   }
 
+  function applyAiItems(parsed: ParsedReceiptItem[]) {
+    setSplitMode("ITEMIZED");
+    setItems(
+      parsed.map((p) => ({
+        id: crypto.randomUUID(),
+        description: p.description,
+        amount: String(p.amount),
+        participantIds:
+          p.assignees.length > 0
+            ? participants.filter((pt) => p.assignees.includes(pt.name)).map((pt) => pt.id)
+            : participants.map((pt) => pt.id),
+        groupKey: p.groupKey,
+        groupQty: p.groupQty,
+        itemQty: p.itemQty,
+      })),
+    );
+  }
+
   const perParticipantTotals = participants.map((p) => {
     const total = items.reduce((sum, item) => {
       if (!item.participantIds.includes(p.id)) return sum;
@@ -169,6 +195,7 @@ export function EditExpenseForm({
         amount: amountNum,
         currency: fd.get("currency") as string,
         paymentMethod,
+        receiptUrl: receiptUrl ?? null,
         paidByParticipantId: (fd.get("paidBy") as string) || undefined,
         expenseDate: (fd.get("expenseDate") as string) || undefined,
         participantIds: selectedParticipants,
@@ -210,12 +237,16 @@ export function EditExpenseForm({
       description: (fd.get("description") as string).trim(),
       currency: fd.get("currency") as string,
       paymentMethod,
+      receiptUrl: receiptUrl ?? null,
       paidByParticipantId: (fd.get("paidBy") as string) || undefined,
       expenseDate: (fd.get("expenseDate") as string) || undefined,
       items: items.map((item) => ({
         description: item.description.trim(),
         amount: parseFloat(item.amount),
         participantIds: item.participantIds,
+        groupKey: item.groupKey,
+        groupQty: item.groupQty,
+        itemQty: item.itemQty,
       })),
     };
     try {
@@ -316,6 +347,30 @@ export function EditExpenseForm({
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Receipt photo */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
+                {receiptUrl ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
+                      <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
+                        Quitar
+                      </button>
+                    </div>
+                    {splitMode === "ITEMIZED" && (
+                      <ReceiptAiButton
+                        receiptUrl={receiptUrl}
+                        participants={participants.map((p) => p.name)}
+                        onApply={applyAiItems}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
+                )}
               </div>
 
               {/* Amount + Currency */}
