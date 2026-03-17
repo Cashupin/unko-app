@@ -6,9 +6,12 @@ export type ParsedReceiptItem = {
   description: string;
   amount: number;
   assignees: string[]; // participant names; empty = all participants
+  groupKey: string;    // UUID shared by all items from the same receipt line
+  groupQty: number;    // total units on that receipt line (e.g. 16 shots)
+  itemQty: number;     // units this item represents (e.g. Juan took 6)
 };
 
-type RawItem = { id: number; description: string; amount: number; qty: number };
+type RawItem = { id: number; description: string; amount: number; qty: number; groupKey: string };
 
 type Props = {
   receiptUrl: string;
@@ -31,7 +34,15 @@ function countersToItems(
     const totalAssigned = Object.values(counter).reduce((a, b) => a + b, 0);
 
     if (totalAssigned === 0) {
-      result.push({ description: item.description, amount: item.amount, assignees: [] });
+      // Unassigned — keep as one item representing all units
+      result.push({
+        description: item.qty > 1 ? `${item.qty} x ${item.description}` : item.description,
+        amount: item.amount,
+        assignees: [],
+        groupKey: item.groupKey,
+        groupQty: item.qty,
+        itemQty: item.qty,
+      });
       continue;
     }
 
@@ -44,9 +55,15 @@ function countersToItems(
     }
 
     for (const [count, names] of countGroups) {
-      // Each person pays count × unitPrice; combined → split equally among names
       const groupAmount = Math.round(count * unitPrice * names.length);
-      result.push({ description: item.description, amount: groupAmount, assignees: names });
+      result.push({
+        description: item.qty > 1 ? `${count * names.length} x ${item.description}` : item.description,
+        amount: groupAmount,
+        assignees: names,
+        groupKey: item.groupKey,
+        groupQty: item.qty,
+        itemQty: count,
+      });
     }
   }
 
@@ -82,7 +99,11 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
         setState("idle");
         return;
       }
-      const items: RawItem[] = data.items.map((item, i) => ({ ...item, id: i }));
+      const items: RawItem[] = data.items.map((item, i) => ({
+        ...item,
+        id: i,
+        groupKey: crypto.randomUUID(),
+      }));
       setRawItems(items);
       setCounters(
         Object.fromEntries(
@@ -118,6 +139,13 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
     }));
   }
 
+  function toggleChip(itemId: number, name: string) {
+    setCounters((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], [name]: (prev[itemId][name] ?? 0) > 0 ? 0 : 1 },
+    }));
+  }
+
   function toggleCollapse(itemId: number) {
     setCollapsed((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
   }
@@ -133,7 +161,7 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
   if (state === "preview") {
     const completeItems = rawItems.filter((item) => {
       const assigned = Object.values(counters[item.id] ?? {}).reduce((a, b) => a + b, 0);
-      return assigned === item.qty;
+      return item.qty === 1 ? assigned >= 1 : assigned === item.qty;
     }).length;
 
     return (
@@ -153,7 +181,7 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
             const counter = counters[item.id] ?? {};
             const assigned = Object.values(counter).reduce((a, b) => a + b, 0);
             const remaining = item.qty - assigned;
-            const isComplete = remaining === 0;
+            const isComplete = item.qty === 1 ? assigned >= 1 : remaining === 0;
             const isCollapsed = collapsed[item.id];
             const hasMultiple = item.qty > 1;
 
@@ -197,7 +225,7 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
                       <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5 dark:bg-emerald-950/40 dark:text-emerald-400">
                         ✓
                       </span>
-                    ) : assigned > 0 ? (
+                    ) : hasMultiple && assigned > 0 ? (
                       <span className="text-[10px] text-amber-600 bg-amber-50 rounded-full px-2 py-0.5 dark:bg-amber-950/40 dark:text-amber-400">
                         {remaining} restante{remaining !== 1 ? "s" : ""}
                       </span>
@@ -208,8 +236,38 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
                   </div>
                 </div>
 
-                {/* Participants counter rows */}
-                {(!hasMultiple || !isCollapsed) && participants.length > 0 && (
+                {/* qty === 1: horizontal chip toggles */}
+                {!hasMultiple && participants.length > 0 && (
+                  <div className="border-t border-zinc-100 dark:border-zinc-700 px-3 py-2 flex flex-wrap gap-1.5">
+                    {participants.map((name) => {
+                      const selected = (counter[name] ?? 0) > 0;
+                      const numSelected = Object.values(counter).filter((v) => v > 0).length;
+                      const perPerson = numSelected > 0 ? Math.round(item.amount / numSelected) : null;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => toggleChip(item.id, name)}
+                          className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                            selected
+                              ? "bg-violet-600 text-white dark:bg-violet-500"
+                              : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600"
+                          }`}
+                        >
+                          {name}
+                          {selected && perPerson !== null && (
+                            <span className="opacity-75 tabular-nums">
+                              ${perPerson.toLocaleString("es-CL")}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* qty > 1: counter rows (collapsible) */}
+                {hasMultiple && !isCollapsed && participants.length > 0 && (
                   <div className="border-t border-zinc-100 dark:border-zinc-700 divide-y divide-zinc-100 dark:divide-zinc-700/60">
                     {participants.map((name) => {
                       const count = counter[name] ?? 0;

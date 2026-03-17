@@ -32,6 +32,9 @@ const itemizedSchema = z.object({
         description: z.string().trim().min(1).max(200),
         amount: z.number().positive(),
         participantNames: z.array(z.string().trim().min(1)).min(1),
+        groupKey: z.string().optional(),
+        groupQty: z.number().int().positive().optional(),
+        itemQty: z.number().int().positive().optional(),
       }),
     )
     .min(1),
@@ -218,7 +221,14 @@ export async function PATCH(
         .map((n) => nameToId.get(n))
         .filter((id): id is string => !!id);
       const createdItem = await tx.expenseItem.create({
-        data: { expenseId, description: item.description, amount: item.amount },
+        data: {
+          expenseId,
+          description: item.description,
+          amount: item.amount,
+          groupKey: item.groupKey ?? null,
+          groupQty: item.groupQty ?? null,
+          itemQty: item.itemQty ?? null,
+        },
         select: { id: true },
       });
       if (ids.length > 0) {

@@ -37,6 +37,9 @@ type ExpenseItemDraft = {
   description: string;
   amount: string;
   participantIds: string[];
+  groupKey?: string;
+  groupQty?: number;
+  itemQty?: number;
 };
 
 function newItem(participants: Participant[]): ExpenseItemDraft {
@@ -149,6 +152,9 @@ export function EditExpenseForm({
           p.assignees.length > 0
             ? participants.filter((pt) => p.assignees.includes(pt.name)).map((pt) => pt.id)
             : participants.map((pt) => pt.id),
+        groupKey: p.groupKey,
+        groupQty: p.groupQty,
+        itemQty: p.itemQty,
       })),
     );
   }
@@ -238,6 +244,9 @@ export function EditExpenseForm({
         description: item.description.trim(),
         amount: parseFloat(item.amount),
         participantIds: item.participantIds,
+        groupKey: item.groupKey,
+        groupQty: item.groupQty,
+        itemQty: item.itemQty,
       })),
     };
     try {

@@ -17,6 +17,9 @@ type ItemDraft = {
   description: string;
   amount: string;
   participantNames: string[];
+  groupKey?: string;
+  groupQty?: number;
+  itemQty?: number;
 };
 
 export type StandaloneInitialValues = {
@@ -72,7 +75,7 @@ function blankState(defaultCurrency = "CLP") {
     paidByName: "",
     splitNames: [] as string[],
     currency: defaultCurrency,
-    splitMode: "EQUAL" as "EQUAL" | "ITEMIZED",
+    splitMode: "ITEMIZED" as "EQUAL" | "ITEMIZED",
     items: [] as ItemDraft[],
   };
 }
@@ -218,6 +221,9 @@ export function StandaloneExpenseForm(props: Props) {
         description: p.description,
         amount: String(p.amount),
         participantNames: p.assignees.length > 0 ? p.assignees : [...participants],
+        groupKey: p.groupKey,
+        groupQty: p.groupQty,
+        itemQty: p.itemQty,
       })),
     );
   }
@@ -314,6 +320,9 @@ export function StandaloneExpenseForm(props: Props) {
             description: item.description.trim(),
             amount: parseFloat(item.amount),
             participantNames: item.participantNames,
+            groupKey: item.groupKey,
+            groupQty: item.groupQty,
+            itemQty: item.itemQty,
           })),
         }),
       });

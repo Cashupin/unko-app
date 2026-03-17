@@ -32,6 +32,9 @@ const itemizedSchema = z.object({
         description: z.string().trim().min(1).max(200),
         amount: z.number().positive(),
         participantNames: z.array(z.string().trim().min(1)).min(1),
+        groupKey: z.string().optional(),
+        groupQty: z.number().int().positive().optional(),
+        itemQty: z.number().int().positive().optional(),
       }),
     )
     .min(1),
@@ -276,6 +279,9 @@ export async function POST(req: NextRequest) {
             return {
               description: item.description,
               amount: item.amount,
+              groupKey: item.groupKey ?? null,
+              groupQty: item.groupQty ?? null,
+              itemQty: item.itemQty ?? null,
               participants: { create: ids.map((pid) => ({ participantId: pid })) },
             };
           }),
