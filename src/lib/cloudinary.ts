@@ -37,14 +37,15 @@ export const UPLOAD_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB — client-side lim
 
 // ─── Signature generator ───────────────────────────────────────────────────────
 
-export function generateUploadSignature() {
+export function generateUploadSignature(subfolder?: string) {
   const timestamp = Math.round(Date.now() / 1000);
+  const folder = subfolder ? `${UPLOAD_FOLDER}/${subfolder}` : UPLOAD_FOLDER;
 
   // Only signable params: folder, allowed_formats, timestamp.
   // max_file_size is intentionally excluded — Cloudinary omits it from
   // its own signature computation, so including it causes a mismatch.
   const paramsToSign = {
-    folder: UPLOAD_FOLDER,
+    folder,
     allowed_formats: UPLOAD_ALLOWED_FORMATS,
     timestamp,
   };
@@ -57,7 +58,7 @@ export function generateUploadSignature() {
   return {
     signature,
     timestamp,
-    folder: UPLOAD_FOLDER,
+    folder,
     allowedFormats: UPLOAD_ALLOWED_FORMATS,
     maxFileSize: UPLOAD_MAX_FILE_SIZE, // returned for client-side validation only
     apiKey: process.env.CLOUDINARY_API_KEY!,

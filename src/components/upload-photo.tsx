@@ -22,12 +22,14 @@ interface UploadPhotoProps {
   onUpload: (secureUrl: string) => void;
   disabled?: boolean;
   label?: string;
+  subfolder?: string;
 }
 
 export function UploadPhoto({
   onUpload,
   disabled = false,
   label = "Subir foto",
+  subfolder,
 }: UploadPhotoProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,11 @@ export function UploadPhoto({
     setUploading(true);
     try {
       // 1. Request a fresh signature from our backend
-      const sigRes = await fetch("/api/upload/signature", { method: "POST" });
+      const sigRes = await fetch("/api/upload/signature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subfolder }),
+      });
       if (!sigRes.ok) {
         throw new Error("No se pudo obtener la firma de subida.");
       }

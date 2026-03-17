@@ -325,6 +325,7 @@ model Expense {
   expenseDate         DateTime  @default(now())
   splitType           SplitType @default(EQUAL)
   paymentMethod       String    @default("CASH")
+  receiptUrl          String?
   isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

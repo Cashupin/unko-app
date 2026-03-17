@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS, CURRENCY_DECIMALS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
+import { UploadPhoto } from "@/components/upload-photo";
+import { ReceiptButton } from "@/components/receipt-button";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -23,6 +25,7 @@ export type StandaloneInitialValues = {
   expenseDate: string; // ISO or ""
   splitType: "EQUAL" | "ITEMIZED";
   amount: string;      // for EQUAL
+  receiptUrl: string | null;
   participants: string[];
   paidByName: string;
   splitParticipantNames: string[];
@@ -113,6 +116,9 @@ export function StandaloneExpenseForm(props: Props) {
   // EQUAL amount (formatted input)
   const [amountValue, setAmountValue] = useState(initialValues?.amount ?? "");
 
+  // Receipt photo
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(initialValues?.receiptUrl ?? null);
+
   function resetState() {
     const s = blankState();
     setParticipants(s.participants);
@@ -123,6 +129,7 @@ export function StandaloneExpenseForm(props: Props) {
     setItems(s.items);
     setNewName("");
     setAmountValue("");
+    setReceiptUrl(null);
   }
 
   function openModal() {
@@ -249,6 +256,7 @@ export function StandaloneExpenseForm(props: Props) {
             description,
             amount,
             currency,
+            receiptUrl: receiptUrl ?? null,
             expenseDate,
             participants,
             paidByName,
@@ -285,6 +293,7 @@ export function StandaloneExpenseForm(props: Props) {
           splitType: "ITEMIZED",
           description,
           currency,
+          receiptUrl: receiptUrl ?? null,
           expenseDate,
           participants,
           paidByName,
@@ -434,6 +443,21 @@ export function StandaloneExpenseForm(props: Props) {
                   placeholder="Opcional"
                   defaultValue={initialValues?.expenseDate}
                 />
+              </div>
+
+              {/* Receipt photo */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
+                {receiptUrl ? (
+                  <div className="flex items-center gap-2">
+                    <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
+                    <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
+                      Quitar
+                    </button>
+                  </div>
+                ) : (
+                  <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
+                )}
               </div>
 
               {/* Participants input */}

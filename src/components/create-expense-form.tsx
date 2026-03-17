@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS, CURRENCY_DECIMALS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
+import { UploadPhoto } from "@/components/upload-photo";
+import { ReceiptButton } from "@/components/receipt-button";
 import { toast } from "sonner";
 
 // Format raw numeric string for display inside the input (es-CL thousands separator)
@@ -62,6 +64,7 @@ export function CreateExpenseForm({
   const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">("EQUAL");
   const [currency, setCurrency] = useState(defaultCurrency);
   const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [amountValue, setAmountValue] = useState("");
 
   // EQUAL mode state
@@ -77,6 +80,7 @@ export function CreateExpenseForm({
     setSplitMode("EQUAL");
     setCurrency(defaultCurrency);
     setPaymentMethod("CASH");
+    setReceiptUrl(null);
     setAmountValue("");
     setItems([newItem(participants)]);
     setOpen(true);
@@ -155,6 +159,7 @@ export function CreateExpenseForm({
         amount: amountNum,
         currency: fd.get("currency") as string,
         paymentMethod,
+        receiptUrl: receiptUrl ?? null,
         paidByParticipantId: (fd.get("paidBy") as string) || undefined,
         expenseDate: (fd.get("expenseDate") as string) || undefined,
         participantIds: selectedParticipants,
@@ -211,6 +216,7 @@ export function CreateExpenseForm({
       description: (fd.get("description") as string).trim(),
       currency: fd.get("currency") as string,
       paymentMethod,
+      receiptUrl: receiptUrl ?? null,
       paidByParticipantId: (fd.get("paidBy") as string) || undefined,
       expenseDate: (fd.get("expenseDate") as string) || undefined,
       items: items.map((item) => ({
@@ -349,6 +355,21 @@ export function CreateExpenseForm({
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Receipt photo */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
+                {receiptUrl ? (
+                  <div className="flex items-center gap-2">
+                    <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
+                    <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
+                      Quitar
+                    </button>
+                  </div>
+                ) : (
+                  <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
+                )}
               </div>
 
               {/* Currency */}
