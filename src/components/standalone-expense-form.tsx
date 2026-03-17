@@ -7,6 +7,7 @@ import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
 import { UploadPhoto } from "@/components/upload-photo";
 import { ReceiptButton } from "@/components/receipt-button";
+import { ReceiptAiButton, type ParsedReceiptItem } from "@/components/receipt-ai-button";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -91,7 +92,7 @@ export function StandaloneExpenseForm(props: Props) {
   const [open, setOpen] = useState(isEdit); // edit opens immediately
   const [loading, setLoading] = useState(false);
   const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">(
-    initialValues?.splitType ?? "EQUAL",
+    initialValues?.splitType ?? "ITEMIZED",
   );
   const [currency, setCurrency] = useState(initialValues?.currency ?? "CLP");
 
@@ -207,6 +208,18 @@ export function StandaloneExpenseForm(props: Props) {
 
   function removeItem(id: string) {
     setItems((prev) => prev.filter((item) => item.id !== id));
+  }
+
+  function applyAiItems(parsed: ParsedReceiptItem[]) {
+    setSplitMode("ITEMIZED");
+    setItems(
+      parsed.map((p) => ({
+        id: crypto.randomUUID(),
+        description: p.description,
+        amount: String(p.amount),
+        participantNames: p.assignees.length > 0 ? p.assignees : [...participants],
+      })),
+    );
   }
 
   // Real-time preview (ITEMIZED)
@@ -376,7 +389,7 @@ export function StandaloneExpenseForm(props: Props) {
                   Modo de división
                 </span>
                 <div className="flex rounded-lg border border-zinc-200 overflow-hidden dark:border-zinc-700">
-                  {(["EQUAL", "ITEMIZED"] as const).map((mode, idx) => (
+                  {(["ITEMIZED", "EQUAL"] as const).map((mode, idx) => (
                     <button
                       key={mode}
                       type="button"
@@ -393,7 +406,7 @@ export function StandaloneExpenseForm(props: Props) {
                           : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
                       }`}
                     >
-                      {mode === "EQUAL" ? "División equitativa" : "Por ítems"}
+                      {mode === "ITEMIZED" ? "Por ítems" : "División equitativa"}
                     </button>
                   ))}
                 </div>
@@ -443,21 +456,6 @@ export function StandaloneExpenseForm(props: Props) {
                   placeholder="Opcional"
                   defaultValue={initialValues?.expenseDate}
                 />
-              </div>
-
-              {/* Receipt photo */}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
-                {receiptUrl ? (
-                  <div className="flex items-center gap-2">
-                    <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
-                    <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
-                      Quitar
-                    </button>
-                  </div>
-                ) : (
-                  <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
-                )}
               </div>
 
               {/* Participants input */}
@@ -526,6 +524,30 @@ export function StandaloneExpenseForm(props: Props) {
                   </select>
                 </div>
               )}
+
+              {/* Receipt photo */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
+                {receiptUrl ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
+                      <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
+                        Quitar
+                      </button>
+                    </div>
+                    {splitMode === "ITEMIZED" && (
+                      <ReceiptAiButton
+                        receiptUrl={receiptUrl}
+                        participants={participants}
+                        onApply={applyAiItems}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
+                )}
+              </div>
 
               {/* EQUAL: split picker */}
               {splitMode === "EQUAL" && participants.length > 0 && (

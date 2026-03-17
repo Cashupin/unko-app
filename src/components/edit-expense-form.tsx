@@ -7,6 +7,7 @@ import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/date-picker";
 import { UploadPhoto } from "@/components/upload-photo";
 import { ReceiptButton } from "@/components/receipt-button";
+import { ReceiptAiButton, type ParsedReceiptItem } from "@/components/receipt-ai-button";
 import { toast } from "sonner";
 
 function fmtInput(raw: string, cur: string): string {
@@ -134,6 +135,21 @@ export function EditExpenseForm({
           : [...item.participantIds, participantId];
         return { ...item, participantIds: pids };
       }),
+    );
+  }
+
+  function applyAiItems(parsed: ParsedReceiptItem[]) {
+    setSplitMode("ITEMIZED");
+    setItems(
+      parsed.map((p) => ({
+        id: crypto.randomUUID(),
+        description: p.description,
+        amount: String(p.amount),
+        participantIds:
+          p.assignees.length > 0
+            ? participants.filter((pt) => p.assignees.includes(pt.name)).map((pt) => pt.id)
+            : participants.map((pt) => pt.id),
+      })),
     );
   }
 
@@ -328,11 +344,20 @@ export function EditExpenseForm({
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
                 {receiptUrl ? (
-                  <div className="flex items-center gap-2">
-                    <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
-                    <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
-                      Quitar
-                    </button>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
+                      <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
+                        Quitar
+                      </button>
+                    </div>
+                    {splitMode === "ITEMIZED" && (
+                      <ReceiptAiButton
+                        receiptUrl={receiptUrl}
+                        participants={participants.map((p) => p.name)}
+                        onApply={applyAiItems}
+                      />
+                    )}
                   </div>
                 ) : (
                   <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
