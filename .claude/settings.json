@@ -7,7 +7,13 @@
       "Bash(PRISMA_FORCE_TRANSACTIONS=1 npx prisma migrate dev --name remove-item-status --create-only)",
       "Bash(rm \"c:/Users/jalva/Projects/unko-app/src/app/api/items/[id]/reset-votes/route.ts\")",
       "Bash(rmdir \"c:/Users/jalva/Projects/unko-app/src/app/api/items/[id]/reset-votes\")",
-      "Bash(start c:UsersjalvaProjectsunko-appmockup-receipt-ui.html)"
+      "Bash(start c:UsersjalvaProjectsunko-appmockup-receipt-ui.html)",
+      "Bash(PRISMA_MIGRATE_SKIP_GENERATE=1 npx prisma migrate dev --name add_expense_share_token --skip-seed)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\standalone-expenses\\[expenseId]",
+      "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\share\\[token]",
+      "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\share"
     ]
   }
 }
