@@ -5,9 +5,10 @@ import { useState } from "react";
 type Props = {
   editSlot: React.ReactNode;
   deleteSlot: React.ReactNode;
+  manageParticipantsSlot?: React.ReactNode;
 };
 
-export function TripHeaderMenu({ editSlot, deleteSlot }: Props) {
+export function TripHeaderMenu({ editSlot, deleteSlot, manageParticipantsSlot }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -30,6 +31,7 @@ export function TripHeaderMenu({ editSlot, deleteSlot }: Props) {
         <div className="absolute right-0 top-full mt-2 z-20 w-48 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-xl overflow-hidden">
           <div className="px-3 py-2 flex flex-col gap-0.5">
             {editSlot}
+            {manageParticipantsSlot}
             {deleteSlot}
           </div>
         </div>

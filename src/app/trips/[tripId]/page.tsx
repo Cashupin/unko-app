@@ -105,20 +105,13 @@ export default async function TripPage({
     name: p.name,
   }));
 
-  const fmt = (d: Date | string) =>
-    new Date(d).toLocaleDateString("es-CL", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-
-  const tripDays =
-    trip.startDate && trip.endDate
-      ? Math.round(
-          (new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) /
-            (1000 * 60 * 60 * 24),
-        ) + 1
-      : null;
+  // Extended participant list for trip home chips
+  const participantsWithRoles = rawParticipants.map((p) => ({
+    id: p.id,
+    name: p.name,
+    image: p.user?.image ?? null,
+    role: p.role,
+  }));
 
   // Slots for mobile menu (server-rendered nodes passed as props)
   const signOutSlot = (
@@ -139,6 +132,14 @@ export default async function TripPage({
 
   const editSlot = isAdmin ? <EditTripForm trip={trip} variant="menu" /> : null;
   const deleteSlot = isAdmin ? <DeleteTripButton tripId={tripId} tripName={trip.name} /> : null;
+  const manageParticipantsSlot = isAdmin ? (
+    <ManageParticipantsPanel
+      tripId={tripId}
+      participants={participants}
+      currentUserId={session.user.id}
+      isAdmin={isAdmin}
+    />
+  ) : null;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0E1113]">
@@ -170,7 +171,7 @@ export default async function TripPage({
           {/* Desktop menus — hidden on mobile */}
           <div className="hidden md:flex items-center gap-1">
             {isAdmin && (
-              <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} />
+              <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} manageParticipantsSlot={manageParticipantsSlot} />
             )}
             <UserMenu
               userName={session.user.name ?? null}
@@ -189,6 +190,7 @@ export default async function TripPage({
             signOutSlot={signOutSlot}
             editSlot={editSlot}
             deleteSlot={deleteSlot}
+            manageParticipantsSlot={manageParticipantsSlot}
           />
         </div>
 
@@ -217,47 +219,20 @@ export default async function TripPage({
 
         {/* ── Home ──────────────────────────────────────────────────────── */}
         {activeTab === "home" && (
-          <div className="flex flex-col gap-6">
-            {/* Trip info card */}
-            {(trip.startDate || trip.endDate || trip.description) && (
-              <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex flex-col gap-2">
-                {(trip.startDate || trip.endDate) && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                      {trip.startDate && fmt(trip.startDate)}
-                      {trip.startDate && trip.endDate && " – "}
-                      {trip.endDate && fmt(trip.endDate)}
-                    </span>
-                    {tripDays && (
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                        · {tripDays} día{tripDays !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </div>
-                )}
-                {trip.description && (
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">{trip.description}</p>
-                )}
-              </div>
-            )}
-
-            <ManageParticipantsPanel
+          <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando...</div>}>
+            <TripHome
               tripId={tripId}
-              participants={participants}
-              currentUserId={session.user.id}
-              isAdmin={isAdmin}
+              tripName={trip.name}
+              tripDestination={trip.destination}
+              coverImageUrl={trip.coverImageUrl}
+              tripStartDate={trip.startDate}
+              tripEndDate={trip.endDate}
+              myParticipantId={myParticipant.id}
+              participants={participantOptions}
+              participantsWithRoles={participantsWithRoles}
+              defaultCurrency={trip.defaultCurrency}
             />
-            <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando...</div>}>
-              <TripHome
-                tripId={tripId}
-                tripStartDate={trip.startDate}
-                tripEndDate={trip.endDate}
-                myParticipantId={myParticipant.id}
-                participants={participantOptions}
-                defaultCurrency={trip.defaultCurrency}
-              />
-            </Suspense>
-          </div>
+          </Suspense>
         )}
 
         {/* ── Actividades ──────────────────────────────────────────────────── */}

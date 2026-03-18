@@ -23,6 +23,7 @@ export function TripMobileMenu({
   signOutSlot,
   editSlot,
   deleteSlot,
+  manageParticipantsSlot,
 }: {
   tripId: string;
   activeTab: string;
@@ -31,6 +32,7 @@ export function TripMobileMenu({
   signOutSlot: React.ReactNode;
   editSlot: React.ReactNode;
   deleteSlot?: React.ReactNode;
+  manageParticipantsSlot?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const { displayCurrency, setDisplayCurrency } = useCurrency();
@@ -129,6 +131,12 @@ export function TripMobileMenu({
           {isAdmin && editSlot && (
             <div className="px-1" onClick={() => setOpen(false)}>
               {editSlot}
+            </div>
+          )}
+
+          {isAdmin && manageParticipantsSlot && (
+            <div className="px-1">
+              {manageParticipantsSlot}
             </div>
           )}
 
