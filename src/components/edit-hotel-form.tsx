@@ -85,7 +85,7 @@ export function EditHotelForm({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="shrink-0 text-xs text-zinc-400 hover:text-zinc-700 disabled:opacity-50 transition-colors dark:hover:text-zinc-200"
+        className="rounded-md px-2 py-1 text-xs text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-300 disabled:opacity-50"
         aria-label="Editar alojamiento"
       >
         ✎

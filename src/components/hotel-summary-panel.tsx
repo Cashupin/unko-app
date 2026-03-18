@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCurrency } from "@/components/currency-provider";
 import { CURRENCY_SYMBOLS, CURRENCY_DECIMALS } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
@@ -17,9 +17,16 @@ type Props = {
   participantCount: number;
 };
 
+const LS_KEY = "hotel-summary-open";
+
 export function HotelSummaryPanel({ hotels, participantCount }: Props) {
   const [open, setOpen] = useState(false);
   const { displayCurrency, convert, exchangeRates } = useCurrency();
+
+  useEffect(() => {
+    const stored = localStorage.getItem(LS_KEY);
+    if (stored !== null) setOpen(stored === "true");
+  }, []);
 
   const ready = exchangeRates.status === "ready";
 
@@ -54,7 +61,13 @@ export function HotelSummaryPanel({ hotels, participantCount }: Props) {
   return (
     <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5">
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOpen((v) => {
+            const next = !v;
+            localStorage.setItem(LS_KEY, String(next));
+            return next;
+          });
+        }}
         className="flex w-full items-center justify-between px-5 py-4 text-left"
       >
         <div className="flex items-center gap-2">

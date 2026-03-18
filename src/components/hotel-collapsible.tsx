@@ -35,10 +35,9 @@ export function HotelCollapsible({
   }
 
   if (!mounted) {
-    // Avoid layout shift — render the toggle button only
     return (
       <div className="mb-6">
-        <div className="h-10 w-48 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+        <div className="h-10 w-48 rounded-xl bg-zinc-100 dark:bg-[#27272a] animate-pulse" />
       </div>
     );
   }
@@ -48,11 +47,11 @@ export function HotelCollapsible({
       <div className="flex flex-col gap-2">
         <button
           onClick={toggle}
-          className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 hover:bg-zinc-100 transition-colors dark:text-zinc-500 dark:hover:bg-white/5"
         >
           <span>🏨</span>
           <span>Alojamiento</span>
-          <span className="text-zinc-400 dark:text-zinc-500 text-xs ml-1">
+          <span className="text-zinc-400 dark:text-zinc-600 text-xs ml-1">
             {open ? "▲" : "▼"}
           </span>
         </button>

@@ -11,6 +11,8 @@ export type NearbyItem = {
   location: string | null;
   locationLat: number | null;
   locationLng: number | null;
+  sourceType?: "item" | "activity";
+  activityDate?: string | null;
 };
 
 type NearbyItemWithDistance = NearbyItem & { distance: number };
@@ -38,18 +40,20 @@ function distanceColor(km: number): string {
   return "bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400";
 }
 
-const TYPE_ICONS: Record<string, string> = { PLACE: "🏛️", FOOD: "🍜" };
+const TYPE_ICONS: Record<string, string> = { PLACE: "🏛️", FOOD: "🍜", ACTIVITY: "📅" };
 
 const PAGE_SIZE = 5;
 
 export function NearbyActivities({
   items,
+  tripId,
   itemsHref,
   alwaysOpen = false,
   expandable = false,
   viewAllHref,
 }: {
   items: NearbyItem[];
+  tripId?: string;
   /** When provided, "Ver →" navigates to this URL with #item-{id} hash */
   itemsHref?: string;
   /** When true, panel is always expanded and cannot be collapsed */
@@ -293,7 +297,14 @@ export function NearbyActivities({
                   >
                     Maps
                   </a>
-                  {itemsHref ? (
+                  {item.sourceType === "activity" && tripId && item.activityDate ? (
+                    <Link
+                      href={`/trips/${tripId}?tab=itinerario#day-${item.activityDate}`}
+                      className="shrink-0 rounded-lg bg-zinc-900 px-2.5 py-1 text-xs text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                    >
+                      Ver →
+                    </Link>
+                  ) : itemsHref ? (
                     <Link
                       href={`${itemsHref}#item-${item.id}`}
                       className="shrink-0 rounded-lg bg-zinc-900 px-2.5 py-1 text-xs text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"

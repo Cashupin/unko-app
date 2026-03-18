@@ -102,7 +102,7 @@ export async function TripHome({
   const tripStatus = getTripStatus(tripStartDate, tripEndDate);
   const todayStr = toDateStr(new Date());
 
-  const [activities, hotels, items, activityCount, itemCount, rawExpenses, rawPayments] = await Promise.all([
+  const [activities, hotels, items, standaloneActivities, activityCount, itemCount, rawExpenses, rawPayments] = await Promise.all([
     activityDates.length > 0
       ? prisma.activity.findMany({
           where: {
@@ -130,6 +130,12 @@ export async function TripHome({
       select: { id: true, title: true, type: true, location: true, locationLat: true, locationLng: true },
       orderBy: { createdAt: "asc" },
       take: 10,
+    }),
+
+    // Itinerary activities with coords not linked to an item (for Nearby panel)
+    prisma.activity.findMany({
+      where: { tripId, itemId: null, locationLat: { not: null }, locationLng: { not: null } },
+      select: { id: true, title: true, location: true, locationLat: true, locationLng: true, activityDate: true },
     }),
 
     prisma.activity.count({ where: { tripId } }),
@@ -586,7 +592,20 @@ export async function TripHome({
       {/* ── Cerca de ti ──────────────────────────────────────────────────────── */}
       <div className="mb-6">
         <NearbyActivities
-          items={items}
+          items={[
+            ...items.map((i) => ({ ...i, sourceType: "item" as const, activityDate: null })),
+            ...standaloneActivities.map((a) => ({
+              id: a.id,
+              title: a.title,
+              type: "ACTIVITY",
+              location: a.location,
+              locationLat: a.locationLat,
+              locationLng: a.locationLng,
+              sourceType: "activity" as const,
+              activityDate: a.activityDate ? a.activityDate.toISOString().slice(0, 10) : null,
+            })),
+          ]}
+          tripId={tripId}
           itemsHref={`/trips/${tripId}?tab=actividades`}
           viewAllHref={`/trips/${tripId}?tab=actividades`}
           alwaysOpen

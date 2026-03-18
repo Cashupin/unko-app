@@ -45,6 +45,7 @@ export async function PATCH(
     activityTime?: string;
     notes?: string;
     photoUrl?: string | null;
+    itemId?: string | null;
   };
 
   if (body.title !== undefined && !body.title.trim()) {
@@ -78,6 +79,7 @@ export async function PATCH(
         notes: body.notes?.trim() || null,
       }),
       ...(body.photoUrl !== undefined && { photoUrl: body.photoUrl ?? null }),
+      ...(body.itemId !== undefined && { itemId: body.itemId ?? null }),
     },
   });
 

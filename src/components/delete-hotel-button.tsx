@@ -44,7 +44,7 @@ export function DeleteHotelButton({
     <button
       onClick={handleDelete}
       disabled={loading}
-      className="shrink-0 text-xs text-zinc-400 hover:text-red-500 disabled:opacity-50 transition-colors"
+      className="rounded-md px-2 py-1 text-xs text-zinc-400 hover:text-red-500 disabled:opacity-50 transition-colors"
       aria-label="Eliminar alojamiento"
     >
       {loading ? "..." : "✕"}
