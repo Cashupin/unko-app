@@ -6,6 +6,7 @@ export type TripSummary = {
   startDate: Date | string | null;
   endDate: Date | string | null;
   defaultCurrency: string;
+  coverImageUrl: string | null;
   createdAt: Date | string;
   createdBy: { id: string; name: string | null; image: string | null };
   _count: { participants: number; items: number };

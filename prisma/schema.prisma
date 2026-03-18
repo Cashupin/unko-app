@@ -157,6 +157,7 @@ model Trip {
   startDate       DateTime?
   endDate         DateTime?
   defaultCurrency   Currency  @default(CLP)
+  coverImageUrl     String?
   isStandaloneGroup Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

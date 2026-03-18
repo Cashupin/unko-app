@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DatePicker } from "@/components/date-picker";
+import { UploadPhoto } from "@/components/upload-photo";
 import { toast } from "sonner";
 
 const CURRENCIES = [
@@ -20,6 +21,7 @@ const CURRENCIES = [
 export default function NewTripPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -41,6 +43,7 @@ export default function NewTripPage() {
     if (destination) body.destination = destination;
     if (startDate) body.startDate = new Date(startDate).toISOString();
     if (endDate) body.endDate = new Date(endDate).toISOString();
+    if (coverImageUrl) body.coverImageUrl = coverImageUrl;
 
     try {
       const res = await fetch("/api/trips", {
@@ -170,6 +173,33 @@ export default function NewTripPage() {
               placeholder="Notas sobre el viaje (opcional)"
               className="resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
             />
+          </div>
+
+          {/* Cover photo */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              Foto de portada <span className="text-zinc-400 font-normal">(opcional)</span>
+            </label>
+            {coverImageUrl ? (
+              <div className="relative rounded-xl overflow-hidden h-32">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverImageUrl} alt="Portada" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setCoverImageUrl(null)}
+                  className="absolute top-2 right-2 rounded-full bg-black/50 text-white text-xs px-2 py-1 hover:bg-black/70 transition-colors"
+                >
+                  Quitar
+                </button>
+              </div>
+            ) : (
+              <UploadPhoto
+                onUpload={setCoverImageUrl}
+                label="Subir foto de portada"
+                subfolder="trip-covers"
+                disabled={loading}
+              />
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-1">

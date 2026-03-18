@@ -46,6 +46,7 @@ async function getTripSummaries(userId: string): Promise<TripSummary[]> {
           startDate: true,
           endDate: true,
           defaultCurrency: true,
+          coverImageUrl: true,
           createdAt: true,
           createdBy: { select: { id: true, name: true, image: true } },
           _count: { select: { participants: true, items: true } },
@@ -391,11 +392,21 @@ function HeroTripCard({ trip, countdown }: { trip: TripSummary; countdown: numbe
       href={`/trips/${trip.id}`}
       className="group relative flex flex-col justify-end rounded-2xl overflow-hidden min-h-50 transition-all hover:scale-[1.01] hover:shadow-2xl"
     >
-      {/* Background gradient */}
-      <div className={`absolute inset-0 bg-linear-to-br ${palette.gradient}`} />
+      {/* Background: photo or gradient */}
+      {trip.coverImageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={trip.coverImageUrl}
+          alt={trip.name}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div className={`absolute inset-0 bg-linear-to-br ${palette.gradient}`} />
+      )}
 
-      {/* Subtle overlay for depth */}
-      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
+      {/* Overlay for readability */}
+      <div className="absolute inset-0 bg-black/55" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
 
       {/* Large emoji decoration */}
       <div className="absolute top-4 right-5 text-6xl opacity-[0.12] select-none leading-none">
@@ -463,8 +474,18 @@ function MiniTripCard({ trip }: { trip: TripSummary }) {
       href={`/trips/${trip.id}`}
       className="group relative flex flex-col justify-end rounded-2xl overflow-hidden min-h-28 transition-all hover:scale-[1.02] hover:shadow-xl"
     >
-      <div className={`absolute inset-0 bg-linear-to-br ${palette.gradient}`} />
-      <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent" />
+      {trip.coverImageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={trip.coverImageUrl}
+          alt={trip.name}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div className={`absolute inset-0 bg-linear-to-br ${palette.gradient}`} />
+      )}
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent" />
 
       <div className="absolute top-3 right-3 text-3xl opacity-[0.15] select-none leading-none">
         {palette.emoji}

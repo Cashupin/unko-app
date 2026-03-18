@@ -21,6 +21,7 @@ const createTripSchema = z.object({
   defaultCurrency: z
     .enum(["CLP", "JPY", "USD", "EUR", "GBP", "KRW", "CNY", "THB"])
     .optional(),
+  coverImageUrl: z.string().url().optional().or(z.literal("")),
 });
 
 // ─── GET /api/trips ────────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { name, description, destination, startDate, endDate, defaultCurrency } =
+  const { name, description, destination, startDate, endDate, defaultCurrency, coverImageUrl } =
     result.data;
 
   const userId = session.user.id;
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         defaultCurrency: defaultCurrency ?? "CLP",
+        coverImageUrl: coverImageUrl || null,
         createdById: userId,
       },
     });

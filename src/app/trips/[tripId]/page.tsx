@@ -68,6 +68,7 @@ export default async function TripPage({
         startDate: true,
         endDate: true,
         defaultCurrency: true,
+        coverImageUrl: true,
         createdById: true,
       },
     }),
