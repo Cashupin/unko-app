@@ -216,7 +216,7 @@ export default async function DashboardPage() {
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-700/80 dark:bg-zinc-900/80 backdrop-blur sticky top-0 z-30">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 md:px-6">
           <span className="text-sm font-semibold text-zinc-400 dark:text-zinc-500 tracking-tight">
-            ✈ planificador
+            ✈ UnkoTrip
           </span>
           <div className="hidden md:flex items-center gap-2">
             <InviteUserForm />
