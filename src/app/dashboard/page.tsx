@@ -5,8 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { calculateSettlement } from "@/lib/settlement";
 import { InviteUserForm } from "@/components/invite-user-form";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { CurrencySelector } from "@/components/currency-selector";
+import { UserMenu } from "@/components/user-menu";
 import { DashboardMobileMenu } from "@/components/dashboard-mobile-menu";
 import { StandaloneExpenseForm } from "@/components/standalone-expense-form";
 import { StandaloneExpenseCard } from "@/components/standalone-expense-card";
@@ -149,24 +148,14 @@ export default async function DashboardPage() {
           </h1>
 
           {/* Desktop actions */}
-          <div className="hidden md:flex items-center gap-3">
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">{session.user.email}</span>
+          <div className="hidden md:flex items-center gap-2">
             <InviteUserForm />
-            <CurrencySelector />
-            <ThemeToggle />
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/api/auth/signin" });
-              }}
-            >
-              <button
-                type="submit"
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
-              >
-                Salir
-              </button>
-            </form>
+            <UserMenu
+              userName={session.user.name ?? null}
+              userEmail={session.user.email ?? null}
+              userImage={session.user.image ?? null}
+              signOutSlot={signOutSlot}
+            />
           </div>
 
           <DashboardMobileMenu signOutSlot={signOutSlot} inviteSlot={inviteSlot} />

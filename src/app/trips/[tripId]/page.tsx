@@ -3,9 +3,9 @@ import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { CurrencySelector } from "@/components/currency-selector";
 import { TripMobileMenu } from "@/components/trip-mobile-menu";
+import { TripHeaderMenu } from "@/components/trip-header-menu";
+import { UserMenu } from "@/components/user-menu";
 import { TripBottomNav } from "@/components/trip-bottom-nav";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { GalleryView } from "@/components/gallery-view";
@@ -111,6 +111,14 @@ export default async function TripPage({
       year: "numeric",
     });
 
+  const tripDays =
+    trip.startDate && trip.endDate
+      ? Math.round(
+          (new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) /
+            (1000 * 60 * 60 * 24),
+        ) + 1
+      : null;
+
   // Slots for mobile menu (server-rendered nodes passed as props)
   const signOutSlot = (
     <form
@@ -141,12 +149,10 @@ export default async function TripPage({
               href="/dashboard"
               className="shrink-0 flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-700 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
             >
-              {/* Home icon — mobile only */}
               <svg className="sm:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
                 <path d="M9 21V12h6v9" />
               </svg>
-              {/* Arrow + text — sm+ */}
               <span className="hidden sm:inline">← Mis viajes</span>
             </Link>
             <span className="text-zinc-200 dark:text-zinc-700">/</span>
@@ -158,34 +164,19 @@ export default async function TripPage({
                 📍 {trip.destination}
               </span>
             )}
-            {(trip.startDate || trip.endDate) && (
-              <span className="hidden shrink-0 text-xs text-zinc-400 lg:inline dark:text-zinc-500">
-                {trip.startDate && fmt(trip.startDate)}
-                {trip.startDate && trip.endDate && " – "}
-                {trip.endDate && fmt(trip.endDate)}
-              </span>
-            )}
           </div>
 
-          {/* Desktop action buttons — hidden on mobile */}
-          <div className="hidden md:flex shrink-0 items-center gap-2">
-            {isAdmin && <DeleteTripButton tripId={tripId} tripName={trip.name} variant="header" />}
-            {isAdmin && <EditTripForm trip={trip} />}
-            <CurrencySelector />
-            <ThemeToggle />
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/api/auth/signin" });
-              }}
-            >
-              <button
-                type="submit"
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
-              >
-                Salir
-              </button>
-            </form>
+          {/* Desktop menus — hidden on mobile */}
+          <div className="hidden md:flex items-center gap-1">
+            {isAdmin && (
+              <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} />
+            )}
+            <UserMenu
+              userName={session.user.name ?? null}
+              userEmail={session.user.email ?? null}
+              userImage={session.user.image ?? null}
+              signOutSlot={signOutSlot}
+            />
           </div>
 
           {/* Mobile hamburger menu */}
@@ -226,6 +217,29 @@ export default async function TripPage({
         {/* ── Home ──────────────────────────────────────────────────────── */}
         {activeTab === "home" && (
           <div className="flex flex-col gap-6">
+            {/* Trip info card */}
+            {(trip.startDate || trip.endDate || trip.description) && (
+              <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex flex-col gap-2">
+                {(trip.startDate || trip.endDate) && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                      {trip.startDate && fmt(trip.startDate)}
+                      {trip.startDate && trip.endDate && " – "}
+                      {trip.endDate && fmt(trip.endDate)}
+                    </span>
+                    {tripDays && (
+                      <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                        · {tripDays} día{tripDays !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {trip.description && (
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">{trip.description}</p>
+                )}
+              </div>
+            )}
+
             <ManageParticipantsPanel
               tripId={tripId}
               participants={participants}
