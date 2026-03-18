@@ -220,7 +220,7 @@ export function StandaloneExpenseForm(props: Props) {
         id: crypto.randomUUID(),
         description: p.description,
         amount: String(p.amount),
-        participantNames: p.assignees.length > 0 ? p.assignees : [...participants],
+        participantNames: p.assignees,
         groupKey: p.groupKey,
         groupQty: p.groupQty,
         itemQty: p.itemQty,
@@ -300,7 +300,7 @@ export function StandaloneExpenseForm(props: Props) {
     for (const item of items) {
       if (!item.description.trim()) { toast.error("Cada ítem debe tener descripción"); return; }
       if (!(parseFloat(item.amount) > 0)) { toast.error("Cada ítem debe tener monto mayor a 0"); return; }
-      if (item.participantNames.length === 0) { toast.error("Cada ítem debe tener al menos un participante"); return; }
+      // participantNames puede ser vacío si el ítem quedará sin asignar (share link)
     }
 
     setLoading(true);

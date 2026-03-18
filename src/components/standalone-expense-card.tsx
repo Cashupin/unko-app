@@ -16,6 +16,7 @@ type Settlement = { fromName: string; toName: string; amount: number; currency: 
 
 export type StandaloneExpenseData = ExpenseCardData & {
   trip: { id: string };
+  shareToken?: string | null;
   settlement: Settlement[];
 };
 
@@ -139,6 +140,24 @@ export function StandaloneExpenseCard({ expense }: { expense: StandaloneExpenseD
 
   const sym = (c: string) => CURRENCY_SYMBOLS[c as Currency] ?? c;
 
+  async function handleShare() {
+    try {
+      const res = await fetch(`/api/standalone-expenses/${expense.id}/share`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        toast.error("No se pudo generar el link");
+        return;
+      }
+      const { token } = (await res.json()) as { token: string };
+      const url = `${window.location.origin}/share/${token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado al portapapeles");
+    } catch {
+      toast.error("Error al generar el link");
+    }
+  }
+
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(buildExportText(expense, displayCurrency, convert));
@@ -249,6 +268,14 @@ export function StandaloneExpenseCard({ expense }: { expense: StandaloneExpenseD
           >
             Copiar
           </button>
+          {expense.splitType === "ITEMIZED" && (
+            <button
+              onClick={handleShare}
+              className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
+            >
+              Compartir
+            </button>
+          )}
         </div>
         <button
           onClick={handleDelete}

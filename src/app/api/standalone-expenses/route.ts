@@ -31,7 +31,7 @@ const itemizedSchema = z.object({
       z.object({
         description: z.string().trim().min(1).max(200),
         amount: z.number().positive(),
-        participantNames: z.array(z.string().trim().min(1)).min(1),
+        participantNames: z.array(z.string().trim().min(1)).min(0),
         groupKey: z.string().optional(),
         groupQty: z.number().int().positive().optional(),
         itemQty: z.number().int().positive().optional(),
@@ -53,6 +53,7 @@ const expenseSelect = {
   expenseDate: true,
   splitType: true,
   isActive: true,
+  shareToken: true,
   createdById: true,
   createdAt: true,
   trip: { select: { id: true } },

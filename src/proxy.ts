@@ -27,5 +27,5 @@ export default auth((req) => {
 
 export const config = {
   // Protect everything except NextAuth API routes, static files and the error page
-  matcher: ["/((?!api/auth|auth|manifest\\.json|sw\\.js|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/((?!api/auth|api/share|auth|share|manifest\\.json|sw\\.js|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };
