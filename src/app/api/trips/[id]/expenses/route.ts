@@ -14,6 +14,8 @@ const CURRENCIES = ["CLP", "JPY", "USD", "EUR", "GBP", "KRW", "CNY", "THB"] as c
 
 const PAYMENT_METHODS = ["CASH", "DEBIT", "CREDIT"] as const;
 
+const CATEGORIES = ["FOOD", "TRANSPORT", "ACCOMMODATION", "ACTIVITY", "OTHER"] as const;
+
 const equalSchema = z.object({
   splitType: z.literal("EQUAL"),
   description: z.string().trim().min(1).max(500),
@@ -24,6 +26,7 @@ const equalSchema = z.object({
   paidByParticipantId: z.string().cuid().optional(),
   expenseDate: z.string().optional(),
   participantIds: z.array(z.string().cuid()).min(1),
+  category: z.enum(CATEGORIES).optional(),
 });
 
 const itemizedSchema = z.object({
@@ -34,6 +37,7 @@ const itemizedSchema = z.object({
   receiptUrl: z.string().url().optional(),
   paidByParticipantId: z.string().cuid().optional(),
   expenseDate: z.string().optional(),
+  category: z.enum(CATEGORIES).optional(),
   items: z
     .array(
       z.object({
@@ -139,7 +143,7 @@ export async function POST(
   const data = result.data;
 
   if (data.splitType === "EQUAL") {
-    const { description, amount, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, participantIds } = data;
+    const { description, amount, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, participantIds, category } = data;
 
     const participantCount = await prisma.tripParticipant.count({
       where: { id: { in: participantIds }, tripId },
@@ -167,6 +171,7 @@ export async function POST(
         receiptUrl: receiptUrl ?? null,
         expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
         splitType: "EQUAL",
+        category: category ?? "OTHER",
         participants: {
           create: participantIds.map((pid, i) => ({
             participantId: pid,
@@ -182,7 +187,7 @@ export async function POST(
 
   // ── ITEMIZED ────────────────────────────────────────────────────────────────
 
-  const { description, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, items } = data;
+  const { description, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, items, category } = data;
 
   // Collect all unique participantIds across all items
   const allParticipantIds = [...new Set(items.flatMap((i) => i.participantIds))];
@@ -225,6 +230,7 @@ export async function POST(
         receiptUrl: receiptUrl ?? null,
         expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
         splitType: "ITEMIZED",
+        category: category ?? "OTHER",
         participants: {
           create: Array.from(amountByParticipant.entries()).map(([pid, amt]) => ({
             participantId: pid,
@@ -271,6 +277,7 @@ const expenseSelect = {
   receiptUrl: true,
   expenseDate: true,
   splitType: true,
+  category: true,
   createdAt: true,
   paidBy: { select: { id: true, name: true } },
   participants: {

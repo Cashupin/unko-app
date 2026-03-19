@@ -548,7 +548,7 @@ export function StandaloneExpenseForm(props: Props) {
                     {splitMode === "ITEMIZED" && (
                       <ReceiptAiButton
                         receiptUrl={receiptUrl}
-                        participants={participants}
+                        participants={participants.map((name) => ({ id: name, name }))}
                         onApply={applyAiItems}
                       />
                     )}

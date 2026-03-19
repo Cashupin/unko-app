@@ -93,6 +93,7 @@ export function HotelExpenseButton({
           paidByParticipantId: paidBy,
           expenseDate: new Date(hotel.checkInDate).toISOString().slice(0, 10),
           participantIds: participants.map((p) => p.id),
+          category: "ACCOMMODATION",
         }),
       });
 

@@ -9,6 +9,7 @@ import { UploadPhoto } from "@/components/upload-photo";
 import { ReceiptButton } from "@/components/receipt-button";
 import { ReceiptAiButton, type ParsedReceiptItem } from "@/components/receipt-ai-button";
 import { toast } from "sonner";
+import { CATEGORY_CONFIG, detectCategory, type ExpenseCategory } from "@/lib/expense-categories";
 
 // Format raw numeric string for display inside the input (es-CL thousands separator)
 function fmtInput(raw: string, cur: string): string {
@@ -79,6 +80,8 @@ export function CreateExpenseForm({
   // ITEMIZED mode state
   const [items, setItems] = useState<ExpenseItemDraft[]>([]);
 
+  const [category, setCategory] = useState<ExpenseCategory>("OTHER");
+
   function openModal() {
     setSelectedParticipants(participants.map((p) => p.id));
     setSplitMode("EQUAL");
@@ -87,6 +90,7 @@ export function CreateExpenseForm({
     setReceiptUrl(null);
     setAmountValue("");
     setItems([newItem(participants)]);
+    setCategory("OTHER");
     setOpen(true);
   }
 
@@ -135,7 +139,7 @@ export function CreateExpenseForm({
         amount: String(p.amount),
         participantIds:
           p.assignees.length > 0
-            ? participants.filter((pt) => p.assignees.includes(pt.name)).map((pt) => pt.id)
+            ? p.assignees
             : participants.map((pt) => pt.id),
         groupKey: p.groupKey,
         groupQty: p.groupQty,
@@ -181,10 +185,11 @@ export function CreateExpenseForm({
         amount: amountNum,
         currency: fd.get("currency") as string,
         paymentMethod,
-        receiptUrl: receiptUrl ?? null,
+        receiptUrl: receiptUrl ?? undefined,
         paidByParticipantId: (fd.get("paidBy") as string) || undefined,
         expenseDate: (fd.get("expenseDate") as string) || undefined,
         participantIds: selectedParticipants,
+        category,
       };
 
       try {
@@ -238,9 +243,10 @@ export function CreateExpenseForm({
       description: (fd.get("description") as string).trim(),
       currency: fd.get("currency") as string,
       paymentMethod,
-      receiptUrl: receiptUrl ?? null,
+      receiptUrl: receiptUrl ?? undefined,
       paidByParticipantId: (fd.get("paidBy") as string) || undefined,
       expenseDate: (fd.get("expenseDate") as string) || undefined,
+      category,
       items: items.map((item) => ({
         description: item.description.trim(),
         amount: parseFloat(item.amount),
@@ -283,26 +289,26 @@ export function CreateExpenseForm({
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex justify-end bg-black/60"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeModal();
           }}
         >
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                Nuevo gasto
-              </h2>
+          <div className="flex h-full w-full max-w-110 flex-col bg-white dark:bg-[#18191c] border-l border-zinc-200 dark:border-[#3f3f46] shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-[#2d2d31] px-5 py-4 shrink-0">
+              <h2 className="text-base font-semibold dark:text-zinc-100">Nuevo gasto</h2>
               <button
                 onClick={closeModal}
-                className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 dark:bg-[#27272a] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-[#3f3f46]"
                 aria-label="Cerrar"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
               {/* Description */}
               <div className="flex flex-col gap-1">
                 <label
@@ -319,8 +325,36 @@ export function CreateExpenseForm({
                   minLength={1}
                   maxLength={500}
                   placeholder="Ej: Cena en Shibuya"
+                  onChange={(e) => {
+                    const detected = detectCategory(e.target.value);
+                    setCategory(detected);
+                  }}
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />
+              </div>
+
+              {/* Category */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Categoría</span>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.entries(CATEGORY_CONFIG) as [ExpenseCategory, { emoji: string; label: string }][]).map(
+                    ([key, { emoji, label }]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setCategory(key)}
+                        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                          category === key
+                            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                            : "border border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200"
+                        }`}
+                      >
+                        <span>{emoji}</span>
+                        {label}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
 
               {/* Split mode toggle */}
@@ -387,19 +421,29 @@ export function CreateExpenseForm({
                 <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
                 {receiptUrl ? (
                   <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
-                      <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
+                    {/* Card preview */}
+                    <div className="flex items-center gap-3 rounded-xl border border-zinc-100 dark:border-[#3f3f46] bg-zinc-50 dark:bg-[#27272a] px-3 py-2.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-950/60 text-lg">
+                        🧾
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200 truncate">Boleta subida</p>
+                        <ReceiptButton url={receiptUrl} label="Ver foto →" className="text-[11px] text-violet-600 dark:text-violet-400 hover:underline" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setReceiptUrl(null)}
+                        className="text-xs text-zinc-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 shrink-0"
+                      >
                         Quitar
                       </button>
                     </div>
-                    {splitMode === "ITEMIZED" && (
-                      <ReceiptAiButton
-                        receiptUrl={receiptUrl}
-                        participants={participants.map((p) => p.name)}
-                        onApply={applyAiItems}
-                      />
-                    )}
+                    {/* AI button — always visible when receipt is uploaded */}
+                    <ReceiptAiButton
+                      receiptUrl={receiptUrl}
+                      participants={participants}
+                      onApply={applyAiItems}
+                    />
                   </div>
                 ) : (
                   <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
@@ -624,7 +668,8 @@ export function CreateExpenseForm({
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-1">
+            </div>
+              <div className="flex items-center justify-end gap-2 border-t border-zinc-100 dark:border-[#2d2d31] px-5 py-4 shrink-0">
                 <button
                   type="button"
                   onClick={closeModal}

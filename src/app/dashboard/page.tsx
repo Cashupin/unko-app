@@ -70,6 +70,7 @@ async function getStandaloneExpenses(userId: string): Promise<StandaloneExpenseD
       receiptUrl: true,
       expenseDate: true,
       splitType: true,
+      category: true,
       isActive: true,
       createdById: true,
       trip: { select: { id: true } },

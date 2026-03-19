@@ -327,6 +327,7 @@ model Expense {
   splitType           SplitType @default(EQUAL)
   paymentMethod       String    @default("CASH")
   receiptUrl          String?
+  category            String    @default("OTHER")
   shareToken          String?   @unique // token público para compartir gasto independiente
   isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())

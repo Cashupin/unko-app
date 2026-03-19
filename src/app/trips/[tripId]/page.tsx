@@ -330,29 +330,17 @@ export default async function TripPage({
 
         {/* ── Gastos ──────────────────────────────────────────────────────── */}
         {activeTab === "gastos" && (
-          <div>
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Gastos</h2>
-              {canEdit && (
-                <CreateExpenseForm
-                  tripId={tripId}
-                  participants={participantOptions}
-                  defaultCurrency={trip.defaultCurrency}
-                />
-              )}
-            </div>
-            <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando gastos...</div>}>
-              <ExpenseList
-                tripId={tripId}
-                participants={participantOptions}
-                defaultCurrency={trip.defaultCurrency}
-                canEdit={canEdit}
-                myParticipantId={myParticipant.id}
-                myUserId={session.user.id!}
-                isAdmin={isAdmin}
-              />
-            </Suspense>
-          </div>
+          <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando gastos...</div>}>
+            <ExpenseList
+              tripId={tripId}
+              participants={participantOptions}
+              defaultCurrency={trip.defaultCurrency}
+              canEdit={canEdit}
+              myParticipantId={myParticipant.id}
+              myUserId={session.user.id!}
+              isAdmin={isAdmin}
+            />
+          </Suspense>
         )}
 
         {/* ── Galería ─────────────────────────────────────────────────────── */}

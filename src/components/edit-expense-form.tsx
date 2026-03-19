@@ -9,6 +9,7 @@ import { UploadPhoto } from "@/components/upload-photo";
 import { ReceiptButton } from "@/components/receipt-button";
 import { ReceiptAiButton, type ParsedReceiptItem } from "@/components/receipt-ai-button";
 import { toast } from "sonner";
+import { CATEGORY_CONFIG, type ExpenseCategory } from "@/lib/expense-categories";
 
 function fmtInput(raw: string, cur: string): string {
   if (!raw) return "";
@@ -60,6 +61,7 @@ export type EditExpenseData = {
   receiptUrl: string | null;
   expenseDate: Date;
   splitType: string;
+  category: string;
   paidByParticipantId: string | null;
   participants: { participantId: string; amount: number }[];
   items: {
@@ -88,6 +90,8 @@ export function EditExpenseForm({
   const [paymentMethod, setPaymentMethod] = useState(expense.paymentMethod ?? "CASH");
   const [receiptUrl, setReceiptUrl] = useState<string | null>(expense.receiptUrl ?? null);
   const [amountValue, setAmountValue] = useState(String(expense.amount));
+
+  const [category, setCategory] = useState<ExpenseCategory>((expense.category as ExpenseCategory) ?? "OTHER");
 
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
     expense.participants.map((ep) => ep.participantId),
@@ -150,7 +154,7 @@ export function EditExpenseForm({
         amount: String(p.amount),
         participantIds:
           p.assignees.length > 0
-            ? participants.filter((pt) => p.assignees.includes(pt.name)).map((pt) => pt.id)
+            ? p.assignees
             : participants.map((pt) => pt.id),
         groupKey: p.groupKey,
         groupQty: p.groupQty,
@@ -199,6 +203,7 @@ export function EditExpenseForm({
         paidByParticipantId: (fd.get("paidBy") as string) || undefined,
         expenseDate: (fd.get("expenseDate") as string) || undefined,
         participantIds: selectedParticipants,
+        category,
       };
       try {
         const res = await fetch(`/api/trips/${tripId}/expenses/${expense.id}`, {
@@ -240,6 +245,7 @@ export function EditExpenseForm({
       receiptUrl: receiptUrl ?? null,
       paidByParticipantId: (fd.get("paidBy") as string) || undefined,
       expenseDate: (fd.get("expenseDate") as string) || undefined,
+      category,
       items: items.map((item) => ({
         description: item.description.trim(),
         amount: parseFloat(item.amount),
@@ -274,11 +280,11 @@ export function EditExpenseForm({
     <>
       <button
         onClick={openModal}
-        className="shrink-0 text-xs text-zinc-400 hover:text-zinc-700 disabled:opacity-50 transition-colors dark:hover:text-zinc-200"
+        className="rounded-md px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
         aria-label="Editar gasto"
         title="Editar gasto"
       >
-        ✎
+        ✏️
       </button>
 
       {open && (
@@ -307,6 +313,30 @@ export function EditExpenseForm({
                   maxLength={500}
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />
+              </div>
+
+              {/* Category */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Categoría</span>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.entries(CATEGORY_CONFIG) as [ExpenseCategory, { emoji: string; label: string }][]).map(
+                    ([key, { emoji, label }]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setCategory(key)}
+                        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                          category === key
+                            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                            : "border border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200"
+                        }`}
+                      >
+                        <span>{emoji}</span>
+                        {label}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
 
               {/* Split mode toggle */}
@@ -363,7 +393,7 @@ export function EditExpenseForm({
                     {splitMode === "ITEMIZED" && (
                       <ReceiptAiButton
                         receiptUrl={receiptUrl}
-                        participants={participants.map((p) => p.name)}
+                        participants={participants}
                         onApply={applyAiItems}
                       />
                     )}

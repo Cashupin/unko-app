@@ -5,7 +5,7 @@ import { useState } from "react";
 export type ParsedReceiptItem = {
   description: string;
   amount: number;
-  assignees: string[]; // participant names; empty = all participants
+  assignees: string[]; // participant IDs; empty = all participants
   groupKey: string;    // UUID shared by all items from the same receipt line
   groupQty: number;    // total units on that receipt line (e.g. 16 shots)
   itemQty: number;     // units this item represents (e.g. Juan took 6)
@@ -13,9 +13,11 @@ export type ParsedReceiptItem = {
 
 type RawItem = { id: number; description: string; amount: number; qty: number; groupKey: string };
 
+type Participant = { id: string; name: string };
+
 type Props = {
   receiptUrl: string;
-  participants: string[];
+  participants: Participant[];
   onApply: (items: ParsedReceiptItem[]) => void;
 };
 
@@ -34,7 +36,6 @@ function countersToItems(
     const totalAssigned = Object.values(counter).reduce((a, b) => a + b, 0);
 
     if (totalAssigned === 0) {
-      // Unassigned — keep as one item representing all units
       result.push({
         description: item.qty > 1 ? `${item.qty} x ${item.description}` : item.description,
         amount: item.amount,
@@ -48,18 +49,18 @@ function countersToItems(
 
     // Group participants with the same count into a single item (equal split works)
     const countGroups = new Map<number, string[]>();
-    for (const [name, count] of Object.entries(counter)) {
+    for (const [id, count] of Object.entries(counter)) {
       if (count <= 0) continue;
       if (!countGroups.has(count)) countGroups.set(count, []);
-      countGroups.get(count)!.push(name);
+      countGroups.get(count)!.push(id);
     }
 
-    for (const [count, names] of countGroups) {
-      const groupAmount = Math.round(count * unitPrice * names.length);
+    for (const [count, ids] of countGroups) {
+      const groupAmount = Math.round(count * unitPrice * ids.length);
       result.push({
-        description: item.qty > 1 ? `${count * names.length} x ${item.description}` : item.description,
+        description: item.qty > 1 ? `${count * ids.length} x ${item.description}` : item.description,
         amount: groupAmount,
-        assignees: names,
+        assignees: ids,
         groupKey: item.groupKey,
         groupQty: item.qty,
         itemQty: count,
@@ -109,7 +110,7 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
         Object.fromEntries(
           items.map((item) => [
             item.id,
-            Object.fromEntries(participants.map((p) => [p, 0])),
+            Object.fromEntries(participants.map((p) => [p.id, 0])),
           ]),
         ),
       );
@@ -121,28 +122,28 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
     }
   }
 
-  function increment(itemId: number, name: string) {
+  function increment(itemId: number, participantId: string) {
     const item = rawItems.find((i) => i.id === itemId)!;
     const assigned = Object.values(counters[itemId] ?? {}).reduce((a, b) => a + b, 0);
     if (assigned >= item.qty) return;
     setCounters((prev) => ({
       ...prev,
-      [itemId]: { ...prev[itemId], [name]: (prev[itemId][name] ?? 0) + 1 },
+      [itemId]: { ...prev[itemId], [participantId]: (prev[itemId][participantId] ?? 0) + 1 },
     }));
   }
 
-  function decrement(itemId: number, name: string) {
-    if ((counters[itemId]?.[name] ?? 0) <= 0) return;
+  function decrement(itemId: number, participantId: string) {
+    if ((counters[itemId]?.[participantId] ?? 0) <= 0) return;
     setCounters((prev) => ({
       ...prev,
-      [itemId]: { ...prev[itemId], [name]: prev[itemId][name] - 1 },
+      [itemId]: { ...prev[itemId], [participantId]: prev[itemId][participantId] - 1 },
     }));
   }
 
-  function toggleChip(itemId: number, name: string) {
+  function toggleChip(itemId: number, participantId: string) {
     setCounters((prev) => ({
       ...prev,
-      [itemId]: { ...prev[itemId], [name]: (prev[itemId][name] ?? 0) > 0 ? 0 : 1 },
+      [itemId]: { ...prev[itemId], [participantId]: (prev[itemId][participantId] ?? 0) > 0 ? 0 : 1 },
     }));
   }
 
@@ -152,9 +153,10 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
 
   if (state === "loading") {
     return (
-      <span className="text-xs text-violet-500 animate-pulse dark:text-violet-400">
-        ✨ Analizando boleta...
-      </span>
+      <div className="flex items-center gap-3 rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50 dark:bg-violet-950/30 px-4 py-3">
+        <span className="text-xl animate-pulse">✨</span>
+        <p className="text-xs font-semibold text-violet-600 dark:text-violet-400 animate-pulse">Analizando boleta...</p>
+      </div>
     );
   }
 
@@ -239,22 +241,22 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
                 {/* qty === 1: horizontal chip toggles */}
                 {!hasMultiple && participants.length > 0 && (
                   <div className="border-t border-zinc-100 dark:border-zinc-700 px-3 py-2 flex flex-wrap gap-1.5">
-                    {participants.map((name) => {
-                      const selected = (counter[name] ?? 0) > 0;
+                    {participants.map((p) => {
+                      const selected = (counter[p.id] ?? 0) > 0;
                       const numSelected = Object.values(counter).filter((v) => v > 0).length;
                       const perPerson = numSelected > 0 ? Math.round(item.amount / numSelected) : null;
                       return (
                         <button
-                          key={name}
+                          key={p.id}
                           type="button"
-                          onClick={() => toggleChip(item.id, name)}
+                          onClick={() => toggleChip(item.id, p.id)}
                           className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                             selected
                               ? "bg-violet-600 text-white dark:bg-violet-500"
                               : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600"
                           }`}
                         >
-                          {name}
+                          {p.name}
                           {selected && perPerson !== null && (
                             <span className="opacity-75 tabular-nums">
                               ${perPerson.toLocaleString("es-CL")}
@@ -269,14 +271,14 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
                 {/* qty > 1: counter rows (collapsible) */}
                 {hasMultiple && !isCollapsed && participants.length > 0 && (
                   <div className="border-t border-zinc-100 dark:border-zinc-700 divide-y divide-zinc-100 dark:divide-zinc-700/60">
-                    {participants.map((name) => {
-                      const count = counter[name] ?? 0;
+                    {participants.map((p) => {
+                      const count = counter[p.id] ?? 0;
                       const amount = Math.round(count * unitPrice);
                       const canIncrement = assigned < item.qty;
 
                       return (
                         <div
-                          key={name}
+                          key={p.id}
                           className={`flex items-center justify-between py-1.5 px-3 transition-colors ${
                             count > 0
                               ? "bg-violet-50 dark:bg-violet-950/30"
@@ -291,7 +293,7 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
                                   : "text-zinc-500 dark:text-zinc-400"
                               }`}
                             >
-                              {name}
+                              {p.name}
                             </span>
                             {count > 0 && (
                               <span className="text-xs tabular-nums text-violet-500 dark:text-violet-400">
@@ -302,7 +304,7 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               type="button"
-                              onClick={() => decrement(item.id, name)}
+                              onClick={() => decrement(item.id, p.id)}
                               className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                                 count > 0
                                   ? "bg-violet-100 text-violet-600 hover:bg-violet-200 dark:bg-violet-900/50 dark:text-violet-400 dark:hover:bg-violet-800/50"
@@ -322,7 +324,7 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
                             </span>
                             <button
                               type="button"
-                              onClick={() => increment(item.id, name)}
+                              onClick={() => increment(item.id, p.id)}
                               className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                                 canIncrement
                                   ? "bg-violet-100 text-violet-600 hover:bg-violet-200 dark:bg-violet-900/50 dark:text-violet-400 dark:hover:bg-violet-800/50"
@@ -370,9 +372,14 @@ export function ReceiptAiButton({ receiptUrl, participants, onApply }: Props) {
       <button
         type="button"
         onClick={analyze}
-        className="self-start text-xs font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors"
+        className="flex items-center gap-3 rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50 dark:bg-violet-950/30 px-4 py-3 text-left transition-colors hover:bg-violet-100 dark:hover:bg-violet-950/50"
       >
-        ✨ Analizar con IA
+        <span className="text-xl">✨</span>
+        <div className="flex-1">
+          <p className="text-xs font-semibold text-violet-700 dark:text-violet-300">Analizar con IA</p>
+          <p className="text-[11px] text-violet-500 dark:text-violet-400">Detecta ítems y montos automáticamente</p>
+        </div>
+        <span className="text-violet-400 dark:text-violet-500 text-sm">→</span>
       </button>
       {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
