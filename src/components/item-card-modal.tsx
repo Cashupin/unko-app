@@ -39,7 +39,7 @@ export type ItemCardData = {
   checksCount: number;
   status: "APPROVED" | "PENDING" | "REJECTED";
   myVote: "APPROVE" | "REJECT" | null;
-  myCheck: { id: string; photoUrl: string | null; userName?: string | null } | null;
+  myCheck: { id: string; photoUrl: string | null; userName: string | null } | null;
   votes: VoteEntry[];
   checks: { id: string; photoUrl: string | null; userName: string | null }[];
   canEdit: boolean;
