@@ -144,7 +144,7 @@ export async function ItemList({
       checksCount: raw._count.checks,
       status,
       myVote,
-      myCheck: myRawCheck ? { id: myRawCheck.id, photoUrl: myRawCheck.photoUrl } : null,
+      myCheck: myRawCheck ? { id: myRawCheck.id, photoUrl: myRawCheck.photoUrl, userName: myRawCheck.user?.name ?? null } : null,
       votes: raw.votes.map((v) => ({
         value: v.value as "APPROVE" | "REJECT",
         userName: v.user?.name ?? null,
