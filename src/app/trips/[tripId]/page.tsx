@@ -145,7 +145,7 @@ export default async function TripPage({
   return (
     <div className="min-h-screen bg-white dark:bg-[#0E1113]">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+      <header className="border-b border-zinc-200 bg-white dark:border-zinc-700/80 dark:bg-zinc-900/80 backdrop-blur sticky top-0 z-30">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 md:px-6">
           <div className="flex items-center gap-3 min-w-0">
             <Link
