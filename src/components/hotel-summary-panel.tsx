@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCurrency } from "@/components/currency-provider";
+import { useCurrency } from "@/providers/currency-provider";
 import { CURRENCY_SYMBOLS, CURRENCY_DECIMALS } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 

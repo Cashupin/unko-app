@@ -7,13 +7,13 @@ import { prisma } from "@/lib/prisma";
 import { calculateSettlement } from "@/lib/settlement";
 import { InviteUserForm } from "@/components/invite-user-form";
 import { UserMenu } from "@/components/user-menu";
-import { DashboardMobileMenu } from "@/components/dashboard-mobile-menu";
+import { DashboardMobileMenu } from "@/modules/dashboard/components/dashboard-mobile-menu";
 import { NotificationsBell } from "@/modules/notifications/components/notifications-bell";
 import { TutorialButton } from "@/components/tutorial-button";
-import { StandaloneExpenseForm } from "@/components/standalone-expense-form";
-import { DashboardExpenses } from "@/components/dashboard-expenses";
+import { StandaloneExpenseForm } from "@/modules/dashboard/components/standalone-expense-form";
+import { DashboardExpenses } from "@/modules/dashboard/components/dashboard-expenses";
 import type { TripSummary } from "@/types/trip";
-import type { StandaloneExpenseData } from "@/components/standalone-expense-card";
+import type { StandaloneExpenseData } from "@/modules/dashboard/components/standalone-expense-card";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   CLP: "$", JPY: "¥", USD: "$", EUR: "€", GBP: "£", KRW: "₩", CNY: "¥", THB: "฿",

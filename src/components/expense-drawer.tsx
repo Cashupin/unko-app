@@ -6,11 +6,11 @@ import { toast } from "sonner";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { ConvertedAmount } from "@/components/converted-amount";
-import { useCurrency } from "@/components/currency-provider";
+import { useCurrency } from "@/providers/currency-provider";
 import { ReceiptButton } from "@/components/receipt-button";
-import { StandaloneExpenseForm } from "@/components/standalone-expense-form";
-import type { StandaloneInitialValues } from "@/components/standalone-expense-form";
-import type { StandaloneExpenseData } from "@/components/standalone-expense-card";
+import { StandaloneExpenseForm } from "@/modules/dashboard/components/standalone-expense-form";
+import type { StandaloneInitialValues } from "@/modules/dashboard/components/standalone-expense-form";
+import type { StandaloneExpenseData } from "@/modules/dashboard/components/standalone-expense-card";
 
 function toInitialValues(expense: StandaloneExpenseData): StandaloneInitialValues {
   const participantNames = expense.participants.map((ep) => ep.participant.name);

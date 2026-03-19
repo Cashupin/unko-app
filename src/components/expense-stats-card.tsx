@@ -1,6 +1,6 @@
 "use client";
 
-import { useCurrency } from "@/components/currency-provider";
+import { useCurrency } from "@/providers/currency-provider";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import type { Settlement } from "@/lib/settlement";

@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { ConvertedAmount } from "@/components/converted-amount";
-import { useCurrency } from "@/components/currency-provider";
+import { useCurrency } from "@/providers/currency-provider";
 import { ExpenseCard } from "@/components/expense-card";
 import type { ExpenseCardData } from "@/components/expense-card";
-import { StandaloneExpenseForm } from "@/components/standalone-expense-form";
-import type { StandaloneInitialValues } from "@/components/standalone-expense-form";
+import { StandaloneExpenseForm } from "@/modules/dashboard/components/standalone-expense-form";
+import type { StandaloneInitialValues } from "@/modules/dashboard/components/standalone-expense-form";
 import { toast } from "sonner";
 
 type Settlement = { fromName: string; toName: string; amount: number; currency: string };

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useCurrency } from "@/components/currency-provider";
+import { useCurrency } from "@/providers/currency-provider";
 import { CURRENCIES, CURRENCY_NAMES } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 
