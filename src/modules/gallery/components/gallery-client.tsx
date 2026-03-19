@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { GalleryLightbox, type GalleryPhoto } from "@/components/gallery-lightbox";
+import { GalleryLightbox, type GalleryPhoto } from "@/modules/gallery/components/gallery-lightbox";
 
 export function GalleryClient({
   photos,

@@ -10,7 +10,7 @@ import { NotificationsBell } from "@/components/notifications-bell";
 import { TutorialButton } from "@/components/tutorial-button";
 import { TripBottomNav } from "@/components/trip-bottom-nav";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { GalleryView } from "@/components/gallery-view";
+import { GalleryView } from "@/modules/gallery/components/gallery-view";
 import { ItemList } from "@/components/item-list";
 import { CreateItemForm } from "@/components/create-item-form";
 import { ManageParticipantsPanel } from "@/components/manage-participants-panel";

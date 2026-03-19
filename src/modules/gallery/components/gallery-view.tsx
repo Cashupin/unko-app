@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { GalleryClient } from "@/components/gallery-client";
+import { GalleryClient } from "@/modules/gallery/components/gallery-client";
 
 export async function GalleryView({ tripId, tripName }: { tripId: string; tripName: string }) {
   const checks = await prisma.check.findMany({
