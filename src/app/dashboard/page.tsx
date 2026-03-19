@@ -8,7 +8,7 @@ import { calculateSettlement } from "@/lib/settlement";
 import { InviteUserForm } from "@/components/invite-user-form";
 import { UserMenu } from "@/components/user-menu";
 import { DashboardMobileMenu } from "@/components/dashboard-mobile-menu";
-import { NotificationsBell } from "@/components/notifications-bell";
+import { NotificationsBell } from "@/modules/notifications/components/notifications-bell";
 import { TutorialButton } from "@/components/tutorial-button";
 import { StandaloneExpenseForm } from "@/components/standalone-expense-form";
 import { DashboardExpenses } from "@/components/dashboard-expenses";

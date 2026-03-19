@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { createNotificationMany } from "@/lib/notifications";
+import { createNotificationMany } from "@/modules/notifications/lib/notifications";
 
 async function requireMember(tripId: string, userId: string) {
   return prisma.tripParticipant.findFirst({

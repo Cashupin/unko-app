@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { createNotification } from "@/lib/notifications";
+import { createNotification } from "@/modules/notifications/lib/notifications";
 
 async function requireActiveSession() {
   const session = await auth();

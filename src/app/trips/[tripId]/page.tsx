@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { TripMobileMenu } from "@/components/trip-mobile-menu";
 import { TripHeaderMenu } from "@/components/trip-header-menu";
 import { UserMenu } from "@/components/user-menu";
-import { NotificationsBell } from "@/components/notifications-bell";
+import { NotificationsBell } from "@/modules/notifications/components/notifications-bell";
 import { TutorialButton } from "@/components/tutorial-button";
 import { TripBottomNav } from "@/components/trip-bottom-nav";
 import { AutoRefresh } from "@/components/auto-refresh";

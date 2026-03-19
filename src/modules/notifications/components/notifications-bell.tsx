@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useNotifications, type AppNotification } from "@/components/notifications-provider";
+import { useNotifications, type AppNotification } from "@/modules/notifications/components/notifications-provider";
 
 const TYPE_ICON: Record<string, string> = {
   TRIP_ADDED: "✈️",
