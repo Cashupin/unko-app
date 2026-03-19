@@ -235,7 +235,7 @@ export async function TripHome({
     <div>
 
       {/* ── Hero Banner ─── flush/edge-to-edge ────────────────────────────────── */}
-      <div className="-mx-4 -mt-6 md:-mx-6 md:-mt-8 relative h-44 sm:h-56 rounded-b-[20px] overflow-hidden mb-5">
+      <div id="tutorial-trip-hero" className="-mx-4 -mt-6 md:-mx-6 md:-mt-8 relative h-44 sm:h-56 rounded-b-[20px] overflow-hidden mb-5">
         {coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -340,7 +340,7 @@ export async function TripHome({
       </div>
 
       {/* ── Stats grid ────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-2.5 mb-6">
+      <div id="tutorial-trip-stats" className="grid grid-cols-3 gap-2 sm:gap-2.5 mb-6">
 
         {/* Chip 1: Días */}
         <div className="bg-zinc-50 border border-zinc-100 dark:bg-[#18191c] dark:border-[#27272a] rounded-2xl p-3 sm:p-3.5 flex flex-col">
@@ -413,7 +413,7 @@ export async function TripHome({
       </div>
 
       {/* ── Participants ─────────────────────────────────────────────────────── */}
-      <div className="mb-6">
+      <div id="tutorial-trip-participants" className="mb-6">
         <div className="flex items-center justify-between mb-2.5">
           <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Participantes
@@ -458,7 +458,7 @@ export async function TripHome({
 
       {/* ── Próximos días ────────────────────────────────────────────────────── */}
       {activityDates.length > 0 && (
-        <div className="mb-6">
+        <div id="tutorial-trip-upcoming" className="mb-6">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
               Próximos días
@@ -613,7 +613,7 @@ export async function TripHome({
       </div>
 
       {/* ── Mi liquidación ───────────────────────────────────────────────────── */}
-      <div className="mb-6">
+      <div id="tutorial-trip-my-settlement" className="mb-6">
         <div className="flex items-center justify-between mb-2.5">
           <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Mi liquidación

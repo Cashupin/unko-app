@@ -139,7 +139,7 @@ export async function ExpenseList({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5 items-start">
       {/* Left column */}
-      <div className="flex flex-col gap-4 lg:sticky lg:top-24">
+      <div id="tutorial-settlement" className="flex flex-col gap-4 lg:sticky lg:top-24">
         <ExpenseStatsCard
           expenseTotals={expenseTotals}
           myShares={myShares}
@@ -169,11 +169,13 @@ export async function ExpenseList({
             Gastos · {rawExpenses.length}
           </h3>
           {canEdit && (
-            <CreateExpenseForm
-              tripId={tripId}
-              participants={participants}
-              defaultCurrency={defaultCurrency}
-            />
+            <div id="tutorial-create-expense">
+              <CreateExpenseForm
+                tripId={tripId}
+                participants={participants}
+                defaultCurrency={defaultCurrency}
+              />
+            </div>
           )}
         </div>
 
