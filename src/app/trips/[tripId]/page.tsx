@@ -3,9 +3,9 @@ import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { CurrencySelector } from "@/components/currency-selector";
 import { TripMobileMenu } from "@/components/trip-mobile-menu";
+import { TripHeaderMenu } from "@/components/trip-header-menu";
+import { UserMenu } from "@/components/user-menu";
 import { TripBottomNav } from "@/components/trip-bottom-nav";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { GalleryView } from "@/components/gallery-view";
@@ -68,6 +68,7 @@ export default async function TripPage({
         startDate: true,
         endDate: true,
         defaultCurrency: true,
+        coverImageUrl: true,
         createdById: true,
       },
     }),
@@ -104,12 +105,13 @@ export default async function TripPage({
     name: p.name,
   }));
 
-  const fmt = (d: Date | string) =>
-    new Date(d).toLocaleDateString("es-CL", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+  // Extended participant list for trip home chips
+  const participantsWithRoles = rawParticipants.map((p) => ({
+    id: p.id,
+    name: p.name,
+    image: p.user?.image ?? null,
+    role: p.role,
+  }));
 
   // Slots for mobile menu (server-rendered nodes passed as props)
   const signOutSlot = (
@@ -130,6 +132,14 @@ export default async function TripPage({
 
   const editSlot = isAdmin ? <EditTripForm trip={trip} variant="menu" /> : null;
   const deleteSlot = isAdmin ? <DeleteTripButton tripId={tripId} tripName={trip.name} /> : null;
+  const manageParticipantsSlot = isAdmin ? (
+    <ManageParticipantsPanel
+      tripId={tripId}
+      participants={participants}
+      currentUserId={session.user.id}
+      isAdmin={isAdmin}
+    />
+  ) : null;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0E1113]">
@@ -141,12 +151,10 @@ export default async function TripPage({
               href="/dashboard"
               className="shrink-0 flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-700 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
             >
-              {/* Home icon — mobile only */}
               <svg className="sm:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
                 <path d="M9 21V12h6v9" />
               </svg>
-              {/* Arrow + text — sm+ */}
               <span className="hidden sm:inline">← Mis viajes</span>
             </Link>
             <span className="text-zinc-200 dark:text-zinc-700">/</span>
@@ -158,34 +166,19 @@ export default async function TripPage({
                 📍 {trip.destination}
               </span>
             )}
-            {(trip.startDate || trip.endDate) && (
-              <span className="hidden shrink-0 text-xs text-zinc-400 lg:inline dark:text-zinc-500">
-                {trip.startDate && fmt(trip.startDate)}
-                {trip.startDate && trip.endDate && " – "}
-                {trip.endDate && fmt(trip.endDate)}
-              </span>
-            )}
           </div>
 
-          {/* Desktop action buttons — hidden on mobile */}
-          <div className="hidden md:flex shrink-0 items-center gap-2">
-            {isAdmin && <DeleteTripButton tripId={tripId} tripName={trip.name} variant="header" />}
-            {isAdmin && <EditTripForm trip={trip} />}
-            <CurrencySelector />
-            <ThemeToggle />
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/api/auth/signin" });
-              }}
-            >
-              <button
-                type="submit"
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
-              >
-                Salir
-              </button>
-            </form>
+          {/* Desktop menus — hidden on mobile */}
+          <div className="hidden md:flex items-center gap-1">
+            {isAdmin && (
+              <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} manageParticipantsSlot={manageParticipantsSlot} />
+            )}
+            <UserMenu
+              userName={session.user.name ?? null}
+              userEmail={session.user.email ?? null}
+              userImage={session.user.image ?? null}
+              signOutSlot={signOutSlot}
+            />
           </div>
 
           {/* Mobile hamburger menu */}
@@ -197,6 +190,7 @@ export default async function TripPage({
             signOutSlot={signOutSlot}
             editSlot={editSlot}
             deleteSlot={deleteSlot}
+            manageParticipantsSlot={manageParticipantsSlot}
           />
         </div>
 
@@ -225,24 +219,20 @@ export default async function TripPage({
 
         {/* ── Home ──────────────────────────────────────────────────────── */}
         {activeTab === "home" && (
-          <div className="flex flex-col gap-6">
-            <ManageParticipantsPanel
+          <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando...</div>}>
+            <TripHome
               tripId={tripId}
-              participants={participants}
-              currentUserId={session.user.id}
-              isAdmin={isAdmin}
+              tripName={trip.name}
+              tripDestination={trip.destination}
+              coverImageUrl={trip.coverImageUrl}
+              tripStartDate={trip.startDate}
+              tripEndDate={trip.endDate}
+              myParticipantId={myParticipant.id}
+              participants={participantOptions}
+              participantsWithRoles={participantsWithRoles}
+              defaultCurrency={trip.defaultCurrency}
             />
-            <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando...</div>}>
-              <TripHome
-                tripId={tripId}
-                tripStartDate={trip.startDate}
-                tripEndDate={trip.endDate}
-                myParticipantId={myParticipant.id}
-                participants={participantOptions}
-                defaultCurrency={trip.defaultCurrency}
-              />
-            </Suspense>
-          </div>
+          </Suspense>
         )}
 
         {/* ── Actividades ──────────────────────────────────────────────────── */}

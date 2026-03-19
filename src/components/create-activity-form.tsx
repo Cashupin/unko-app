@@ -21,9 +21,12 @@ export function CreateActivityForm({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [createProposal, setCreateProposal] = useState(false);
+  const [proposalType, setProposalType] = useState<"PLACE" | "FOOD">("PLACE");
 
   function openModal() {
     setPhotoUrl(null);
+    setCreateProposal(false);
     setOpen(true);
   }
 
@@ -68,16 +71,43 @@ export function CreateActivityForm({
         body: JSON.stringify(body),
       });
 
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { id?: string; error?: string };
 
       if (!res.ok) {
         toast.error(data.error ?? "Error al crear la actividad");
         return;
       }
 
+      // Optionally create a linked proposal item
+      if (createProposal && data.id) {
+        const itemBody: Record<string, unknown> = {
+          title: body.title,
+          type: proposalType,
+          tripId,
+        };
+        if (body.description) itemBody.description = body.description;
+        if (body.location) itemBody.location = body.location;
+        if (body.locationLat != null) itemBody.locationLat = body.locationLat;
+        if (body.locationLng != null) itemBody.locationLng = body.locationLng;
+
+        const itemRes = await fetch("/api/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(itemBody),
+        });
+        const itemData = (await itemRes.json()) as { id?: string };
+        if (itemRes.ok && itemData.id) {
+          await fetch(`/api/trips/${tripId}/activities/${data.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ itemId: itemData.id }),
+          });
+        }
+      }
+
       closeModal();
       router.refresh();
-      toast.success("Actividad creada");
+      toast.success(createProposal ? "Actividad y propuesta creadas" : "Actividad creada");
     } catch {
       toast.error("Error de red. Intenta de nuevo.");
     } finally {
@@ -252,6 +282,39 @@ export function CreateActivityForm({
                     label="+ Subir foto"
                     disabled={loading}
                   />
+                )}
+              </div>
+
+              {/* Crear también como propuesta */}
+              <div className="rounded-xl border border-zinc-100 px-3 py-2.5 dark:border-zinc-700">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={createProposal}
+                    onChange={(e) => setCreateProposal(e.target.checked)}
+                    className="rounded accent-zinc-700 dark:accent-zinc-300"
+                  />
+                  <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    Crear también como propuesta del grupo
+                  </span>
+                </label>
+                {createProposal && (
+                  <div className="mt-2 flex gap-2 pl-6">
+                    {(["PLACE", "FOOD"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setProposalType(t)}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                          proposalType === t
+                            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                            : "border border-zinc-200 text-zinc-500 hover:border-zinc-300 dark:border-zinc-600 dark:text-zinc-400"
+                        }`}
+                      >
+                        {t === "PLACE" ? "🏛️ Lugar" : "🍜 Comida"}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 

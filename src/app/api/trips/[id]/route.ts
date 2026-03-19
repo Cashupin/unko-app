@@ -20,6 +20,7 @@ const updateTripSchema = z.object({
   defaultCurrency: z
     .enum(["CLP", "JPY", "USD", "EUR", "GBP", "KRW", "CNY", "THB"])
     .optional(),
+  coverImageUrl: z.string().url().optional().or(z.literal("")),
 });
 
 // ─── PATCH /api/trips/[id] ────────────────────────────────────────────────────
@@ -49,7 +50,7 @@ export async function PATCH(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  const { name, description, destination, startDate, endDate, defaultCurrency } = result.data;
+  const { name, description, destination, startDate, endDate, defaultCurrency, coverImageUrl } = result.data;
 
   const trip = await prisma.trip.update({
     where: { id: tripId },
@@ -60,6 +61,7 @@ export async function PATCH(
       ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
       ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
       ...(defaultCurrency !== undefined && { defaultCurrency }),
+      ...(coverImageUrl !== undefined && { coverImageUrl: coverImageUrl || null }),
     },
     select: {
       id: true,
@@ -69,6 +71,7 @@ export async function PATCH(
       startDate: true,
       endDate: true,
       defaultCurrency: true,
+      coverImageUrl: true,
     },
   });
 

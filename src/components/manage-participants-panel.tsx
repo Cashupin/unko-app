@@ -80,63 +80,56 @@ function ParticipantRow({
   }
 
   return (
-    <li className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        {/* Avatar */}
-        {participant.user?.image ? (
-          <Image
-            src={participant.user.image}
-            alt={participant.name}
-            width={28}
-            height={28}
-            className="rounded-full shrink-0"
-          />
-        ) : (
-          <div className="h-7 w-7 rounded-full bg-zinc-200 flex items-center justify-center text-xs text-zinc-500 shrink-0 dark:bg-zinc-700 dark:text-zinc-400">
-            {participant.name[0]?.toUpperCase()}
-          </div>
-        )}
-
-        {/* Name */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-zinc-800 truncate dark:text-zinc-200">
-            {participant.name}
-            {participant.type === "GHOST" && (
-              <span className="ml-1 text-xs text-zinc-400 dark:text-zinc-500">(fantasma)</span>
-            )}
-          </p>
+    <li className="flex items-center gap-2.5">
+      {participant.user?.image ? (
+        <Image
+          src={participant.user.image}
+          alt={participant.name}
+          width={28}
+          height={28}
+          className="rounded-full shrink-0"
+        />
+      ) : (
+        <div className="h-7 w-7 rounded-full bg-zinc-200 flex items-center justify-center text-xs font-semibold text-zinc-500 shrink-0 dark:bg-zinc-700 dark:text-zinc-400">
+          {participant.name[0]?.toUpperCase()}
         </div>
+      )}
 
-        {/* Role selector */}
-        <select
-          value={participant.role}
-          onChange={(e) => handleRoleChange(e.target.value)}
-          disabled={loadingRole}
-          className="shrink-0 rounded border border-zinc-200 bg-white py-0.5 px-1 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-300"
-        >
-          {ROLE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-
-        {/* Remove button — disabled for self */}
-        {!isSelf && (
-          <button
-            onClick={handleRemove}
-            disabled={loadingRemove}
-            className="shrink-0 text-xs text-zinc-400 hover:text-red-500 disabled:opacity-50 transition-colors"
-            aria-label={`Eliminar a ${participant.name}`}
-          >
-            ✕
-          </button>
-        )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-zinc-800 truncate dark:text-zinc-200">
+          {participant.name}
+          {participant.type === "GHOST" && (
+            <span className="ml-1 text-xs text-zinc-400 dark:text-zinc-500">(fantasma)</span>
+          )}
+        </p>
       </div>
 
+      <select
+        value={participant.role}
+        onChange={(e) => handleRoleChange(e.target.value)}
+        disabled={loadingRole}
+        className="shrink-0 rounded-lg border border-zinc-200 bg-white py-1 px-2 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-300"
+      >
+        {ROLE_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+
+      {!isSelf && (
+        <button
+          onClick={handleRemove}
+          disabled={loadingRemove}
+          className="shrink-0 text-sm text-zinc-400 hover:text-red-500 disabled:opacity-50 transition-colors"
+          aria-label={`Eliminar a ${participant.name}`}
+        >
+          ✕
+        </button>
+      )}
     </li>
   );
 }
 
-// ─── Add participant panel (email + ghost toggle) ──────────────────────────────
+// ─── Add participant section ────────────────────────────────────────────────────
 
 function AddParticipantSection({ tripId }: { tripId: string }) {
   const router = useRouter();
@@ -212,7 +205,6 @@ function AddParticipantSection({ tripId }: { tripId: string }) {
     }
   }
 
-  // Invite confirmation card
   if (pendingInviteEmail) {
     return (
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
@@ -244,13 +236,14 @@ function AddParticipantSection({ tripId }: { tripId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      {/* Toggle */}
       <div className="flex rounded-lg border border-zinc-200 overflow-hidden text-xs dark:border-zinc-700">
         <button
           type="button"
           onClick={() => { setMode("email"); setValue(""); }}
           className={`flex-1 py-1.5 font-medium transition-colors ${
-            mode === "email" ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            mode === "email"
+              ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+              : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400"
           }`}
         >
           Por email
@@ -259,7 +252,9 @@ function AddParticipantSection({ tripId }: { tripId: string }) {
           type="button"
           onClick={() => { setMode("ghost"); setValue(""); }}
           className={`flex-1 py-1.5 font-medium transition-colors ${
-            mode === "ghost" ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            mode === "ghost"
+              ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+              : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400"
           }`}
         >
           Fantasma
@@ -289,107 +284,120 @@ function AddParticipantSection({ tripId }: { tripId: string }) {
           Un participante fantasma no necesita cuenta. Solo se usa para dividir gastos.
         </p>
       )}
-
     </form>
   );
 }
 
-// ─── Main panel ───────────────────────────────────────────────────────────────
+// ─── Main — modal with trigger button ─────────────────────────────────────────
 
 export function ManageParticipantsPanel({
   tripId,
   participants,
   currentUserId,
   isAdmin,
+  variant = "menu",
 }: {
   tripId: string;
   participants: Participant[];
   currentUserId: string;
   isAdmin: boolean;
+  /** "menu" = menu item style (default); "inline" = plain text link style */
+  variant?: "menu" | "inline";
 }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-      {/* Collapsible header */}
+    <>
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
-        aria-expanded={open}
+        onClick={() => setOpen(true)}
+        className={
+          variant === "menu"
+            ? "w-full rounded-lg px-4 py-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            : "text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors"
+        }
       >
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            Participantes
-          </span>
-          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
-            {participants.length}
-          </span>
-        </div>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.75"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`shrink-0 text-zinc-400 transition-transform duration-200 dark:text-zinc-500 ${open ? "rotate-180" : ""}`}
-        >
-          <polyline points="4 6 8 10 12 6" />
-        </svg>
+        {variant === "menu" ? "Gestionar participantes" : "Gestionar →"}
       </button>
 
-      {/* Collapsible body */}
       {open && (
-        <div className="border-t border-zinc-100 px-5 pb-5 pt-4 dark:border-zinc-700">
-          <ul className="flex flex-col gap-3">
-            {participants.map((p) =>
-              isAdmin ? (
-                <ParticipantRow
-                  key={p.id}
-                  participant={p}
-                  tripId={tripId}
-                  currentUserId={currentUserId}
-                />
-              ) : (
-                <li key={p.id} className="flex items-center gap-3">
-                  {p.user?.image ? (
-                    <Image
-                      src={p.user.image}
-                      alt={p.name}
-                      width={28}
-                      height={28}
-                      className="rounded-full"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-100 dark:border-zinc-700">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                  Participantes
+                </h2>
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
+                  {participants.length}
+                </span>
+              </div>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Participant list */}
+            <div className="px-6 py-4">
+              <ul className="flex flex-col gap-3">
+                {participants.map((p) =>
+                  isAdmin ? (
+                    <ParticipantRow
+                      key={p.id}
+                      participant={p}
+                      tripId={tripId}
+                      currentUserId={currentUserId}
                     />
                   ) : (
-                    <div className="h-7 w-7 rounded-full bg-zinc-200 flex items-center justify-center text-xs text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
-                      {p.name[0]?.toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-zinc-800 truncate dark:text-zinc-200">
-                      {p.name}
-                      {p.type === "GHOST" && (
-                        <span className="ml-1 text-xs text-zinc-400 dark:text-zinc-500">(fantasma)</span>
+                    <li key={p.id} className="flex items-center gap-2.5">
+                      {p.user?.image ? (
+                        <Image
+                          src={p.user.image}
+                          alt={p.name}
+                          width={28}
+                          height={28}
+                          className="rounded-full shrink-0"
+                        />
+                      ) : (
+                        <div className="h-7 w-7 rounded-full bg-zinc-200 flex items-center justify-center text-xs font-semibold text-zinc-500 shrink-0 dark:bg-zinc-700 dark:text-zinc-400">
+                          {p.name[0]?.toUpperCase()}
+                        </div>
                       )}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">
-                    {{ ADMIN: "Admin", EDITOR: "Editor", VIEWER: "Invitado" }[p.role]}
-                  </span>
-                </li>
-              ),
-            )}
-          </ul>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-zinc-800 truncate dark:text-zinc-200">
+                          {p.name}
+                          {p.type === "GHOST" && (
+                            <span className="ml-1 text-xs text-zinc-400 dark:text-zinc-500">(fantasma)</span>
+                          )}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">
+                        {{ ADMIN: "Admin", EDITOR: "Editor", VIEWER: "Invitado" }[p.role]}
+                      </span>
+                    </li>
+                  ),
+                )}
+              </ul>
 
-          {isAdmin && (
-            <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-700">
-              <AddParticipantSection tripId={tripId} />
+              {isAdmin && (
+                <div className="mt-5 pt-5 border-t border-zinc-100 dark:border-zinc-700">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-3">
+                    Agregar participante
+                  </p>
+                  <AddParticipantSection tripId={tripId} />
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

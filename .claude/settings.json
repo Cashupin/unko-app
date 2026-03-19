@@ -8,7 +8,8 @@
       "Bash(rm \"c:/Users/jalva/Projects/unko-app/src/app/api/items/[id]/reset-votes/route.ts\")",
       "Bash(rmdir \"c:/Users/jalva/Projects/unko-app/src/app/api/items/[id]/reset-votes\")",
       "Bash(start c:UsersjalvaProjectsunko-appmockup-receipt-ui.html)",
-      "Bash(PRISMA_MIGRATE_SKIP_GENERATE=1 npx prisma migrate dev --name add_expense_share_token --skip-seed)"
+      "Bash(PRISMA_MIGRATE_SKIP_GENERATE=1 npx prisma migrate dev --name add_expense_share_token --skip-seed)",
+      "Bash(npx next:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\standalone-expenses\\[expenseId]",

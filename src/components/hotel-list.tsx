@@ -5,6 +5,7 @@ import { HotelReservedToggle } from "@/components/hotel-reserved-toggle";
 import { HotelScrollTarget } from "@/components/hotel-scroll-target";
 import { HotelSummaryPanel } from "@/components/hotel-summary-panel";
 import { ConvertedAmount } from "@/components/converted-amount";
+import { HotelExpenseButton } from "@/components/hotel-expense-button";
 
 export async function HotelList({
   tripId,
@@ -19,7 +20,7 @@ export async function HotelList({
   tripEndDate?: Date | null;
   highlightHotelId?: string | null;
 }) {
-  const [hotels, participantCount] = await Promise.all([
+  const [hotels, participants, expenses] = await Promise.all([
     prisma.hotel.findMany({
       where: { tripId },
       select: {
@@ -38,12 +39,32 @@ export async function HotelList({
       },
       orderBy: { checkInDate: "asc" },
     }),
-    prisma.tripParticipant.count({ where: { tripId } }),
+    prisma.tripParticipant.findMany({
+      where: { tripId },
+      select: { id: true, name: true },
+      orderBy: { joinedAt: "asc" },
+    }),
+    prisma.expense.findMany({
+      where: { tripId },
+      select: { description: true, expenseDate: true },
+    }),
   ]);
+  const participantCount = participants.length;
+
+  function hotelHasExpense(hotel: { name: string; checkInDate: Date }): boolean {
+    const checkInStr = new Date(hotel.checkInDate).toISOString().slice(0, 10);
+    const prefix = `Alojamiento · ${hotel.name}`;
+    return expenses.some((e) => {
+      const expDateStr = e.expenseDate
+        ? new Date(e.expenseDate).toISOString().slice(0, 10)
+        : null;
+      return e.description.startsWith(prefix) && expDateStr === checkInStr;
+    });
+  }
 
   if (hotels.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white/60 p-14 text-center dark:border-zinc-700 dark:bg-zinc-800/60">
+      <div className="rounded-2xl border-2 border-dashed border-zinc-200 p-14 text-center dark:border-[#27272a]">
         <p className="text-sm text-zinc-400 dark:text-zinc-500">
           No hay alojamientos todavía. ¡Agrega el primero!
         </p>
@@ -80,12 +101,12 @@ export async function HotelList({
         return (
           <HotelScrollTarget key={hotel.id} hotelId={hotel.id} highlightId={highlightHotelId ?? null}>
           <div
-            className="group rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 hover:shadow-md hover:border-zinc-200 transition-all overflow-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5 dark:hover:border-zinc-700"
+            className="group rounded-2xl border border-zinc-100 bg-white overflow-hidden transition-all hover:border-zinc-200 dark:border-[#27272a] dark:bg-[#18191c] dark:hover:border-[#3f3f46]"
           >
             {/* Card header strip */}
             <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
               <div className="flex items-start gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-lg dark:bg-blue-950">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-lg dark:bg-blue-500/10">
                   🏨
                 </div>
                 <div className="min-w-0">
@@ -104,7 +125,7 @@ export async function HotelList({
                     </p>
                   )}
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-950 dark:border-blue-900 dark:text-blue-400">
+                    <span className="rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/15 dark:text-blue-400">
                       {hotel.numberOfNights} noche{hotel.numberOfNights !== 1 ? "s" : ""}
                     </span>
                     <HotelReservedToggle
@@ -116,27 +137,40 @@ export async function HotelList({
                 </div>
               </div>
 
-              {canEdit && (
-                <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <EditHotelForm
-                    tripId={tripId}
-                    hotel={hotel}
-                    tripStartDate={tripStartDate}
-                    tripEndDate={tripEndDate}
-                  />
-                  <DeleteHotelButton tripId={tripId} hotelId={hotel.id} />
-                </div>
-              )}
+              <div className="flex items-center gap-2 shrink-0">
+                <HotelExpenseButton
+                  tripId={tripId}
+                  hotel={{
+                    name: hotel.name,
+                    totalPrice: hotel.totalPrice,
+                    currency: hotel.currency,
+                    checkInDate: hotel.checkInDate,
+                  }}
+                  participants={participants}
+                  hasExpense={hotelHasExpense(hotel)}
+                />
+                {canEdit && (
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <EditHotelForm
+                      tripId={tripId}
+                      hotel={hotel}
+                      tripStartDate={tripStartDate}
+                      tripEndDate={tripEndDate}
+                    />
+                    <DeleteHotelButton tripId={tripId} hotelId={hotel.id} />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Divider */}
-            <div className="mx-5 h-px bg-zinc-100 dark:bg-zinc-700" />
+            <div className="mx-5 h-px bg-zinc-100 dark:bg-[#27272a]" />
 
             {/* Dates + pricing */}
             <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
               {/* Date range */}
               <div className="flex items-center gap-2">
-                <div className="rounded-lg bg-zinc-50 border border-zinc-100 px-3 py-1.5 text-center dark:bg-zinc-700 dark:border-zinc-700">
+                <div className="rounded-lg bg-zinc-50 border border-zinc-100 px-3 py-1.5 text-center dark:bg-[#27272a] dark:border-[#3f3f46]">
                   <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
                     Check-in
                   </p>
@@ -145,7 +179,7 @@ export async function HotelList({
                   </p>
                 </div>
                 <span className="text-zinc-300 text-lg dark:text-zinc-600">→</span>
-                <div className="rounded-lg bg-zinc-50 border border-zinc-100 px-3 py-1.5 text-center dark:bg-zinc-700 dark:border-zinc-700">
+                <div className="rounded-lg bg-zinc-50 border border-zinc-100 px-3 py-1.5 text-center dark:bg-[#27272a] dark:border-[#3f3f46]">
                   <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
                     Check-out
                   </p>
@@ -167,7 +201,7 @@ export async function HotelList({
                     </div>
                   )}
                   {hotel.totalPrice != null && (
-                    <div className="rounded-xl bg-zinc-900 px-3 py-1.5 text-right dark:bg-zinc-100">
+                    <div className="rounded-xl bg-zinc-900 px-3 py-1.5 text-right dark:bg-zinc-100 dark:text-zinc-900">
                       <p className="text-[10px] font-medium text-zinc-400 dark:text-zinc-600">Total</p>
                       <p className="text-sm font-bold text-white dark:text-zinc-900">
                         <ConvertedAmount amount={hotel.totalPrice} currency={hotel.currency} />
