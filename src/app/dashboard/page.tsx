@@ -8,6 +8,7 @@ import { calculateSettlement } from "@/lib/settlement";
 import { InviteUserForm } from "@/components/invite-user-form";
 import { UserMenu } from "@/components/user-menu";
 import { DashboardMobileMenu } from "@/components/dashboard-mobile-menu";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { StandaloneExpenseForm } from "@/components/standalone-expense-form";
 import { DashboardExpenses } from "@/components/dashboard-expenses";
 import type { TripSummary } from "@/types/trip";
@@ -219,16 +220,19 @@ export default async function DashboardPage() {
           <span className="text-sm font-semibold text-zinc-400 dark:text-zinc-500 tracking-tight">
             ✈ UnkoTrip
           </span>
-          <div className="hidden md:flex items-center gap-2">
-            <InviteUserForm />
-            <UserMenu
-              userName={session.user.name ?? null}
-              userEmail={session.user.email ?? null}
-              userImage={session.user.image ?? null}
-              signOutSlot={signOutSlot}
-            />
+          <div className="flex items-center gap-2">
+            <NotificationsBell />
+            <div className="hidden md:flex items-center gap-2">
+              <InviteUserForm />
+              <UserMenu
+                userName={session.user.name ?? null}
+                userEmail={session.user.email ?? null}
+                userImage={session.user.image ?? null}
+                signOutSlot={signOutSlot}
+              />
+            </div>
+            <DashboardMobileMenu signOutSlot={signOutSlot} inviteSlot={inviteSlot} />
           </div>
-          <DashboardMobileMenu signOutSlot={signOutSlot} inviteSlot={inviteSlot} />
         </div>
       </header>
 

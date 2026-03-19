@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { TripMobileMenu } from "@/components/trip-mobile-menu";
 import { TripHeaderMenu } from "@/components/trip-header-menu";
 import { UserMenu } from "@/components/user-menu";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { TripBottomNav } from "@/components/trip-bottom-nav";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { GalleryView } from "@/components/gallery-view";
@@ -168,30 +169,31 @@ export default async function TripPage({
             )}
           </div>
 
-          {/* Desktop menus — hidden on mobile */}
-          <div className="hidden md:flex items-center gap-1">
-            {isAdmin && (
-              <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} manageParticipantsSlot={manageParticipantsSlot} />
-            )}
-            <UserMenu
-              userName={session.user.name ?? null}
-              userEmail={session.user.email ?? null}
-              userImage={session.user.image ?? null}
+          {/* Right side: bell + desktop menus + mobile hamburger */}
+          <div className="flex items-center gap-1">
+            <NotificationsBell />
+            <div className="hidden md:flex items-center gap-1">
+              {isAdmin && (
+                <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} manageParticipantsSlot={manageParticipantsSlot} />
+              )}
+              <UserMenu
+                userName={session.user.name ?? null}
+                userEmail={session.user.email ?? null}
+                userImage={session.user.image ?? null}
+                signOutSlot={signOutSlot}
+              />
+            </div>
+            <TripMobileMenu
+              tripId={tripId}
+              activeTab={activeTab}
+              tripName={trip.name}
+              isAdmin={isAdmin}
               signOutSlot={signOutSlot}
+              editSlot={editSlot}
+              deleteSlot={deleteSlot}
+              manageParticipantsSlot={manageParticipantsSlot}
             />
           </div>
-
-          {/* Mobile hamburger menu */}
-          <TripMobileMenu
-            tripId={tripId}
-            activeTab={activeTab}
-            tripName={trip.name}
-            isAdmin={isAdmin}
-            signOutSlot={signOutSlot}
-            editSlot={editSlot}
-            deleteSlot={deleteSlot}
-            manageParticipantsSlot={manageParticipantsSlot}
-          />
         </div>
 
         {/* Tab navigation — hidden on mobile, shown on tablet+ */}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotificationMany } from "@/lib/notifications";
 
 async function requireMember(tripId: string, userId: string) {
   return prisma.tripParticipant.findFirst({
@@ -145,10 +146,11 @@ export async function POST(
   if (data.splitType === "EQUAL") {
     const { description, amount, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, participantIds, category } = data;
 
-    const participantCount = await prisma.tripParticipant.count({
+    const participantRows = await prisma.tripParticipant.findMany({
       where: { id: { in: participantIds }, tripId },
+      select: { id: true, userId: true, name: true },
     });
-    if (participantCount !== participantIds.length) {
+    if (participantRows.length !== participantIds.length) {
       return NextResponse.json(
         { error: "Uno o más participantes no pertenecen al viaje" },
         { status: 400 },
@@ -182,6 +184,19 @@ export async function POST(
       select: expenseSelect,
     });
 
+    // Notificar a deudores (participantes que no son el pagador, con cuenta real)
+    const payerId = paidByParticipantId ?? null;
+    const debtorNotifications = participantRows
+      .filter((p) => p.userId && p.userId !== session.user.id && p.id !== payerId)
+      .map((p) => ({
+        userId: p.userId!,
+        type: "EXPENSE_CREATED" as const,
+        title: `Nuevo gasto: ${description}`,
+        body: `Debes ${perPerson.toLocaleString("es-CL")} ${currency}.`,
+        link: `/trips/${tripId}?tab=gastos`,
+      }));
+    createNotificationMany(debtorNotifications).catch(() => {});
+
     return NextResponse.json(expense, { status: 201 });
   }
 
@@ -192,10 +207,11 @@ export async function POST(
   // Collect all unique participantIds across all items
   const allParticipantIds = [...new Set(items.flatMap((i) => i.participantIds))];
 
-  const participantCount = await prisma.tripParticipant.count({
+  const allParticipantRows = await prisma.tripParticipant.findMany({
     where: { id: { in: allParticipantIds }, tripId },
+    select: { id: true, userId: true },
   });
-  if (participantCount !== allParticipantIds.length) {
+  if (allParticipantRows.length !== allParticipantIds.length) {
     return NextResponse.json(
       { error: "Uno o más participantes no pertenecen al viaje" },
       { status: 400 },
@@ -262,6 +278,19 @@ export async function POST(
 
     return tx.expense.findUniqueOrThrow({ where: { id: created.id }, select: expenseSelect });
   });
+
+  // Notificar a deudores del gasto itemizado
+  const payerId = paidByParticipantId ?? null;
+  const itemizedNotifications = allParticipantRows
+    .filter((p) => p.userId && p.userId !== session.user.id && p.id !== payerId)
+    .map((p) => ({
+      userId: p.userId!,
+      type: "EXPENSE_CREATED" as const,
+      title: `Nuevo gasto: ${description}`,
+      body: `Te han asignado ítems en un gasto compartido.`,
+      link: `/trips/${tripId}?tab=gastos`,
+    }));
+  createNotificationMany(itemizedNotifications).catch(() => {});
 
   return NextResponse.json(expense, { status: 201 });
 }

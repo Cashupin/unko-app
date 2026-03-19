@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CurrencyProvider } from "@/components/currency-provider";
+import { NotificationsProvider } from "@/components/notifications-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -42,7 +43,9 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <CurrencyProvider>
+          <NotificationsProvider>
           {children}
+          </NotificationsProvider>
           </CurrencyProvider>
           <Toaster
             richColors
