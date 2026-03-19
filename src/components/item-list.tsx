@@ -1,205 +1,7 @@
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import type { ItemType } from "@/generated/prisma/client";
-import { CheckInButton } from "@/components/check-in-button";
-import { VoteButtons } from "@/components/vote-buttons";
-import { AddToItineraryButton } from "@/components/add-to-itinerary-button";
-import { DeleteItemButton } from "@/components/delete-item-button";
-import { EditItemForm } from "@/components/edit-item-form";
-import { PhotoThumbnail } from "@/components/photo-thumbnail";
-import { getMapsUrl } from "@/lib/maps-url";
+import { ItemCardWithModal, type ItemCardData } from "@/components/item-card-modal";
 import type { ItemSummary } from "@/types/item";
-
-// ─── Labels / colors ───────────────────────────────────────────────────────────
-
-const TYPE_LABELS = { PLACE: "Lugar", FOOD: "Comida" } as const;
-const TYPE_COLORS = {
-  PLACE: "bg-blue-100 text-blue-700",
-  FOOD: "bg-orange-100 text-orange-700",
-} as const;
-
-// ─── Item Card ─────────────────────────────────────────────────────────────────
-
-function ItemCard({
-  item,
-  required,
-  isOwner,
-  isAdmin,
-  canEdit,
-  tripId,
-  tripStartDate,
-  tripEndDate,
-}: {
-  item: ItemSummary;
-  required: number;
-  isOwner: boolean;
-  isAdmin: boolean;
-  canEdit: boolean;
-  tripId: string;
-  tripStartDate?: Date | null;
-  tripEndDate?: Date | null;
-}) {
-  const canDelete = isOwner || isAdmin;
-  const hasMajority = item.approvals >= required;
-  const canAddToItinerary = isAdmin || hasMajority;
-
-  return (
-    <div id={`item-${item.id}`} className="group rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 hover:shadow-md hover:border-zinc-200 transition-all flex flex-col overflow-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5 dark:hover:border-zinc-700">
-      {/* Cover image / placeholder */}
-      {item.imageUrl ? (
-        <div className="relative h-40 w-full">
-          <Image
-            src={item.imageUrl}
-            alt={item.title}
-            fill
-            className="object-cover"
-          />
-        </div>
-      ) : (
-        <div
-          className={`flex h-40 w-full items-center justify-center ${
-            item.type === "FOOD"
-              ? "bg-linear-to-br from-orange-400 to-amber-600"
-              : "bg-linear-to-br from-blue-500 to-indigo-700"
-          }`}
-        >
-          <span className="text-5xl opacity-80 drop-shadow-sm select-none">
-            {item.type === "FOOD" ? "🍽️" : "🏛️"}
-          </span>
-        </div>
-      )}
-
-      <div className="p-5 flex flex-col flex-1 gap-0">
-        {/* Badges + actions */}
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_COLORS[item.type]}`}
-          >
-            {TYPE_LABELS[item.type]}
-          </span>
-          {(canEdit || canDelete) && (
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
-              {canEdit && <EditItemForm item={item} />}
-              {canDelete && <DeleteItemButton itemId={item.id} />}
-            </div>
-          )}
-        </div>
-
-        {/* Title */}
-        <h3 className="mb-3 font-semibold text-zinc-900 leading-snug dark:text-zinc-100">
-          {item.title}
-        </h3>
-
-        {/* Description */}
-        {item.description && (
-          <p className="mb-3 text-sm text-zinc-500 line-clamp-2 dark:text-zinc-400">
-            {item.description}
-          </p>
-        )}
-
-        {/* Address */}
-        {item.address && (
-          <p className="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            🏙️ {item.address}
-          </p>
-        )}
-
-        {/* Location */}
-        {item.location && (
-          <a
-            href={getMapsUrl(item.location, item.locationLat, item.locationLng)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mb-3 flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-600 hover:underline dark:text-zinc-500 dark:hover:text-zinc-300"
-          >
-            📍 {item.location}
-          </a>
-        )}
-
-        {/* External link */}
-        {item.externalUrl && (
-          <a
-            href={item.externalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mb-3 block text-xs text-blue-600 underline underline-offset-2 truncate dark:text-blue-400"
-          >
-            {item.externalUrl}
-          </a>
-        )}
-
-        {/* Stats row */}
-        <div className="mt-auto flex items-center gap-3 border-t border-zinc-100 pt-3 text-xs text-zinc-400 dark:border-zinc-700 dark:text-zinc-500">
-          <span>{item._count.checks} visita{item._count.checks !== 1 ? "s" : ""}</span>
-          <span className="ml-auto">
-            {new Date(item.createdAt).toLocaleDateString()}
-          </span>
-        </div>
-
-        {/* Author */}
-        <div className="mt-2 flex items-center gap-2">
-          {item.createdBy.image && (
-            <Image
-              src={item.createdBy.image}
-              alt={item.createdBy.name ?? ""}
-              width={18}
-              height={18}
-              className="rounded-full"
-            />
-          )}
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">
-            {item.createdBy.name ?? item.createdBy.id}
-          </span>
-        </div>
-
-        {/* Vote buttons — always visible, subtle */}
-        <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-700">
-          <VoteButtons
-            itemId={item.id}
-            myVote={item.myVote}
-            approvals={item.approvals}
-            rejections={item.rejections}
-          />
-        </div>
-
-        {/* Check-in photos from all users */}
-        {item.checks.some((c) => c.photoUrl) && (
-          <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
-            {item.checks
-              .filter((c) => c.photoUrl)
-              .map((c) => (
-                <div key={c.id} className="flex flex-col items-center gap-1 shrink-0">
-                  <PhotoThumbnail url={c.photoUrl!} alt={`Foto de ${c.userName ?? "visita"}`} />
-                  {c.userName && (
-                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate max-w-16 text-center">
-                      {c.userName}
-                    </span>
-                  )}
-                </div>
-              ))}
-          </div>
-        )}
-
-        {/* Check-in + add to itinerary */}
-        <div className="mt-3 border-t border-zinc-100 pt-3 flex items-center justify-between gap-2 dark:border-zinc-700">
-          <CheckInButton itemId={item.id} myCheck={item.myCheck} />
-          {canAddToItinerary && (
-            <AddToItineraryButton
-              tripId={tripId}
-              itemId={item.id}
-              title={item.title}
-              tripStartDate={tripStartDate}
-              tripEndDate={tripEndDate}
-              inItinerary={item.inItinerary}
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Item List (Server Component) ─────────────────────────────────────────────
 
 export async function ItemList({
   currentUserId,
@@ -245,15 +47,14 @@ export async function ItemList({
         imageUrl: true,
         tripId: true,
         createdAt: true,
-        updatedAt: true,
-        createdBy: {
-          select: { id: true, name: true, image: true },
-        },
-        _count: {
-          select: { checks: true },
-        },
+        createdBy: { select: { id: true, name: true, image: true } },
+        _count: { select: { checks: true } },
         votes: {
-          select: { userId: true, value: true },
+          select: {
+            userId: true,
+            value: true,
+            user: { select: { name: true, image: true } },
+          },
         },
         checks: {
           select: {
@@ -276,50 +77,94 @@ export async function ItemList({
 
   const required = Math.floor(registeredParticipants / 2) + 1;
 
-  const items: (ItemSummary & { canEdit: boolean })[] = rawItems.map((item) => {
-    const myRawCheck = item.checks.find((c) => c.userId === currentUserId);
-    const isOwner = item.createdBy.id === currentUserId;
-    const otherVoteCount = item.votes.filter((v) => v.userId !== item.createdBy.id).length;
-    return {
-      ...item,
-      approvals: item.votes.filter((v) => v.value === "APPROVE").length,
-      rejections: item.votes.filter((v) => v.value === "REJECT").length,
-      myVote:
-        (item.votes.find((v) => v.userId === currentUserId)?.value as
-          | "APPROVE"
-          | "REJECT"
-          | undefined) ?? null,
-      myCheck: myRawCheck
-        ? { id: myRawCheck.id, photoUrl: myRawCheck.photoUrl, userName: myRawCheck.user?.name ?? null }
-        : null,
-      checks: item.checks.map(({ id, photoUrl, user }) => ({ id, photoUrl, userName: user?.name ?? null })),
-      canEdit: (isOwner && otherVoteCount === 0) || isAdmin,
-      inItinerary: item.activities.length > 0,
-    };
-  });
-
-  if (items.length === 0) {
+  if (rawItems.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white/60 p-14 text-center dark:border-zinc-700 dark:bg-zinc-800/60">
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">No hay actividades todavía. ¡Agrega la primera!</p>
+      <div className="rounded-2xl border-2 border-dashed border-[#2d2d31] bg-[#1f2023]/60 p-14 text-center">
+        <p className="text-sm text-zinc-500">No hay actividades todavía. ¡Agrega la primera!</p>
       </div>
     );
   }
 
+  const items: ItemCardData[] = rawItems.map((raw) => {
+    const approvals = raw.votes.filter((v) => v.value === "APPROVE").length;
+    const rejections = raw.votes.filter((v) => v.value === "REJECT").length;
+    const isOwner = raw.createdBy.id === currentUserId;
+    const otherVoteCount = raw.votes.filter((v) => v.userId !== raw.createdBy.id).length;
+    const hasMajority = approvals >= required;
+    const myVote =
+      (raw.votes.find((v) => v.userId === currentUserId)?.value as "APPROVE" | "REJECT" | undefined) ??
+      null;
+    const myRawCheck = raw.checks.find((c) => c.userId === currentUserId);
+
+    const status: "APPROVED" | "PENDING" | "REJECTED" =
+      approvals >= required ? "APPROVED" : rejections >= required ? "REJECTED" : "PENDING";
+
+    const itemSummary: ItemSummary = {
+      id: raw.id,
+      title: raw.title,
+      type: raw.type as "PLACE" | "FOOD",
+      description: raw.description,
+      location: raw.location,
+      locationLat: raw.locationLat,
+      locationLng: raw.locationLng,
+      address: raw.address,
+      externalUrl: raw.externalUrl,
+      imageUrl: raw.imageUrl,
+      tripId: raw.tripId,
+      createdAt: raw.createdAt,
+      createdBy: raw.createdBy,
+      _count: raw._count,
+      approvals,
+      rejections,
+      myVote,
+      myCheck: myRawCheck
+        ? { id: myRawCheck.id, photoUrl: myRawCheck.photoUrl, userName: myRawCheck.user?.name ?? null }
+        : null,
+      checks: raw.checks.map(({ id, photoUrl, user }) => ({ id, photoUrl, userName: user?.name ?? null })),
+      inItinerary: raw.activities.length > 0,
+    };
+
+    return {
+      id: raw.id,
+      title: raw.title,
+      type: raw.type as "PLACE" | "FOOD",
+      description: raw.description,
+      location: raw.location,
+      locationLat: raw.locationLat,
+      locationLng: raw.locationLng,
+      address: raw.address,
+      externalUrl: raw.externalUrl,
+      imageUrl: raw.imageUrl,
+      tripId: raw.tripId,
+      createdAt: raw.createdAt.toISOString(),
+      createdByName: raw.createdBy.name,
+      createdByImage: raw.createdBy.image,
+      approvals,
+      rejections,
+      checksCount: raw._count.checks,
+      status,
+      myVote,
+      myCheck: myRawCheck ? { id: myRawCheck.id, photoUrl: myRawCheck.photoUrl } : null,
+      votes: raw.votes.map((v) => ({
+        value: v.value as "APPROVE" | "REJECT",
+        userName: v.user?.name ?? null,
+        userImage: v.user?.image ?? null,
+      })),
+      checks: raw.checks.map(({ id, photoUrl, user }) => ({ id, photoUrl, userName: user?.name ?? null })),
+      canEdit: (isOwner && otherVoteCount === 0) || isAdmin,
+      canDelete: isOwner || isAdmin,
+      inItinerary: raw.activities.length > 0,
+      canAddToItinerary: isAdmin || hasMajority,
+      tripStartDate: tripStartDate ? tripStartDate.toISOString() : null,
+      tripEndDate: tripEndDate ? tripEndDate.toISOString() : null,
+      itemSummary,
+    };
+  });
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {items.map((item) => (
-        <ItemCard
-          key={item.id}
-          item={item}
-          required={required}
-          isOwner={item.createdBy.id === currentUserId}
-          isAdmin={isAdmin}
-          canEdit={item.canEdit}
-          tripId={tripId}
-          tripStartDate={tripStartDate}
-          tripEndDate={tripEndDate}
-        />
+        <ItemCardWithModal key={item.id} item={item} />
       ))}
     </div>
   );

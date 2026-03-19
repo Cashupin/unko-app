@@ -35,12 +35,12 @@ function formatDistance(km: number): string {
 }
 
 function distanceColor(km: number): string {
-  if (km < 0.5) return "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400";
-  if (km < 2) return "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400";
-  return "bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400";
+  if (km < 0.5) return "bg-emerald-500/15 text-emerald-400";
+  if (km < 2) return "bg-amber-500/15 text-amber-400";
+  return "bg-[#27272a] text-zinc-400";
 }
 
-const TYPE_ICONS: Record<string, string> = { PLACE: "🏛️", FOOD: "🍜", ACTIVITY: "📅" };
+const TYPE_ICONS: Record<string, string> = { PLACE: "📍", FOOD: "🍜", ACTIVITY: "📅" };
 
 const PAGE_SIZE = 5;
 
@@ -142,17 +142,17 @@ export function NearbyActivities({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm ring-1 ring-black/3 dark:border-zinc-700 dark:bg-zinc-800 dark:ring-white/5">
+    <div className="overflow-hidden rounded-2xl border border-[#2d2d31] bg-[#1f2023]">
       {/* Header — collapsible or static depending on alwaysOpen */}
       {alwaysOpen ? (
         <div className="flex items-center gap-2.5 px-4 py-3.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-100 text-sm dark:bg-zinc-700">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#27272a] text-base">
             📍
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Cerca de ti</p>
+            <p className="text-sm font-semibold text-zinc-100">Cerca de ti</p>
             {geoStatus === "ready" && (
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              <p className="text-xs text-zinc-500">
                 {nearbyItems.length} {nearbyItems.length === 1 ? "actividad" : "actividades"} en {radius} km
               </p>
             )}
@@ -160,7 +160,7 @@ export function NearbyActivities({
           {viewAllHref && (
             <Link
               href={viewAllHref}
-              className="shrink-0 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+              className="shrink-0 text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors"
             >
               Ver todas →
             </Link>
@@ -177,26 +177,26 @@ export function NearbyActivities({
               setUserPos(null);
             }
           }}
-          className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+          className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-[#27272a]/50"
         >
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-100 text-sm dark:bg-zinc-700">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#27272a] text-base">
               📍
             </span>
             <div>
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Cerca de ti</p>
+              <p className="text-sm font-semibold text-zinc-100">Cerca de ti</p>
               {collapsed && geoStatus !== "ready" && (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">Toca para ver actividades cercanas</p>
+                <p className="text-xs text-zinc-500">Toca para ver actividades cercanas</p>
               )}
               {geoStatus === "ready" && (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                <p className="text-xs text-zinc-500">
                   {nearbyItems.length} {nearbyItems.length === 1 ? "actividad" : "actividades"} en {radius} km
                 </p>
               )}
             </div>
           </div>
           <svg
-            className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500 ${collapsed ? "" : "rotate-180"}`}
+            className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${collapsed ? "" : "rotate-180"}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -209,10 +209,10 @@ export function NearbyActivities({
 
       {/* Expanded content */}
       {!collapsed && (
-        <div className="border-t border-zinc-100 dark:border-zinc-700">
+        <div className="border-t border-[#2d2d31]">
           {/* Radius slider */}
-          <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 dark:border-zinc-700">
-            <span className="shrink-0 text-xs font-medium text-zinc-500 dark:text-zinc-400">Radio</span>
+          <div className="flex items-center gap-3 border-b border-[#2d2d31] px-4 py-3">
+            <span className="shrink-0 text-xs font-medium text-zinc-500">Radio</span>
             <input
               type="range"
               min={1}
@@ -223,9 +223,9 @@ export function NearbyActivities({
                 setRadius(val);
                 localStorage.setItem("nearby-radius", String(val));
               }}
-              className="flex-1 accent-zinc-700 dark:accent-zinc-300"
+              className="flex-1 accent-zinc-400"
             />
-            <span className="w-14 shrink-0 rounded-lg bg-zinc-100 px-2 py-0.5 text-right text-xs font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
+            <span className="w-14 shrink-0 rounded-lg bg-[#27272a] px-2 py-0.5 text-right text-xs font-semibold text-zinc-300">
               {radius} km
             </span>
           </div>
@@ -233,55 +233,57 @@ export function NearbyActivities({
           {/* Status messages */}
           {geoStatus === "loading" && (
             <div className="flex items-center gap-2 px-4 py-4">
-              <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:0ms] dark:bg-zinc-500" />
-              <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:150ms] dark:bg-zinc-500" />
-              <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:300ms] dark:bg-zinc-500" />
-              <span className="text-sm text-zinc-400 dark:text-zinc-500">Obteniendo ubicación...</span>
+              <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-600 [animation-delay:0ms]" />
+              <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-600 [animation-delay:150ms]" />
+              <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-600 [animation-delay:300ms]" />
+              <span className="text-sm text-zinc-500">Obteniendo ubicación...</span>
             </div>
           )}
           {geoStatus === "denied" && (
-            <p className="px-4 py-4 text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="px-4 py-4 text-sm text-zinc-500">
               Permiso de ubicación denegado. Habilítalo en la configuración del navegador.
             </p>
           )}
           {geoStatus === "unavailable" && (
-            <p className="px-4 py-4 text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="px-4 py-4 text-sm text-zinc-500">
               No se pudo obtener la ubicación. Verifica tu conexión o señal GPS.
             </p>
           )}
           {geoStatus === "timeout" && (
-            <p className="px-4 py-4 text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="px-4 py-4 text-sm text-zinc-500">
               La ubicación tardó demasiado. Cierra y vuelve a abrir el panel.
             </p>
           )}
           {geoStatus === "unsupported" && (
-            <p className="px-4 py-4 text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="px-4 py-4 text-sm text-zinc-500">
               Geolocalización no disponible en este dispositivo.
             </p>
           )}
           {geoStatus === "ready" && itemsWithCoords.length === 0 && (
-            <p className="px-4 py-4 text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="px-4 py-4 text-sm text-zinc-500">
               Ninguna actividad tiene ubicación registrada.
             </p>
           )}
           {geoStatus === "ready" && itemsWithCoords.length > 0 && nearbyItems.length === 0 && (
-            <p className="px-4 py-4 text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="px-4 py-4 text-sm text-zinc-500">
               No hay actividades en un radio de {radius} km.
             </p>
           )}
 
           {/* Nearby items list */}
           {nearbyItems.length > 0 && (
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-700">
+            <div className="divide-y divide-[#2d2d31]">
               {nearbyItems.slice(0, expandable ? visibleCount : PAGE_SIZE).map((item) => (
                 <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-                  <span className="shrink-0 text-base">{TYPE_ICONS[item.type] ?? "💡"}</span>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#27272a] text-sm">
+                    {TYPE_ICONS[item.type] ?? "💡"}
+                  </span>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                    <p className="truncate text-sm font-medium text-zinc-200">
                       {item.title}
                     </p>
                     {item.location && (
-                      <p className="truncate text-xs text-zinc-400 dark:text-zinc-500">{item.location}</p>
+                      <p className="truncate text-xs text-zinc-500">{item.location}</p>
                     )}
                   </div>
                   <span
@@ -293,21 +295,21 @@ export function NearbyActivities({
                     href={getMapsUrl(item.location ?? "", item.locationLat, item.locationLng)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 rounded-lg border border-zinc-200 px-2.5 py-1 text-xs text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                    className="shrink-0 rounded-lg border border-[#3f3f46] px-2.5 py-1 text-xs text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-200"
                   >
                     Maps
                   </a>
                   {item.sourceType === "activity" && tripId && item.activityDate ? (
                     <Link
                       href={`/trips/${tripId}?tab=itinerario#day-${item.activityDate}`}
-                      className="shrink-0 rounded-lg bg-zinc-900 px-2.5 py-1 text-xs text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                      className="shrink-0 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs text-zinc-900 transition-colors hover:bg-zinc-300"
                     >
                       Ver →
                     </Link>
                   ) : itemsHref ? (
                     <Link
                       href={`${itemsHref}#item-${item.id}`}
-                      className="shrink-0 rounded-lg bg-zinc-900 px-2.5 py-1 text-xs text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                      className="shrink-0 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs text-zinc-900 transition-colors hover:bg-zinc-300"
                     >
                       Ver →
                     </Link>
@@ -315,7 +317,7 @@ export function NearbyActivities({
                     <button
                       type="button"
                       onClick={() => scrollToItem(item.id)}
-                      className="shrink-0 rounded-lg bg-zinc-900 px-2.5 py-1 text-xs text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                      className="shrink-0 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs text-zinc-900 transition-colors hover:bg-zinc-300"
                     >
                       Ver →
                     </button>
@@ -326,7 +328,7 @@ export function NearbyActivities({
                 <button
                   type="button"
                   onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                  className="w-full px-4 py-3 text-sm text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-700/50 transition-colors"
+                  className="w-full px-4 py-3 text-sm text-zinc-500 hover:bg-[#27272a]/50 transition-colors"
                 >
                   Ver más ({nearbyItems.length - visibleCount} restantes)
                 </button>

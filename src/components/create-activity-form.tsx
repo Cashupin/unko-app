@@ -311,7 +311,7 @@ export function CreateActivityForm({
                             : "border border-zinc-200 text-zinc-500 hover:border-zinc-300 dark:border-zinc-600 dark:text-zinc-400"
                         }`}
                       >
-                        {t === "PLACE" ? "🏛️ Lugar" : "🍜 Comida"}
+                        {t === "PLACE" ? "📍 Lugar" : "🍜 Comida"}
                       </button>
                     ))}
                   </div>

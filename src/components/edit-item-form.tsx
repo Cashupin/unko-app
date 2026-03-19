@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { UploadPhoto } from "@/components/upload-photo";
 import { LocationInput } from "@/components/location-input";
@@ -98,8 +99,8 @@ export function EditItemForm({ item }: { item: ItemData }) {
         </svg>
       </button>
 
-      {/* Modal */}
-      {open && (
+      {/* Modal — rendered via portal to escape card's stacking context */}
+      {open && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
@@ -244,7 +245,8 @@ export function EditItemForm({ item }: { item: ItemData }) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

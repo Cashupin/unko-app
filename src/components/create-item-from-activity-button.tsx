@@ -82,7 +82,7 @@ export function CreateItemFromActivityButton({
                 : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
-            🏛️ Lugar
+            📍 Lugar
           </button>
           <button
             type="button"

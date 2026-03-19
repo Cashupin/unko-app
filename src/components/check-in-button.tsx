@@ -22,21 +22,17 @@ export function CheckInButton({ itemId, myCheck }: CheckInButtonProps) {
 
   async function submit(photoUrl?: string) {
     setSaving(true);
-
     try {
       const res = await fetch(`/api/items/${itemId}/check`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(photoUrl ? { photoUrl } : {}),
       });
-
       const data = (await res.json()) as { error?: string };
-
       if (!res.ok) {
         toast.error(data.error ?? "Error al registrar la visita");
         return;
       }
-
       setOpen(false);
       setPendingUrl(null);
       router.refresh();
@@ -50,27 +46,31 @@ export function CheckInButton({ itemId, myCheck }: CheckInButtonProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Trigger */}
+      {/* Main trigger */}
       <button
         onClick={() => {
           setOpen((v) => !v);
           setPendingUrl(null);
         }}
-        className="text-xs font-medium text-green-700 underline underline-offset-2 hover:text-green-900 text-left dark:text-green-400 dark:hover:text-green-300"
+        className={`w-full rounded-xl py-3 text-sm font-bold transition-colors ${
+          alreadyChecked
+            ? "border border-[#3f3f46] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+            : "bg-emerald-500 text-zinc-900 hover:bg-emerald-400"
+        }`}
       >
-        {alreadyChecked ? "Actualizar foto" : "✓ Registrar visita"}
+        {alreadyChecked ? "✓ Actualizar foto" : "✓ Registrar mi visita"}
       </button>
 
       {/* Inline panel */}
       {open && (
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 flex flex-col gap-3 dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="rounded-xl border border-[#3f3f46] bg-[#27272a] p-3 flex flex-col gap-3">
           {pendingUrl && (
             <Image
               src={pendingUrl}
               alt="Vista previa"
               width={80}
               height={80}
-              className="rounded-lg object-cover border border-zinc-200 dark:border-zinc-600"
+              className="rounded-lg object-cover"
             />
           )}
 
@@ -84,7 +84,7 @@ export function CheckInButton({ itemId, myCheck }: CheckInButtonProps) {
             <button
               onClick={() => submit(pendingUrl ?? undefined)}
               disabled={saving}
-              className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-800 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-emerald-500 py-2 text-xs font-bold text-zinc-900 hover:bg-emerald-400 disabled:opacity-50 transition-colors"
             >
               {saving ? "Guardando..." : alreadyChecked ? "Actualizar" : "Confirmar visita"}
             </button>
@@ -94,7 +94,7 @@ export function CheckInButton({ itemId, myCheck }: CheckInButtonProps) {
                 setPendingUrl(null);
               }}
               disabled={saving}
-              className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 hover:bg-white disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              className="rounded-lg border border-[#3f3f46] px-3 py-2 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50 transition-colors"
             >
               Cancelar
             </button>
