@@ -6,7 +6,7 @@ import { EditActivityForm } from "@/modules/itinerario/components/edit-activity-
 import { PhotoThumbnail } from "@/components/ui/photo-thumbnail";
 import { getMapsUrl } from "@/lib/maps-url";
 import { PastDaysCollapsible } from "@/modules/itinerario/components/past-days-collapsible";
-import { CreateItemFromActivityButton } from "@/components/create-item-from-activity-button";
+import { CreateItemFromActivityButton } from "@/modules/proposals/components/create-item-from-activity-button";
 
 function toDateStr(d: Date): string {
   return d.toISOString().slice(0, 10);

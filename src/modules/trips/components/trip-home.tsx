@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateSettlement } from "@/modules/expenses/lib/settlement";
 import { MySettlementBanner } from "@/modules/expenses/components/my-settlement-banner";
 import { getMapsUrl } from "@/lib/maps-url";
-import { NearbyActivities } from "@/components/nearby-activities";
+import { NearbyActivities } from "@/modules/proposals/components/nearby-activities";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 

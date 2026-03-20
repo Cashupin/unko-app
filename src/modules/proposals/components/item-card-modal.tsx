@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import { getMapsUrl } from "@/lib/maps-url";
-import { CheckInButton } from "@/components/check-in-button";
-import { VoteButtons } from "@/components/vote-buttons";
-import { AddToItineraryButton } from "@/components/add-to-itinerary-button";
+import { CheckInButton } from "@/modules/proposals/components/check-in-button";
+import { VoteButtons } from "@/modules/proposals/components/vote-buttons";
+import { AddToItineraryButton } from "@/modules/proposals/components/add-to-itinerary-button";
 import { PhotoThumbnail } from "@/components/ui/photo-thumbnail";
-import { EditItemForm } from "@/components/edit-item-form";
-import { DeleteItemButton } from "@/components/delete-item-button";
-import type { ItemSummary } from "@/types/item";
+import { EditItemForm } from "@/modules/proposals/components/edit-item-form";
+import { DeleteItemButton } from "@/modules/proposals/components/delete-item-button";
+import type { ItemSummary } from "@/modules/proposals/types/item";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

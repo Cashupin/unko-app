@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { UploadPhoto } from "@/components/ui/upload-photo";
-import type { CheckSummary } from "@/types/item";
+import type { CheckSummary } from "@/modules/proposals/types/item";
 
 interface CheckInButtonProps {
   itemId: string;

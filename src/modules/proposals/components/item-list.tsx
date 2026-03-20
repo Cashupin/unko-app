@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { ItemType } from "@/generated/prisma/client";
-import { ItemCardWithModal, type ItemCardData } from "@/components/item-card-modal";
-import type { ItemSummary } from "@/types/item";
+import { ItemCardWithModal, type ItemCardData } from "@/modules/proposals/components/item-card-modal";
+import type { ItemSummary } from "@/modules/proposals/types/item";
 
 export async function ItemList({
   currentUserId,

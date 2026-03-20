@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { NearbyActivities } from "@/components/nearby-activities";
+import { NearbyActivities } from "@/modules/proposals/components/nearby-activities";
 
 export async function NearbyActivitiesServer({
   tripId,

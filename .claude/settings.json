@@ -24,7 +24,12 @@
       "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/lib/settlement.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/expenses/lib/settlement.ts\")",
       "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/lib/expense-categories.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/expenses/lib/expense-categories.ts\")",
       "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/itinerario/components\")",
-      "Bash(mv activity-list.tsx create-activity-form.tsx edit-activity-form.tsx delete-activity-button.tsx past-days-collapsible.tsx scroll-to-today.tsx hotel-collapsible.tsx hotel-list.tsx hotel-summary-panel.tsx hotel-scroll-target.tsx hotel-reserved-toggle.tsx hotel-expense-button.tsx create-hotel-form.tsx edit-hotel-form.tsx delete-hotel-button.tsx \"../modules/itinerario/components/\")"
+      "Bash(mv activity-list.tsx create-activity-form.tsx edit-activity-form.tsx delete-activity-button.tsx past-days-collapsible.tsx scroll-to-today.tsx hotel-collapsible.tsx hotel-list.tsx hotel-summary-panel.tsx hotel-scroll-target.tsx hotel-reserved-toggle.tsx hotel-expense-button.tsx create-hotel-form.tsx edit-hotel-form.tsx delete-hotel-button.tsx \"../modules/itinerario/components/\")",
+      "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/proposals/components\")",
+      "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/proposals/actions\")",
+      "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/proposals/lib\")",
+      "Bash(mv item-list.tsx item-card-modal.tsx item-filter-chips.tsx create-item-form.tsx edit-item-form.tsx delete-item-button.tsx vote-buttons.tsx check-in-button.tsx add-to-itinerary-button.tsx create-item-from-activity-button.tsx nearby-activities.tsx nearby-activities-server.tsx hash-highlight.tsx kml-import.tsx \"../modules/proposals/components/\")",
+      "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/app/actions/import-kml.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/proposals/actions/import-kml.ts\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\standalone-expenses\\[expenseId]",

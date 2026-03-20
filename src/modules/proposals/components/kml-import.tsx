@@ -4,8 +4,8 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { importKmlItems, getTripItemsForDedup, type ImportKmlItem, type ImportKmlResult, type ExistingItemStub } from "@/app/actions/import-kml";
-import type { KmlPin } from "@/lib/parse-kml";
+import { importKmlItems, getTripItemsForDedup, type ImportKmlItem, type ImportKmlResult, type ExistingItemStub } from "@/modules/proposals/actions/import-kml";
+import type { KmlPin } from "@/modules/proposals/lib/parse-kml";
 
 type Phase = "idle" | "preview" | "importing" | "result";
 
@@ -89,7 +89,7 @@ export function KmlImport({ tripId }: { tripId: string }) {
     setAnalyzing(true);
     try {
       const [{ parseKmlFile }, existing] = await Promise.all([
-        import("@/lib/parse-kml"),
+        import("@/modules/proposals/lib/parse-kml"),
         getTripItemsForDedup(tripId),
       ]);
       const pins = await parseKmlFile(file);

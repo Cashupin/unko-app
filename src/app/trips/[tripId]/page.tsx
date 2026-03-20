@@ -11,8 +11,8 @@ import { TutorialButton } from "@/components/ui/tutorial-button";
 import { TripBottomNav } from "@/modules/trips/components/trip-bottom-nav";
 import { AutoRefresh } from "@/components/ui/auto-refresh";
 import { GalleryView } from "@/modules/gallery/components/gallery-view";
-import { ItemList } from "@/components/item-list";
-import { CreateItemForm } from "@/components/create-item-form";
+import { ItemList } from "@/modules/proposals/components/item-list";
+import { CreateItemForm } from "@/modules/proposals/components/create-item-form";
 import { ManageParticipantsPanel } from "@/modules/trips/components/manage-participants-panel";
 import { EditTripForm } from "@/modules/trips/components/edit-trip-form";
 import { DeleteTripButton } from "@/modules/trips/components/delete-trip-button";
@@ -24,10 +24,10 @@ import { CreateHotelForm } from "@/modules/itinerario/components/create-hotel-fo
 import { TripHome } from "@/modules/trips/components/trip-home";
 import { ExpenseList } from "@/modules/expenses/components/expense-list";
 import { CreateExpenseForm } from "@/modules/expenses/components/create-expense-form";
-import { ItemFilterChips } from "@/components/item-filter-chips";
-import { NearbyActivitiesServer } from "@/components/nearby-activities-server";
-import { HashHighlight } from "@/components/hash-highlight";
-import { KmlImport } from "@/components/kml-import";
+import { ItemFilterChips } from "@/modules/proposals/components/item-filter-chips";
+import { NearbyActivitiesServer } from "@/modules/proposals/components/nearby-activities-server";
+import { HashHighlight } from "@/modules/proposals/components/hash-highlight";
+import { KmlImport } from "@/modules/proposals/components/kml-import";
 import type { ParticipantSummary } from "@/modules/trips/types/trip";
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
