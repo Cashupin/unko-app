@@ -6,10 +6,10 @@ import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { toast } from "sonner";
 import { ConvertedAmount } from "@/components/ui/converted-amount";
-import { getCategoryEmoji } from "@/lib/expense-categories";
-import { ReceiptButton } from "@/components/receipt-button";
-import { EditExpenseForm } from "@/components/edit-expense-form";
-import type { EditExpenseData } from "@/components/edit-expense-form";
+import { getCategoryEmoji } from "@/modules/expenses/lib/expense-categories";
+import { ReceiptButton } from "@/modules/expenses/components/receipt-button";
+import { EditExpenseForm } from "@/modules/expenses/components/edit-expense-form";
+import type { EditExpenseData } from "@/modules/expenses/components/edit-expense-form";
 
 type Participant = { id: string; name: string };
 

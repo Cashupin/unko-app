@@ -17,7 +17,12 @@
       "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/trips/components\")",
       "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/trips/types\")",
       "Bash(mv trip-home.tsx trip-bottom-nav.tsx trip-mobile-menu.tsx trip-header-menu.tsx edit-trip-form.tsx delete-trip-button.tsx manage-participants-panel.tsx add-participant-form.tsx invite-user-form.tsx \"../modules/trips/components/\")",
-      "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/types/trip.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/trips/types/trip.ts\")"
+      "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/types/trip.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/trips/types/trip.ts\")",
+      "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/expenses/components\")",
+      "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/expenses/lib\")",
+      "Bash(mv expense-list.tsx expense-card.tsx expense-drawer.tsx expense-settlement-panel.tsx expense-stats-card.tsx expense-summary.tsx my-settlement-banner.tsx create-expense-form.tsx edit-expense-form.tsx delete-expense-button.tsx create-payment-form.tsx receipt-ai-button.tsx receipt-button.tsx \"../modules/expenses/components/\")",
+      "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/lib/settlement.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/expenses/lib/settlement.ts\")",
+      "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/lib/expense-categories.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/expenses/lib/expense-categories.ts\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\standalone-expenses\\[expenseId]",

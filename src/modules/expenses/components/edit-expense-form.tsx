@@ -6,12 +6,11 @@ import { CURRENCY_OPTIONS, CURRENCY_DECIMALS, fmtAmount } from "@/lib/constants"
 import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/ui/date-picker";
 import { UploadPhoto } from "@/components/ui/upload-photo";
-import { ReceiptButton } from "@/components/receipt-button";
-import { ReceiptAiButton, type ParsedReceiptItem } from "@/components/receipt-ai-button";
+import { ReceiptButton } from "@/modules/expenses/components/receipt-button";
+import { ReceiptAiButton, type ParsedReceiptItem } from "@/modules/expenses/components/receipt-ai-button";
 import { toast } from "sonner";
-import { CATEGORY_CONFIG, detectCategory, type ExpenseCategory } from "@/lib/expense-categories";
+import { CATEGORY_CONFIG, type ExpenseCategory } from "@/modules/expenses/lib/expense-categories";
 
-// Format raw numeric string for display inside the input (es-CL thousands separator)
 function fmtInput(raw: string, cur: string): string {
   if (!raw) return "";
   const decimals = CURRENCY_DECIMALS[cur as Currency] ?? 2;
@@ -26,7 +25,6 @@ function fmtInput(raw: string, cur: string): string {
   return raw.includes(".") ? `${intFmt},${dec}` : intFmt;
 }
 
-// Strip formatting from typed input, returning raw value for state (period as decimal sep)
 function parseInputVal(input: string, cur: string): string {
   const decimals = CURRENCY_DECIMALS[cur as Currency] ?? 2;
   if (decimals === 0) return input.replace(/\D/g, "");
@@ -54,46 +52,66 @@ function newItem(participants: Participant[]): ExpenseItemDraft {
   };
 }
 
-export function CreateExpenseForm({
+export type EditExpenseData = {
+  id: string;
+  description: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  receiptUrl: string | null;
+  expenseDate: Date;
+  splitType: string;
+  category: string;
+  paidByParticipantId: string | null;
+  participants: { participantId: string; amount: number }[];
+  items: {
+    description: string;
+    amount: number;
+    participantIds: string[];
+  }[];
+};
+
+export function EditExpenseForm({
   tripId,
+  expense,
   participants,
-  defaultCurrency,
 }: {
   tripId: string;
+  expense: EditExpenseData;
   participants: Participant[];
-  defaultCurrency: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">("ITEMIZED");
-  const [currency, setCurrency] = useState(defaultCurrency);
-  const [paymentMethod, setPaymentMethod] = useState("CASH");
-  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
-  const [amountValue, setAmountValue] = useState("");
 
-  // EQUAL mode state
+  const initialSplitMode = expense.splitType === "ITEMIZED" ? "ITEMIZED" : "EQUAL";
+  const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">(initialSplitMode);
+  const [currency, setCurrency] = useState(expense.currency);
+  const [paymentMethod, setPaymentMethod] = useState(expense.paymentMethod ?? "CASH");
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(expense.receiptUrl ?? null);
+  const [amountValue, setAmountValue] = useState(String(expense.amount));
+
+  const [category, setCategory] = useState<ExpenseCategory>((expense.category as ExpenseCategory) ?? "OTHER");
+
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
-    participants.map((p) => p.id),
+    expense.participants.map((ep) => ep.participantId),
   );
 
-  // ITEMIZED mode state
-  const [items, setItems] = useState<ExpenseItemDraft[]>([]);
-
-  const [category, setCategory] = useState<ExpenseCategory>("OTHER");
+  const [items, setItems] = useState<ExpenseItemDraft[]>(() => {
+    if (expense.items.length > 0) {
+      return expense.items.map((item) => ({
+        id: crypto.randomUUID(),
+        description: item.description,
+        amount: String(item.amount),
+        participantIds: item.participantIds,
+      }));
+    }
+    return [newItem(participants)];
+  });
 
   function openModal() {
-    setSelectedParticipants(participants.map((p) => p.id));
-    setSplitMode("EQUAL");
-    setCurrency(defaultCurrency);
-    setPaymentMethod("CASH");
-    setReceiptUrl(null);
-    setAmountValue("");
-    setItems([newItem(participants)]);
-    setCategory("OTHER");
     setOpen(true);
   }
-
   function closeModal() {
     setOpen(false);
   }
@@ -107,17 +125,14 @@ export function CreateExpenseForm({
   function addItem() {
     setItems((prev) => [...prev, newItem(participants)]);
   }
-
   function removeItem(id: string) {
     setItems((prev) => prev.filter((item) => item.id !== id));
   }
-
   function updateItem(id: string, patch: Partial<Omit<ExpenseItemDraft, "id">>) {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...patch } : item)),
     );
   }
-
   function toggleItemParticipant(itemId: string, participantId: string) {
     setItems((prev) =>
       prev.map((item) => {
@@ -148,7 +163,6 @@ export function CreateExpenseForm({
     );
   }
 
-  // Real-time per-participant totals for ITEMIZED mode
   const perParticipantTotals = participants.map((p) => {
     const total = items.reduce((sum, item) => {
       if (!item.participantIds.includes(p.id)) return sum;
@@ -158,12 +172,13 @@ export function CreateExpenseForm({
     }, 0);
     return { ...p, total };
   });
-
   const itemizedTotal = perParticipantTotals.reduce((s, p) => s + p.total, 0);
+
+  const defaultDateStr = new Date(expense.expenseDate).toISOString().slice(0, 10);
+  const defaultAmount = String(expense.amount);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
     const fd = new FormData(e.currentTarget);
 
     if (splitMode === "EQUAL") {
@@ -171,7 +186,6 @@ export function CreateExpenseForm({
         toast.error("Debes seleccionar al menos un participante");
         return;
       }
-
       const amountNum = parseFloat(amountValue);
       if (!amountValue || isNaN(amountNum) || amountNum <= 0) {
         toast.error("El monto debe ser mayor a 0");
@@ -185,16 +199,15 @@ export function CreateExpenseForm({
         amount: amountNum,
         currency: fd.get("currency") as string,
         paymentMethod,
-        receiptUrl: receiptUrl ?? undefined,
+        receiptUrl: receiptUrl ?? null,
         paidByParticipantId: (fd.get("paidBy") as string) || undefined,
         expenseDate: (fd.get("expenseDate") as string) || undefined,
         participantIds: selectedParticipants,
         category,
       };
-
       try {
-        const res = await fetch(`/api/trips/${tripId}/expenses`, {
-          method: "POST",
+        const res = await fetch(`/api/trips/${tripId}/expenses/${expense.id}`, {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
@@ -205,7 +218,7 @@ export function CreateExpenseForm({
         }
         closeModal();
         router.refresh();
-        toast.success("Gasto registrado");
+        toast.success("Gasto actualizado");
       } catch {
         toast.error("Error de red. Intenta de nuevo.");
       } finally {
@@ -214,27 +227,13 @@ export function CreateExpenseForm({
       return;
     }
 
-    // ── ITEMIZED ─────────────────────────────────────────────────────────────
-
-    if (items.length === 0) {
-      toast.error("Agrega al menos un ítem");
-      return;
-    }
-
+    // ITEMIZED
+    if (items.length === 0) { toast.error("Agrega al menos un ítem"); return; }
     for (const item of items) {
-      if (!item.description.trim()) {
-        toast.error("Cada ítem debe tener una descripción");
-        return;
-      }
+      if (!item.description.trim()) { toast.error("Cada ítem debe tener una descripción"); return; }
       const amt = parseFloat(item.amount);
-      if (!amt || amt <= 0) {
-        toast.error("Cada ítem debe tener un monto mayor a 0");
-        return;
-      }
-      if (item.participantIds.length === 0) {
-        toast.error("Cada ítem debe tener al menos un participante");
-        return;
-      }
+      if (!amt || amt <= 0) { toast.error("Cada ítem debe tener un monto mayor a 0"); return; }
+      if (item.participantIds.length === 0) { toast.error("Cada ítem debe tener al menos un participante"); return; }
     }
 
     setLoading(true);
@@ -243,7 +242,7 @@ export function CreateExpenseForm({
       description: (fd.get("description") as string).trim(),
       currency: fd.get("currency") as string,
       paymentMethod,
-      receiptUrl: receiptUrl ?? undefined,
+      receiptUrl: receiptUrl ?? null,
       paidByParticipantId: (fd.get("paidBy") as string) || undefined,
       expenseDate: (fd.get("expenseDate") as string) || undefined,
       category,
@@ -256,10 +255,9 @@ export function CreateExpenseForm({
         itemQty: item.itemQty,
       })),
     };
-
     try {
-      const res = await fetch(`/api/trips/${tripId}/expenses`, {
-        method: "POST",
+      const res = await fetch(`/api/trips/${tripId}/expenses/${expense.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
@@ -270,7 +268,7 @@ export function CreateExpenseForm({
       }
       closeModal();
       router.refresh();
-      toast.success("Gasto registrado");
+      toast.success("Gasto actualizado");
     } catch {
       toast.error("Error de red. Intenta de nuevo.");
     } finally {
@@ -282,53 +280,37 @@ export function CreateExpenseForm({
     <>
       <button
         onClick={openModal}
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        className="rounded-md px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+        aria-label="Editar gasto"
+        title="Editar gasto"
       >
-        + Nuevo gasto
+        ✏️
       </button>
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex justify-end bg-black/60"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeModal();
-          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div className="flex h-full w-full max-w-110 flex-col bg-white dark:bg-[#18191c] border-l border-zinc-200 dark:border-[#3f3f46] shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-[#2d2d31] px-5 py-4 shrink-0">
-              <h2 className="text-base font-semibold dark:text-zinc-100">Nuevo gasto</h2>
-              <button
-                onClick={closeModal}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 dark:bg-[#27272a] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-[#3f3f46]"
-                aria-label="Cerrar"
-              >
-                ✕
-              </button>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Editar gasto</h2>
+              <button onClick={closeModal} className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300" aria-label="Cerrar">✕</button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {/* Description */}
               <div className="flex flex-col gap-1">
-                <label
-                  htmlFor="expense-desc"
-                  className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                >
+                <label htmlFor="edit-expense-desc" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                   Descripción <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="expense-desc"
+                  id="edit-expense-desc"
                   name="description"
                   type="text"
                   required
-                  minLength={1}
+                  defaultValue={expense.description}
                   maxLength={500}
-                  placeholder="Ej: Cena en Shibuya"
-                  onChange={(e) => {
-                    const detected = detectCategory(e.target.value);
-                    setCategory(detected);
-                  }}
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />
               </div>
@@ -359,33 +341,14 @@ export function CreateExpenseForm({
 
               {/* Split mode toggle */}
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Modo de división
-                </span>
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Modo de división</span>
                 <div className="flex rounded-lg border border-zinc-200 overflow-hidden dark:border-zinc-700">
-                  <button
-                    type="button"
-                    onClick={() => setSplitMode("EQUAL")}
-                    className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
-                      splitMode === "EQUAL"
-                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                        : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                    }`}
-                  >
+                  <button type="button" onClick={() => setSplitMode("EQUAL")}
+                    className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${splitMode === "EQUAL" ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"}`}>
                     División equitativa
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSplitMode("ITEMIZED");
-                      if (items.length === 0) setItems([newItem(participants)]);
-                    }}
-                    className={`flex-1 px-3 py-2 text-xs font-medium transition-colors border-l border-zinc-200 dark:border-zinc-700 ${
-                      splitMode === "ITEMIZED"
-                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                        : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                    }`}
-                  >
+                  <button type="button" onClick={() => { setSplitMode("ITEMIZED"); if (items.length === 0) setItems([newItem(participants)]); }}
+                    className={`flex-1 px-3 py-2 text-xs font-medium transition-colors border-l border-zinc-200 dark:border-zinc-700 ${splitMode === "ITEMIZED" ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"}`}>
                     Por ítems
                   </button>
                 </div>
@@ -421,47 +384,34 @@ export function CreateExpenseForm({
                 <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Foto de boleta</span>
                 {receiptUrl ? (
                   <div className="flex flex-col gap-2">
-                    {/* Card preview */}
-                    <div className="flex items-center gap-3 rounded-xl border border-zinc-100 dark:border-[#3f3f46] bg-zinc-50 dark:bg-[#27272a] px-3 py-2.5">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-950/60 text-lg">
-                        🧾
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200 truncate">Boleta subida</p>
-                        <ReceiptButton url={receiptUrl} label="Ver foto →" className="text-[11px] text-violet-600 dark:text-violet-400 hover:underline" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setReceiptUrl(null)}
-                        className="text-xs text-zinc-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 shrink-0"
-                      >
+                    <div className="flex items-center gap-2">
+                      <ReceiptButton url={receiptUrl} label="🧾 Ver boleta" className="text-xs text-blue-600 hover:underline dark:text-blue-400" />
+                      <button type="button" onClick={() => setReceiptUrl(null)} className="text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400">
                         Quitar
                       </button>
                     </div>
-                    {/* AI button — always visible when receipt is uploaded */}
-                    <ReceiptAiButton
-                      receiptUrl={receiptUrl}
-                      participants={participants}
-                      onApply={applyAiItems}
-                    />
+                    {splitMode === "ITEMIZED" && (
+                      <ReceiptAiButton
+                        receiptUrl={receiptUrl}
+                        participants={participants}
+                        onApply={applyAiItems}
+                      />
+                    )}
                   </div>
                 ) : (
                   <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
                 )}
               </div>
 
-              {/* Currency */}
+              {/* Amount + Currency */}
               <div className="grid grid-cols-2 gap-3">
                 {splitMode === "EQUAL" && (
                   <div className="flex flex-col gap-1">
-                    <label
-                      htmlFor="expense-amount"
-                      className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                    >
+                    <label htmlFor="edit-expense-amount" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                       Monto <span className="text-red-500">*</span>
                     </label>
                     <input
-                      id="expense-amount"
+                      id="edit-expense-amount"
                       type="text"
                       inputMode="numeric"
                       placeholder="0"
@@ -472,23 +422,16 @@ export function CreateExpenseForm({
                   </div>
                 )}
                 <div className={`flex flex-col gap-1 ${splitMode === "ITEMIZED" ? "col-span-2" : ""}`}>
-                  <label
-                    htmlFor="expense-currency"
-                    className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                  >
-                    Moneda
-                  </label>
+                  <label htmlFor="edit-expense-currency" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Moneda</label>
                   <select
-                    id="expense-currency"
+                    id="edit-expense-currency"
                     name="currency"
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
                     className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
                   >
                     {CURRENCY_OPTIONS.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                      </option>
+                      <option key={c.value} value={c.value}>{c.label}</option>
                     ))}
                   </select>
                 </div>
@@ -497,48 +440,35 @@ export function CreateExpenseForm({
               {/* Paid by + Date */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="paidBy"
-                    className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                  >
-                    Pagado por
-                  </label>
+                  <label htmlFor="edit-paidBy" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Pagado por</label>
                   <select
-                    id="paidBy"
+                    id="edit-paidBy"
                     name="paidBy"
+                    defaultValue={expense.paidByParticipantId ?? ""}
                     className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
                   >
                     <option value="">-- Seleccionar --</option>
                     {participants.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
+                      <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="expense-date"
-                    className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                  >
-                    Fecha
-                  </label>
+                  <label htmlFor="edit-expense-date" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Fecha</label>
                   <DatePicker
-                    id="expense-date"
+                    id="edit-expense-date"
                     name="expenseDate"
+                    defaultValue={defaultDateStr}
                     placeholder="Opcional"
                   />
                 </div>
               </div>
 
-              {/* ── EQUAL: participant picker ──────────────────────────────── */}
+              {/* EQUAL: participant picker */}
               {splitMode === "EQUAL" && (
                 <div className="flex flex-col gap-2">
                   <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    Dividir entre{" "}
-                    <span className="text-zinc-400 dark:text-zinc-500">
-                      (equitativo)
-                    </span>
+                    Dividir entre <span className="text-zinc-400 dark:text-zinc-500">(equitativo)</span>
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {participants.map((p) => (
@@ -546,11 +476,7 @@ export function CreateExpenseForm({
                         key={p.id}
                         type="button"
                         onClick={() => toggleParticipant(p.id)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                          selectedParticipants.includes(p.id)
-                            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                            : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                        }`}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${selectedParticipants.includes(p.id) ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400"}`}
                       >
                         {p.name}
                       </button>
@@ -559,131 +485,57 @@ export function CreateExpenseForm({
                 </div>
               )}
 
-              {/* ── ITEMIZED: items list ───────────────────────────────────── */}
+              {/* ITEMIZED: items list */}
               {splitMode === "ITEMIZED" && (
                 <div className="flex flex-col gap-3">
-                  <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    Ítems
-                  </span>
-
+                  <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Ítems</span>
                   {items.map((item, idx) => (
-                    <div
-                      key={item.id}
-                      className="rounded-xl border border-zinc-200 p-3 flex flex-col gap-2 dark:border-zinc-700"
-                    >
-                      {/* Item header */}
+                    <div key={item.id} className="rounded-xl border border-zinc-200 p-3 flex flex-col gap-2 dark:border-zinc-700">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          Ítem {idx + 1}
-                        </span>
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Ítem {idx + 1}</span>
                         {items.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.id)}
-                            className="text-xs text-zinc-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 transition-colors"
-                            aria-label="Eliminar ítem"
-                          >
-                            ✕
-                          </button>
+                          <button type="button" onClick={() => removeItem(item.id)} className="text-xs text-zinc-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 transition-colors" aria-label="Eliminar ítem">✕</button>
                         )}
                       </div>
-
-                      {/* Description + amount */}
                       <div className="grid grid-cols-[1fr_auto] gap-2">
-                        <input
-                          type="text"
-                          placeholder="Descripción del ítem"
-                          maxLength={50}
-                          value={item.description}
-                          onChange={(e) =>
-                            updateItem(item.id, { description: e.target.value })
-                          }
-                          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
-                        />
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="0"
-                          value={fmtInput(item.amount, currency)}
-                          onChange={(e) =>
-                            updateItem(item.id, { amount: parseInputVal(e.target.value, currency) })
-                          }
-                          className="w-28 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
-                        />
+                        <input type="text" placeholder="Descripción del ítem" maxLength={50} value={item.description} onChange={(e) => updateItem(item.id, { description: e.target.value })}
+                          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500" />
+                        <input type="text" inputMode="numeric" placeholder="0" value={fmtInput(item.amount, currency)} onChange={(e) => updateItem(item.id, { amount: parseInputVal(e.target.value, currency) })}
+                          className="w-28 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500" />
                       </div>
-
-                      {/* Participant toggles */}
                       <div className="flex flex-wrap gap-1.5">
                         {participants.map((p) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => toggleItemParticipant(item.id, p.id)}
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                              item.participantIds.includes(p.id)
-                                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                                : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400"
-                            }`}
-                          >
+                          <button key={p.id} type="button" onClick={() => toggleItemParticipant(item.id, p.id)}
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${item.participantIds.includes(p.id) ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-400"}`}>
                             {p.name}
                           </button>
                         ))}
                       </div>
                     </div>
                   ))}
-
-                  <button
-                    type="button"
-                    onClick={addItem}
-                    className="rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-xs font-medium text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 transition-colors dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:text-zinc-300"
-                  >
+                  <button type="button" onClick={addItem} className="rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-xs font-medium text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 transition-colors dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:text-zinc-300">
                     + Agregar ítem
                   </button>
-
-                  {/* Per-participant preview */}
                   {itemizedTotal > 0 && (
                     <div className="rounded-xl bg-zinc-50 border border-zinc-200 p-3 dark:bg-zinc-700/50 dark:border-zinc-700">
-                      <p className="text-xs font-semibold text-zinc-500 mb-2 dark:text-zinc-400">
-                        Resumen · Total {fmtAmount(itemizedTotal, currency)}
-                      </p>
+                      <p className="text-xs font-semibold text-zinc-500 mb-2 dark:text-zinc-400">Resumen · Total {fmtAmount(itemizedTotal, currency)}</p>
                       <div className="flex flex-col gap-1">
-                        {perParticipantTotals
-                          .filter((p) => p.total > 0)
-                          .map((p) => (
-                            <div
-                              key={p.id}
-                              className="flex items-center justify-between"
-                            >
-                              <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                                {p.name}
-                              </span>
-                              <span className="text-xs font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
-                                {fmtAmount(p.total, currency)}
-                              </span>
-                            </div>
-                          ))}
+                        {perParticipantTotals.filter((p) => p.total > 0).map((p) => (
+                          <div key={p.id} className="flex items-center justify-between">
+                            <span className="text-xs text-zinc-600 dark:text-zinc-400">{p.name}</span>
+                            <span className="text-xs font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">{fmtAmount(p.total, currency)}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-            </div>
-              <div className="flex items-center justify-end gap-2 border-t border-zinc-100 dark:border-[#2d2d31] px-5 py-4 shrink-0">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  disabled={loading}
-                  className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  {loading ? "Guardando..." : "Guardar"}
+              <div className="flex justify-end gap-2 pt-1">
+                <button type="button" onClick={closeModal} disabled={loading} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700">Cancelar</button>
+                <button type="submit" disabled={loading} className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+                  {loading ? "Guardando..." : "Guardar cambios"}
                 </button>
               </div>
             </form>

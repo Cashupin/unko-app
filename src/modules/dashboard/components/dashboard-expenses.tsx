@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
-import { ExpenseDrawer } from "@/components/expense-drawer";
+import { ExpenseDrawer } from "@/modules/expenses/components/expense-drawer";
 import type { StandaloneExpenseData } from "@/modules/dashboard/components/standalone-expense-card";
 
 function ExpenseRow({

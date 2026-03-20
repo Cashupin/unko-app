@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CreatePaymentForm } from "@/components/create-payment-form";
+import { CreatePaymentForm } from "@/modules/expenses/components/create-payment-form";
 import { ConvertedAmount } from "@/components/ui/converted-amount";
 
 type Settlement = {
@@ -44,10 +44,12 @@ export function ExpenseSettlementPanel({
   return (
     <div className="rounded-2xl border border-zinc-100 dark:border-[#2d2d31] bg-white dark:bg-[#1f2023] overflow-hidden">
       {/* Trigger header */}
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-3"
+        onKeyDown={(e) => e.key === "Enter" && setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-4 py-3 cursor-pointer"
       >
         <span className="text-[10px] font-bold uppercase tracking-[.07em] text-zinc-400 dark:text-zinc-500">
           Liquidación general
@@ -71,7 +73,7 @@ export function ExpenseSettlementPanel({
             ▾
           </span>
         </div>
-      </button>
+      </div>
 
       {/* Body */}
       {open && (

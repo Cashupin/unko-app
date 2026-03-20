@@ -3,7 +3,7 @@
 import { useCurrency } from "@/providers/currency-provider";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
-import type { Settlement } from "@/lib/settlement";
+import type { Settlement } from "@/modules/expenses/lib/settlement";
 
 type Props = {
   settlements: Settlement[];

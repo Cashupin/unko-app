@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { calculateSettlement } from "@/lib/settlement";
-import { ExpenseCard } from "@/components/expense-card";
-import { MySettlementBanner } from "@/components/my-settlement-banner";
+import { calculateSettlement } from "@/modules/expenses/lib/settlement";
+import { ExpenseCard } from "@/modules/expenses/components/expense-card";
+import { MySettlementBanner } from "@/modules/expenses/components/my-settlement-banner";
 import { ConvertedAmount } from "@/components/ui/converted-amount";
-import { ExpenseStatsCard } from "@/components/expense-stats-card";
-import { ExpenseSettlementPanel } from "@/components/expense-settlement-panel";
-import { CreateExpenseForm } from "@/components/create-expense-form";
+import { ExpenseStatsCard } from "@/modules/expenses/components/expense-stats-card";
+import { ExpenseSettlementPanel } from "@/modules/expenses/components/expense-settlement-panel";
+import { CreateExpenseForm } from "@/modules/expenses/components/create-expense-form";
 
 type Participant = { id: string; name: string };
 

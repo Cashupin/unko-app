@@ -4,7 +4,7 @@ import { CURRENCY_SYMBOLS as SYM, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { calculateSettlement } from "@/lib/settlement";
+import { calculateSettlement } from "@/modules/expenses/lib/settlement";
 import { InviteUserForm } from "@/modules/trips/components/invite-user-form";
 import { UserMenu } from "@/components/ui/user-menu";
 import { DashboardMobileMenu } from "@/modules/dashboard/components/dashboard-mobile-menu";

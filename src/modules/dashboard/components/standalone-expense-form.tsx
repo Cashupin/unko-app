@@ -6,8 +6,8 @@ import { CURRENCY_OPTIONS, CURRENCY_DECIMALS, fmtAmount } from "@/lib/constants"
 import type { Currency } from "@/lib/constants";
 import { DatePicker } from "@/components/ui/date-picker";
 import { UploadPhoto } from "@/components/ui/upload-photo";
-import { ReceiptButton } from "@/components/receipt-button";
-import { ReceiptAiButton, type ParsedReceiptItem } from "@/components/receipt-ai-button";
+import { ReceiptButton } from "@/modules/expenses/components/receipt-button";
+import { ReceiptAiButton, type ParsedReceiptItem } from "@/modules/expenses/components/receipt-ai-button";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

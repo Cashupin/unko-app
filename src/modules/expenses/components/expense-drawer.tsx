@@ -7,7 +7,7 @@ import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { ConvertedAmount } from "@/components/ui/converted-amount";
 import { useCurrency } from "@/providers/currency-provider";
-import { ReceiptButton } from "@/components/receipt-button";
+import { ReceiptButton } from "@/modules/expenses/components/receipt-button";
 import { StandaloneExpenseForm } from "@/modules/dashboard/components/standalone-expense-form";
 import type { StandaloneInitialValues } from "@/modules/dashboard/components/standalone-expense-form";
 import type { StandaloneExpenseData } from "@/modules/dashboard/components/standalone-expense-card";
