@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { DeleteHotelButton } from "@/components/delete-hotel-button";
-import { EditHotelForm } from "@/components/edit-hotel-form";
-import { HotelReservedToggle } from "@/components/hotel-reserved-toggle";
-import { HotelScrollTarget } from "@/components/hotel-scroll-target";
-import { HotelSummaryPanel } from "@/components/hotel-summary-panel";
+import { DeleteHotelButton } from "@/modules/itinerario/components/delete-hotel-button";
+import { EditHotelForm } from "@/modules/itinerario/components/edit-hotel-form";
+import { HotelReservedToggle } from "@/modules/itinerario/components/hotel-reserved-toggle";
+import { HotelScrollTarget } from "@/modules/itinerario/components/hotel-scroll-target";
+import { HotelSummaryPanel } from "@/modules/itinerario/components/hotel-summary-panel";
 import { ConvertedAmount } from "@/components/ui/converted-amount";
-import { HotelExpenseButton } from "@/components/hotel-expense-button";
+import { HotelExpenseButton } from "@/modules/itinerario/components/hotel-expense-button";
 
 export async function HotelList({
   tripId,
