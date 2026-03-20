@@ -29,7 +29,10 @@
       "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/proposals/actions\")",
       "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/proposals/lib\")",
       "Bash(mv item-list.tsx item-card-modal.tsx item-filter-chips.tsx create-item-form.tsx edit-item-form.tsx delete-item-button.tsx vote-buttons.tsx check-in-button.tsx add-to-itinerary-button.tsx create-item-from-activity-button.tsx nearby-activities.tsx nearby-activities-server.tsx hash-highlight.tsx kml-import.tsx \"../modules/proposals/components/\")",
-      "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/app/actions/import-kml.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/proposals/actions/import-kml.ts\")"
+      "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/app/actions/import-kml.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/proposals/actions/import-kml.ts\")",
+      "Bash(grep -r 'from \"\"\"\"@/components/' --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(grep -r 'from \"\"@/lib/settlement\\\\|from \"\"@/lib/expense-categories\\\\|from \"\"@/lib/parse-kml\\\\|from \"\"@/types/trip\\\\|from \"\"@/types/item\\\\|from \"\"@/app/actions/' --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(grep -rn 'from \"\"\"\"@/components/[^u]' --include=\"*.tsx\" --include=\"*.ts\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\standalone-expenses\\[expenseId]",
