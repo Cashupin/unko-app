@@ -1,11 +1,11 @@
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import { DeleteActivityButton } from "@/modules/itinerario/components/delete-activity-button";
-import { CreateActivityForm } from "@/modules/itinerario/components/create-activity-form";
-import { EditActivityForm } from "@/modules/itinerario/components/edit-activity-form";
+import { DeleteActivityButton } from "@/modules/itinerary/components/delete-activity-button";
+import { CreateActivityForm } from "@/modules/itinerary/components/create-activity-form";
+import { EditActivityForm } from "@/modules/itinerary/components/edit-activity-form";
 import { PhotoThumbnail } from "@/components/ui/photo-thumbnail";
 import { getMapsUrl } from "@/lib/maps-url";
-import { PastDaysCollapsible } from "@/modules/itinerario/components/past-days-collapsible";
+import { PastDaysCollapsible } from "@/modules/itinerary/components/past-days-collapsible";
 import { CreateItemFromActivityButton } from "@/modules/proposals/components/create-item-from-activity-button";
 
 function toDateStr(d: Date): string {

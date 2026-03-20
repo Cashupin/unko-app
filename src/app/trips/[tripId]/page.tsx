@@ -16,11 +16,11 @@ import { CreateItemForm } from "@/modules/proposals/components/create-item-form"
 import { ManageParticipantsPanel } from "@/modules/trips/components/manage-participants-panel";
 import { EditTripForm } from "@/modules/trips/components/edit-trip-form";
 import { DeleteTripButton } from "@/modules/trips/components/delete-trip-button";
-import { ActivityList } from "@/modules/itinerario/components/activity-list";
-import { CreateActivityForm } from "@/modules/itinerario/components/create-activity-form";
-import { HotelList } from "@/modules/itinerario/components/hotel-list";
-import { HotelCollapsible } from "@/modules/itinerario/components/hotel-collapsible";
-import { CreateHotelForm } from "@/modules/itinerario/components/create-hotel-form";
+import { ActivityList } from "@/modules/itinerary/components/activity-list";
+import { CreateActivityForm } from "@/modules/itinerary/components/create-activity-form";
+import { HotelList } from "@/modules/itinerary/components/hotel-list";
+import { HotelCollapsible } from "@/modules/itinerary/components/hotel-collapsible";
+import { CreateHotelForm } from "@/modules/itinerary/components/create-hotel-form";
 import { TripHome } from "@/modules/trips/components/trip-home";
 import { ExpenseList } from "@/modules/expenses/components/expense-list";
 import { CreateExpenseForm } from "@/modules/expenses/components/create-expense-form";

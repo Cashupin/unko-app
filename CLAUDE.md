@@ -25,7 +25,7 @@ src/
 │   ├── dashboard/
 │   ├── trips/
 │   ├── expenses/
-│   ├── itinerario/
+│   ├── itinerary/
 │   └── proposals/
 ├── components/
 │   └── ui/               ← SOLO componentes UI puros y reutilizables
