@@ -4,8 +4,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { UploadPhoto } from "@/components/upload-photo";
-import { LocationInput } from "@/components/location-input";
+import { UploadPhoto } from "@/components/ui/upload-photo";
+import { LocationInput } from "@/components/ui/location-input";
 import { toast } from "sonner";
 
 type ItemData = {

@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { UploadPhoto } from "@/components/upload-photo";
-import { DatePicker } from "@/components/date-picker";
-import { LocationInput } from "@/components/location-input";
+import { UploadPhoto } from "@/components/ui/upload-photo";
+import { DatePicker } from "@/components/ui/date-picker";
+import { LocationInput } from "@/components/ui/location-input";
 import { toast } from "sonner";
 
 type ActivityData = {

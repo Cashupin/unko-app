@@ -10,7 +10,10 @@
       "Bash(start c:UsersjalvaProjectsunko-appmockup-receipt-ui.html)",
       "Bash(PRISMA_MIGRATE_SKIP_GENERATE=1 npx prisma migrate dev --name add_expense_share_token --skip-seed)",
       "Bash(npx next:*)",
-      "Bash(npm list:*)"
+      "Bash(npm list:*)",
+      "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/components/ui\")",
+      "Bash(mv date-picker.tsx location-input.tsx photo-thumbnail.tsx upload-photo.tsx currency-selector.tsx converted-amount.tsx auto-refresh.tsx user-menu.tsx theme-toggle.tsx tutorial-button.tsx ui/)",
+      "Bash(xargs sed:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\standalone-expenses\\[expenseId]",

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { toast } from "sonner";
-import { ConvertedAmount } from "@/components/converted-amount";
+import { ConvertedAmount } from "@/components/ui/converted-amount";
 import { getCategoryEmoji } from "@/lib/expense-categories";
 import { ReceiptButton } from "@/components/receipt-button";
 import { EditExpenseForm } from "@/components/edit-expense-form";

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { DeleteActivityButton } from "@/components/delete-activity-button";
 import { CreateActivityForm } from "@/components/create-activity-form";
 import { EditActivityForm } from "@/components/edit-activity-form";
-import { PhotoThumbnail } from "@/components/photo-thumbnail";
+import { PhotoThumbnail } from "@/components/ui/photo-thumbnail";
 import { getMapsUrl } from "@/lib/maps-url";
 import { PastDaysCollapsible } from "@/components/past-days-collapsible";
 import { CreateItemFromActivityButton } from "@/components/create-item-from-activity-button";

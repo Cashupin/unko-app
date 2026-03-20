@@ -6,7 +6,7 @@ import { getMapsUrl } from "@/lib/maps-url";
 import { CheckInButton } from "@/components/check-in-button";
 import { VoteButtons } from "@/components/vote-buttons";
 import { AddToItineraryButton } from "@/components/add-to-itinerary-button";
-import { PhotoThumbnail } from "@/components/photo-thumbnail";
+import { PhotoThumbnail } from "@/components/ui/photo-thumbnail";
 import { EditItemForm } from "@/components/edit-item-form";
 import { DeleteItemButton } from "@/components/delete-item-button";
 import type { ItemSummary } from "@/types/item";

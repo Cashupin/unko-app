@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CreatePaymentForm } from "@/components/create-payment-form";
-import { ConvertedAmount } from "@/components/converted-amount";
+import { ConvertedAmount } from "@/components/ui/converted-amount";
 
 type Settlement = {
   fromId: string;

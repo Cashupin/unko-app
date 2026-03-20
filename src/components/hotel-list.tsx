@@ -4,7 +4,7 @@ import { EditHotelForm } from "@/components/edit-hotel-form";
 import { HotelReservedToggle } from "@/components/hotel-reserved-toggle";
 import { HotelScrollTarget } from "@/components/hotel-scroll-target";
 import { HotelSummaryPanel } from "@/components/hotel-summary-panel";
-import { ConvertedAmount } from "@/components/converted-amount";
+import { ConvertedAmount } from "@/components/ui/converted-amount";
 import { HotelExpenseButton } from "@/components/hotel-expense-button";
 
 export async function HotelList({

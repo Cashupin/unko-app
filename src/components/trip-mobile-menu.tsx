@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useCurrency } from "@/providers/currency-provider";
 import { CURRENCIES, CURRENCY_NAMES } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";

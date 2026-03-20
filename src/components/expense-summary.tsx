@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
-import { ConvertedAmount } from "@/components/converted-amount";
+import { ConvertedAmount } from "@/components/ui/converted-amount";
 
 type ParticipantTotal = {
   id: string;

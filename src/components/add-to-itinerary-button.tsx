@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { DatePicker } from "@/components/date-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
 
 function toDateInput(date: Date | null | undefined): string {

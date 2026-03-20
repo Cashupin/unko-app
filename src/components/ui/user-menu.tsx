@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { CurrencySelector } from "@/components/currency-selector";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { CurrencySelector } from "@/components/ui/currency-selector";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 type Props = {
   userName: string | null;

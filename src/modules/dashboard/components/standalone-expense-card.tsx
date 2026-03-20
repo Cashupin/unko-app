@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
-import { ConvertedAmount } from "@/components/converted-amount";
+import { ConvertedAmount } from "@/components/ui/converted-amount";
 import { useCurrency } from "@/providers/currency-provider";
 import { ExpenseCard } from "@/components/expense-card";
 import type { ExpenseCardData } from "@/components/expense-card";

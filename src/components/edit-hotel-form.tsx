@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS } from "@/lib/constants";
-import { DatePicker } from "@/components/date-picker";
-import { LocationInput } from "@/components/location-input";
+import { DatePicker } from "@/components/ui/date-picker";
+import { LocationInput } from "@/components/ui/location-input";
 import { toast } from "sonner";
 
 function toYMD(d: Date | string | null | undefined): string | undefined {
