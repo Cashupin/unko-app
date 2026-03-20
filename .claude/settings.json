@@ -13,7 +13,11 @@
       "Bash(npm list:*)",
       "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/components/ui\")",
       "Bash(mv date-picker.tsx location-input.tsx photo-thumbnail.tsx upload-photo.tsx currency-selector.tsx converted-amount.tsx auto-refresh.tsx user-menu.tsx theme-toggle.tsx tutorial-button.tsx ui/)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/trips/components\")",
+      "Bash(mkdir -p \"c:/Users/jalva/Projects/unko-app/src/modules/trips/types\")",
+      "Bash(mv trip-home.tsx trip-bottom-nav.tsx trip-mobile-menu.tsx trip-header-menu.tsx edit-trip-form.tsx delete-trip-button.tsx manage-participants-panel.tsx add-participant-form.tsx invite-user-form.tsx \"../modules/trips/components/\")",
+      "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/types/trip.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/trips/types/trip.ts\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\standalone-expenses\\[expenseId]",

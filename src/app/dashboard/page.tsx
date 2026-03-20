@@ -5,14 +5,14 @@ import type { Currency } from "@/lib/constants";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { calculateSettlement } from "@/lib/settlement";
-import { InviteUserForm } from "@/components/invite-user-form";
+import { InviteUserForm } from "@/modules/trips/components/invite-user-form";
 import { UserMenu } from "@/components/ui/user-menu";
 import { DashboardMobileMenu } from "@/modules/dashboard/components/dashboard-mobile-menu";
 import { NotificationsBell } from "@/modules/notifications/components/notifications-bell";
 import { TutorialButton } from "@/components/ui/tutorial-button";
 import { StandaloneExpenseForm } from "@/modules/dashboard/components/standalone-expense-form";
 import { DashboardExpenses } from "@/modules/dashboard/components/dashboard-expenses";
-import type { TripSummary } from "@/types/trip";
+import type { TripSummary } from "@/modules/trips/types/trip";
 import type { StandaloneExpenseData } from "@/modules/dashboard/components/standalone-expense-card";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
