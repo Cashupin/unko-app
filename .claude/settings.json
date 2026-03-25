@@ -32,7 +32,14 @@
       "Bash(mv \"c:/Users/jalva/Projects/unko-app/src/app/actions/import-kml.ts\" \"c:/Users/jalva/Projects/unko-app/src/modules/proposals/actions/import-kml.ts\")",
       "Bash(grep -r 'from \"\"\"\"@/components/' --include=\"*.tsx\" --include=\"*.ts\")",
       "Bash(grep -r 'from \"\"@/lib/settlement\\\\|from \"\"@/lib/expense-categories\\\\|from \"\"@/lib/parse-kml\\\\|from \"\"@/types/trip\\\\|from \"\"@/types/item\\\\|from \"\"@/app/actions/' --include=\"*.tsx\" --include=\"*.ts\")",
-      "Bash(grep -rn 'from \"\"\"\"@/components/[^u]' --include=\"*.tsx\" --include=\"*.ts\")"
+      "Bash(grep -rn 'from \"\"\"\"@/components/[^u]' --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(grep -r 'from \"\"\"\"@/components/' src --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(grep -r 'from \"\"@/lib/\\\\\\(settlement\\\\|expense-categories\\\\|parse-kml\\\\|notifications\\\\\\)\"\"' src --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(grep -r 'from \"\"@/types/\\\\\\(trip\\\\|item\\\\\\)\"\"' src --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/jalva/Projects/unko-app/**)",
+      "Bash(done)"
     ],
     "additionalDirectories": [
       "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\standalone-expenses\\[expenseId]",

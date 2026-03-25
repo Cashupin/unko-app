@@ -9,7 +9,7 @@ import { UserMenu } from "@/components/ui/user-menu";
 import { NotificationsBell } from "@/modules/notifications/components/notifications-bell";
 import { TutorialButton } from "@/components/ui/tutorial-button";
 import { TripBottomNav } from "@/modules/trips/components/trip-bottom-nav";
-import { AutoRefresh } from "@/components/ui/auto-refresh";
+import { TripLiveUpdater } from "@/modules/trips/components/trip-live-updater";
 import { GalleryView } from "@/modules/gallery/components/gallery-view";
 import { ItemList } from "@/modules/proposals/components/item-list";
 import { CreateItemForm } from "@/modules/proposals/components/create-item-form";
@@ -72,6 +72,7 @@ export default async function TripPage({
         defaultCurrency: true,
         coverImageUrl: true,
         createdById: true,
+        updatedAt: true,
       },
     }),
     prisma.tripParticipant.findFirst({
@@ -375,7 +376,7 @@ export default async function TripPage({
       </main>
 
       <TripBottomNav tripId={tripId} activeTab={activeTab} />
-      <AutoRefresh />
+      <TripLiveUpdater tripId={tripId} lastSeenAt={trip.updatedAt.toISOString()} />
     </div>
   );
 }

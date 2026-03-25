@@ -197,6 +197,7 @@ export async function POST(
       }));
     createNotificationMany(debtorNotifications).catch(() => {});
 
+    prisma.trip.update({ where: { id: tripId }, data: {} }).catch(() => {});
     return NextResponse.json(expense, { status: 201 });
   }
 
@@ -291,7 +292,7 @@ export async function POST(
       link: `/trips/${tripId}?tab=gastos`,
     }));
   createNotificationMany(itemizedNotifications).catch(() => {});
-
+  prisma.trip.update({ where: { id: tripId }, data: {} }).catch(() => {});
   return NextResponse.json(expense, { status: 201 });
 }
 

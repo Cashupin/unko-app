@@ -102,5 +102,6 @@ export async function POST(
     },
   });
 
+  prisma.trip.update({ where: { id: tripId }, data: {} }).catch(() => {});
   return NextResponse.json(payment, { status: 201 });
 }

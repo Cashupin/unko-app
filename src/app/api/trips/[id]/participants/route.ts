@@ -212,6 +212,7 @@ export async function POST(
     body: `${session.user.name ?? "Alguien"} te agregó como participante.`,
     link: `/trips/${tripId}`,
   }).catch(() => {});
+  prisma.trip.update({ where: { id: tripId }, data: {} }).catch(() => {});
 
   return NextResponse.json(participant, { status: 201 });
 }
