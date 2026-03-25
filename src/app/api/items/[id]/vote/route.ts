@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { broadcast } from "@/lib/supabase-broadcast";
 
 const voteSchema = z.object({
   value: z.enum(["APPROVE", "REJECT"], {
@@ -67,5 +68,6 @@ export async function POST(
     prisma.vote.count({ where: { itemId, value: "REJECT" } }),
   ]);
 
+  broadcast(`trip:${item.tripId}`, "update");
   return NextResponse.json({ approvals, rejections, myVote: value });
 }

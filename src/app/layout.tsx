@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { CurrencyProvider } from "@/providers/currency-provider";
 import { NotificationsProvider } from "@/modules/notifications/components/notifications-provider";
+import { auth } from "@/auth";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -31,11 +32,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -43,9 +47,11 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <CurrencyProvider>
-          <NotificationsProvider>
-          {children}
-          </NotificationsProvider>
+          {userId ? (
+            <NotificationsProvider userId={userId}>
+              {children}
+            </NotificationsProvider>
+          ) : children}
           </CurrencyProvider>
           <Toaster
             richColors

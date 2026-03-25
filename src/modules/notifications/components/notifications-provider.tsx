@@ -5,9 +5,9 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from "react";
+import { supabase } from "@/lib/supabase";
 
 export type AppNotification = {
   id: string;
@@ -35,13 +35,16 @@ const NotificationsContext = createContext<NotificationsContextValue>({
   markAllRead: async () => {},
 });
 
-const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutos
-
-export function NotificationsProvider({ children }: { children: React.ReactNode }) {
+export function NotificationsProvider({
+  children,
+  userId,
+}: {
+  children: React.ReactNode;
+  userId: string;
+}) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -52,7 +55,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       setNotifications(data.notifications ?? []);
       setUnreadCount(data.unreadCount ?? 0);
     } catch {
-      // silent — no molestar al usuario si falla el polling
+      // silent
     } finally {
       setLoading(false);
     }
@@ -60,7 +63,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   const markAllRead = useCallback(async () => {
     if (unreadCount === 0) return;
-    // Optimistic update
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     setUnreadCount(0);
     try {
@@ -70,13 +72,26 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, [unreadCount]);
 
+  // Carga inicial
   useEffect(() => {
     fetchNotifications();
-    intervalRef.current = setInterval(fetchNotifications, POLL_INTERVAL);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
   }, [fetchNotifications]);
+
+  // Realtime — escucha broadcast de nuevas notificaciones para este usuario
+  useEffect(() => {
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on("broadcast", { event: "new_notification" }, (payload) => {
+        const n = payload.payload as AppNotification;
+        setNotifications((prev) => [n, ...prev]);
+        setUnreadCount((prev) => prev + 1);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   return (
     <NotificationsContext.Provider

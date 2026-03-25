@@ -72,7 +72,6 @@ export default async function TripPage({
         defaultCurrency: true,
         coverImageUrl: true,
         createdById: true,
-        updatedAt: true,
       },
     }),
     prisma.tripParticipant.findFirst({
@@ -376,7 +375,7 @@ export default async function TripPage({
       </main>
 
       <TripBottomNav tripId={tripId} activeTab={activeTab} />
-      <TripLiveUpdater tripId={tripId} lastSeenAt={trip.updatedAt.toISOString()} />
+      <TripLiveUpdater tripId={tripId} />
     </div>
   );
 }

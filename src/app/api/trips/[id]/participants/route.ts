@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { createNotification } from "@/modules/notifications/lib/notifications";
+import { broadcast } from "@/lib/supabase-broadcast";
 
 async function requireActiveSession() {
   const session = await auth();
@@ -212,7 +213,7 @@ export async function POST(
     body: `${session.user.name ?? "Alguien"} te agregó como participante.`,
     link: `/trips/${tripId}`,
   }).catch(() => {});
-  prisma.trip.update({ where: { id: tripId }, data: {} }).catch(() => {});
+  broadcast(`trip:${tripId}`, "update");
 
   return NextResponse.json(participant, { status: 201 });
 }

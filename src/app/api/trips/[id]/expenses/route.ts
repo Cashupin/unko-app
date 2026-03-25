@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotificationMany } from "@/modules/notifications/lib/notifications";
+import { broadcast } from "@/lib/supabase-broadcast";
 
 async function requireMember(tripId: string, userId: string) {
   return prisma.tripParticipant.findFirst({
@@ -196,8 +197,7 @@ export async function POST(
         link: `/trips/${tripId}?tab=gastos`,
       }));
     createNotificationMany(debtorNotifications).catch(() => {});
-
-    prisma.trip.update({ where: { id: tripId }, data: {} }).catch(() => {});
+    broadcast(`trip:${tripId}`, "update");
     return NextResponse.json(expense, { status: 201 });
   }
 
@@ -292,7 +292,7 @@ export async function POST(
       link: `/trips/${tripId}?tab=gastos`,
     }));
   createNotificationMany(itemizedNotifications).catch(() => {});
-  prisma.trip.update({ where: { id: tripId }, data: {} }).catch(() => {});
+  broadcast(`trip:${tripId}`, "update");
   return NextResponse.json(expense, { status: 201 });
 }
 

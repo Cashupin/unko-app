@@ -39,12 +39,19 @@
       "Bash(for f:*)",
       "Bash(do echo:*)",
       "Read(//c/Users/jalva/Projects/unko-app/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(npm uninstall:*)",
+      "Bash(sed -i 's/  prisma\\\\.trip\\\\.update\\({ where: { id: tripId }, data: {} }\\)\\\\.catch\\(\\(\\) => {}\\);\\\\n//g' src/app/api/trips/[id]/activities/route.ts src/app/api/trips/[id]/hotels/route.ts src/app/api/trips/[id]/expenses/route.ts src/app/api/trips/[id]/payments/route.ts src/app/api/trips/[id]/participants/route.ts)",
+      "Bash(grep -n \"touchTrip\\\\|prisma.trip.update.*data: {}\" src/app/api/trips/[id]/activities/route.ts src/app/api/trips/[id]/hotels/route.ts src/app/api/trips/[id]/expenses/route.ts src/app/api/trips/[id]/payments/route.ts src/app/api/trips/[id]/participants/route.ts)",
+      "Bash(do)",
+      "Bash(powershell -Command \"\\(Get-Content ''$f''\\) -replace ''  prisma\\\\.trip\\\\.update\\\\\\(\\\\{ where: \\\\{ id: tripId \\\\}, data: \\\\{\\\\} \\\\}\\\\\\)\\\\.catch\\\\\\(\\\\\\(\\\\\\) => \\\\{\\\\}\\\\\\);\\\\r?\\\\n'', '''' | Set-Content ''$f''\")",
+      "Bash(grep -n \"prisma.trip.update.*data: {}\" src/app/api/trips/[id]/activities/route.ts src/app/api/trips/[id]/hotels/route.ts src/app/api/trips/[id]/expenses/route.ts src/app/api/trips/[id]/payments/route.ts src/app/api/trips/[id]/participants/route.ts)"
     ],
     "additionalDirectories": [
       "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\standalone-expenses\\[expenseId]",
       "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\share\\[token]",
-      "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\share"
+      "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\share",
+      "c:\\Users\\jalva\\Projects\\unko-app\\src\\app\\api\\trips\\[id]\\events"
     ]
   }
 }

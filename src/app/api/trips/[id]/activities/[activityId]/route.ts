@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
+import { broadcast } from "@/lib/supabase-broadcast";
 
 async function requireMember(tripId: string, userId: string) {
   return prisma.tripParticipant.findFirst({
@@ -83,6 +84,7 @@ export async function PATCH(
     },
   });
 
+  broadcast(`trip:${tripId}`, "update");
   return NextResponse.json(updated);
 }
 
@@ -112,5 +114,6 @@ export async function DELETE(
 
   await prisma.activity.delete({ where: { id: activityId } });
   void deleteCloudinaryImage(activity.photoUrl);
+  broadcast(`trip:${tripId}`, "update");
   return new NextResponse(null, { status: 204 });
 }

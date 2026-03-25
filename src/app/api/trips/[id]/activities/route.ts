@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { broadcast } from "@/lib/supabase-broadcast";
 
 async function requireMember(tripId: string, userId: string) {
   return prisma.tripParticipant.findFirst({
@@ -115,6 +116,6 @@ export async function POST(
     },
   });
 
-  prisma.trip.update({ where: { id: tripId }, data: {} }).catch(() => {});
+  broadcast(`trip:${tripId}`, "update");
   return NextResponse.json(activity, { status: 201 });
 }

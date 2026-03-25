@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
+import { broadcast } from "@/lib/supabase-broadcast";
 
 // ─── Validation ────────────────────────────────────────────────────────────────
 
@@ -65,7 +66,7 @@ export async function POST(
   // ── Business rule: item must exist ───────────────────────────────────────────
   const item = await prisma.item.findUnique({
     where: { id: itemId },
-    select: { id: true },
+    select: { id: true, tripId: true },
   });
 
   if (!item) {
@@ -87,6 +88,7 @@ export async function POST(
       data: { photoUrl: photoUrl ?? null },
       select: checkSelect,
     });
+    broadcast(`trip:${item.tripId}`, "update");
     return NextResponse.json(check, { status: 200 });
   }
 
@@ -99,5 +101,6 @@ export async function POST(
     select: checkSelect,
   });
 
+  broadcast(`trip:${item.tripId}`, "update");
   return NextResponse.json(check, { status: 201 });
 }
