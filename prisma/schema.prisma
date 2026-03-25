@@ -61,6 +61,12 @@ enum SplitType {
   ITEMIZED // División por ítems individuales
 }
 
+enum NotificationType {
+  TRIP_ADDED        // Te agregaron a un viaje
+  EXPENSE_CREATED   // Te asociaron a un gasto
+  PAYMENT_RECEIVED  // Alguien marcó un pago como pagado
+}
+
 // ─── NextAuth required models ─────────────────────────────────────────────────
 
 model Account {
@@ -123,6 +129,7 @@ model User {
   createdTrips    Trip[]           @relation("TripCreatedBy")
   participations  TripParticipant[] @relation("UserParticipant")
   expenses        Expense[]        @relation("ExpenseCreatedBy")
+  notifications   Notification[]
 }
 
 model Invitation {
@@ -327,6 +334,7 @@ model Expense {
   splitType           SplitType @default(EQUAL)
   paymentMethod       String    @default("CASH")
   receiptUrl          String?
+  category            String    @default("OTHER")
   shareToken          String?   @unique // token público para compartir gasto independiente
   isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())
@@ -404,4 +412,22 @@ model Payment {
   @@index([tripId])
   @@index([fromParticipantId])
   @@index([toParticipantId])
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?
+  link      String?          // Ruta interna de la app, ej: /trips/[id]
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }

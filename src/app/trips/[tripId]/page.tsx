@@ -3,30 +3,32 @@ import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { TripMobileMenu } from "@/components/trip-mobile-menu";
-import { TripHeaderMenu } from "@/components/trip-header-menu";
-import { UserMenu } from "@/components/user-menu";
-import { TripBottomNav } from "@/components/trip-bottom-nav";
-import { AutoRefresh } from "@/components/auto-refresh";
-import { GalleryView } from "@/components/gallery-view";
-import { ItemList } from "@/components/item-list";
-import { CreateItemForm } from "@/components/create-item-form";
-import { ManageParticipantsPanel } from "@/components/manage-participants-panel";
-import { EditTripForm } from "@/components/edit-trip-form";
-import { DeleteTripButton } from "@/components/delete-trip-button";
-import { ActivityList } from "@/components/activity-list";
-import { CreateActivityForm } from "@/components/create-activity-form";
-import { HotelList } from "@/components/hotel-list";
-import { HotelCollapsible } from "@/components/hotel-collapsible";
-import { CreateHotelForm } from "@/components/create-hotel-form";
-import { TripHome } from "@/components/trip-home";
-import { ExpenseList } from "@/components/expense-list";
-import { CreateExpenseForm } from "@/components/create-expense-form";
-import { ItemFilterChips } from "@/components/item-filter-chips";
-import { NearbyActivitiesServer } from "@/components/nearby-activities-server";
-import { HashHighlight } from "@/components/hash-highlight";
-import { KmlImport } from "@/components/kml-import";
-import type { ParticipantSummary } from "@/types/trip";
+import { TripMobileMenu } from "@/modules/trips/components/trip-mobile-menu";
+import { TripHeaderMenu } from "@/modules/trips/components/trip-header-menu";
+import { UserMenu } from "@/components/ui/user-menu";
+import { NotificationsBell } from "@/modules/notifications/components/notifications-bell";
+import { TutorialButton } from "@/components/ui/tutorial-button";
+import { TripBottomNav } from "@/modules/trips/components/trip-bottom-nav";
+import { TripLiveUpdater } from "@/modules/trips/components/trip-live-updater";
+import { GalleryView } from "@/modules/gallery/components/gallery-view";
+import { ItemList } from "@/modules/proposals/components/item-list";
+import { CreateItemForm } from "@/modules/proposals/components/create-item-form";
+import { ManageParticipantsPanel } from "@/modules/trips/components/manage-participants-panel";
+import { EditTripForm } from "@/modules/trips/components/edit-trip-form";
+import { DeleteTripButton } from "@/modules/trips/components/delete-trip-button";
+import { ActivityList } from "@/modules/itinerary/components/activity-list";
+import { CreateActivityForm } from "@/modules/itinerary/components/create-activity-form";
+import { HotelList } from "@/modules/itinerary/components/hotel-list";
+import { HotelCollapsible } from "@/modules/itinerary/components/hotel-collapsible";
+import { CreateHotelForm } from "@/modules/itinerary/components/create-hotel-form";
+import { TripHome } from "@/modules/trips/components/trip-home";
+import { ExpenseList } from "@/modules/expenses/components/expense-list";
+import { CreateExpenseForm } from "@/modules/expenses/components/create-expense-form";
+import { ItemFilterChips } from "@/modules/proposals/components/item-filter-chips";
+import { NearbyActivitiesServer } from "@/modules/proposals/components/nearby-activities-server";
+import { HashHighlight } from "@/modules/proposals/components/hash-highlight";
+import { KmlImport } from "@/modules/proposals/components/kml-import";
+import type { ParticipantSummary } from "@/modules/trips/types/trip";
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
 
@@ -144,7 +146,7 @@ export default async function TripPage({
   return (
     <div className="min-h-screen bg-white dark:bg-[#0E1113]">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+      <header className="border-b border-zinc-200 bg-white dark:border-zinc-700/80 dark:bg-zinc-900 sticky top-0 z-30">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 md:px-6">
           <div className="flex items-center gap-3 min-w-0">
             <Link
@@ -168,38 +170,50 @@ export default async function TripPage({
             )}
           </div>
 
-          {/* Desktop menus — hidden on mobile */}
-          <div className="hidden md:flex items-center gap-1">
-            {isAdmin && (
-              <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} manageParticipantsSlot={manageParticipantsSlot} />
-            )}
-            <UserMenu
-              userName={session.user.name ?? null}
-              userEmail={session.user.email ?? null}
-              userImage={session.user.image ?? null}
+          {/* Right side: bell + desktop menus + mobile hamburger */}
+          <div className="flex items-center gap-1">
+            <TutorialButton
+              tutorialId={
+                activeTab === "actividades" ? "trip-actividades"
+                : activeTab === "itinerario" ? "trip-itinerario"
+                : activeTab === "gastos" ? "trip-gastos"
+                : "trip-home"
+              }
+            />
+            <NotificationsBell />
+            <div className="hidden md:flex items-center gap-1">
+              {isAdmin && (
+                <div id="tutorial-trip-admin-menu">
+                <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} manageParticipantsSlot={manageParticipantsSlot} />
+                </div>
+              )}
+              <UserMenu
+                userName={session.user.name ?? null}
+                userEmail={session.user.email ?? null}
+                userImage={session.user.image ?? null}
+                signOutSlot={signOutSlot}
+              />
+            </div>
+            <TripMobileMenu
+              tripId={tripId}
+              activeTab={activeTab}
+              tripName={trip.name}
+              isAdmin={isAdmin}
               signOutSlot={signOutSlot}
+              editSlot={editSlot}
+              deleteSlot={deleteSlot}
+              manageParticipantsSlot={manageParticipantsSlot}
             />
           </div>
-
-          {/* Mobile hamburger menu */}
-          <TripMobileMenu
-            tripId={tripId}
-            activeTab={activeTab}
-            tripName={trip.name}
-            isAdmin={isAdmin}
-            signOutSlot={signOutSlot}
-            editSlot={editSlot}
-            deleteSlot={deleteSlot}
-            manageParticipantsSlot={manageParticipantsSlot}
-          />
         </div>
 
         {/* Tab navigation — hidden on mobile, shown on tablet+ */}
         <div className="mx-auto max-w-5xl px-4 pb-3 md:px-6">
-          <nav className="hidden md:flex gap-1" aria-label="Pestañas del viaje">
+          <nav id="tutorial-trip-tabs" className="hidden md:flex gap-1" aria-label="Pestañas del viaje">
             {TABS.map((tab) => (
               <Link
                 key={tab.id}
+                id={`tutorial-tab-${tab.id}`}
                 href={`/trips/${tripId}?tab=${tab.id}`}
                 className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === tab.id
@@ -240,12 +254,14 @@ export default async function TripPage({
           <div className="flex flex-col gap-6">
             <HashHighlight />
             {/* Nearby activities */}
-            <Suspense fallback={null}>
-              <NearbyActivitiesServer tripId={tripId} alwaysOpen expandable />
-            </Suspense>
+            <div id="tutorial-nearby">
+              <Suspense fallback={null}>
+                <NearbyActivitiesServer tripId={tripId} alwaysOpen expandable />
+              </Suspense>
+            </div>
 
             {/* Items list */}
-            <div>
+            <div id="tutorial-item-list">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                   Actividades del grupo
@@ -256,7 +272,7 @@ export default async function TripPage({
                 </div>
               </div>
 
-              <div className="mb-4">
+              <div id="tutorial-item-filters" className="mb-4">
                 <ItemFilterChips />
               </div>
 
@@ -283,30 +299,32 @@ export default async function TripPage({
         {activeTab === "itinerario" && (
           <div>
             {/* Alojamiento collapsible */}
-            <HotelCollapsible
-              autoOpen={!!hotelId}
-              createSlot={
-                canEdit ? (
-                  <CreateHotelForm
-                    tripId={tripId}
-                    defaultCurrency={trip.defaultCurrency}
-                    tripStartDate={trip.startDate}
-                    tripEndDate={trip.endDate}
-                  />
-                ) : null
-              }
-              hotelListSlot={
-                <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando alojamiento...</div>}>
-                  <HotelList
-                    tripId={tripId}
-                    canEdit={canEdit}
-                    tripStartDate={trip.startDate}
-                    tripEndDate={trip.endDate}
-                    highlightHotelId={hotelId}
-                  />
-                </Suspense>
-              }
-            />
+            <div id="tutorial-hotel-section">
+              <HotelCollapsible
+                autoOpen={!!hotelId}
+                createSlot={
+                  canEdit ? (
+                    <CreateHotelForm
+                      tripId={tripId}
+                      defaultCurrency={trip.defaultCurrency}
+                      tripStartDate={trip.startDate}
+                      tripEndDate={trip.endDate}
+                    />
+                  ) : null
+                }
+                hotelListSlot={
+                  <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando alojamiento...</div>}>
+                    <HotelList
+                      tripId={tripId}
+                      canEdit={canEdit}
+                      tripStartDate={trip.startDate}
+                      tripEndDate={trip.endDate}
+                      highlightHotelId={hotelId}
+                    />
+                  </Suspense>
+                }
+              />
+            </div>
 
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Itinerario</h2>
@@ -316,41 +334,33 @@ export default async function TripPage({
                 </div>
               )}
             </div>
-            <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando itinerario...</div>}>
-              <ActivityList
-                tripId={tripId}
-                canEdit={canEdit}
-                startDate={trip.startDate}
-                endDate={trip.endDate}
-              />
-            </Suspense>
+            <div id="tutorial-activity-list">
+              <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando itinerario...</div>}>
+                <ActivityList
+                  tripId={tripId}
+                  canEdit={canEdit}
+                  startDate={trip.startDate}
+                  endDate={trip.endDate}
+                />
+              </Suspense>
+            </div>
           </div>
         )}
 
 
         {/* ── Gastos ──────────────────────────────────────────────────────── */}
         {activeTab === "gastos" && (
-          <div>
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Gastos</h2>
-              {canEdit && (
-                <CreateExpenseForm
-                  tripId={tripId}
-                  participants={participantOptions}
-                  defaultCurrency={trip.defaultCurrency}
-                />
-              )}
-            </div>
+          <div id="tutorial-expense-list">
             <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando gastos...</div>}>
-              <ExpenseList
-                tripId={tripId}
-                participants={participantOptions}
-                defaultCurrency={trip.defaultCurrency}
-                canEdit={canEdit}
-                myParticipantId={myParticipant.id}
-                myUserId={session.user.id!}
-                isAdmin={isAdmin}
-              />
+            <ExpenseList
+              tripId={tripId}
+              participants={participantOptions}
+              defaultCurrency={trip.defaultCurrency}
+              canEdit={canEdit}
+              myParticipantId={myParticipant.id}
+              myUserId={session.user.id!}
+              isAdmin={isAdmin}
+            />
             </Suspense>
           </div>
         )}
@@ -365,7 +375,7 @@ export default async function TripPage({
       </main>
 
       <TripBottomNav tripId={tripId} activeTab={activeTab} />
-      <AutoRefresh />
+      <TripLiveUpdater tripId={tripId} />
     </div>
   );
 }

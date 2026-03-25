@@ -27,14 +27,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Get the expense with paidBy and the specific split
+  // Get the expense with paidBy and all splits
   const expense = await prisma.expense.findFirst({
     where: { id: expenseId, tripId },
     select: {
       paidByParticipantId: true,
       participants: {
-        where: { participantId },
-        select: { id: true, paid: true },
+        select: { id: true, participantId: true, paid: true },
       },
     },
   });
@@ -42,7 +41,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Gasto no encontrado" }, { status: 404 });
   }
 
-  const split = expense.participants[0];
+  const split = expense.participants.find((p) => p.participantId === participantId);
   if (!split) {
     return NextResponse.json({ error: "Participante no encontrado en este gasto" }, { status: 404 });
   }
@@ -54,10 +53,26 @@ export async function PATCH(
     return NextResponse.json({ error: "No tienes permiso para modificar este split" }, { status: 403 });
   }
 
-  const updated = await prisma.expenseParticipant.update({
-    where: { id: split.id },
-    data: { paid: !split.paid },
-    select: { paid: true },
-  });
-  return NextResponse.json(updated);
+  const newPaid = !split.paid;
+
+  // After toggling, check if all debtors (non-payer) are paid → auto disable/enable
+  const debtorSplits = expense.participants.filter(
+    (p) => p.participantId !== expense.paidByParticipantId,
+  );
+  const allPaidAfterToggle = debtorSplits.every((p) =>
+    p.id === split.id ? newPaid : p.paid,
+  );
+
+  await prisma.$transaction([
+    prisma.expenseParticipant.update({
+      where: { id: split.id },
+      data: { paid: newPaid },
+    }),
+    prisma.expense.update({
+      where: { id: expenseId },
+      data: { isActive: !allPaidAfterToggle },
+    }),
+  ]);
+
+  return NextResponse.json({ paid: newPaid });
 }

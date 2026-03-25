@@ -20,7 +20,7 @@ const csp = [
   "font-src 'self'",
   // Cloudinary upload endpoint is called directly from the browser.
   // In development, Next.js HMR uses WebSockets on a dynamic port — allow them.
-  `connect-src 'self' https://api.cloudinary.com https://res.cloudinary.com https://photon.komoot.io${isDev ? " ws://localhost:* ws://127.0.0.1:*" : ""}`,
+  `connect-src 'self' https://api.cloudinary.com https://res.cloudinary.com https://photon.komoot.io https://*.supabase.co wss://*.supabase.co${isDev ? " ws://localhost:* ws://127.0.0.1:* http://127.0.0.1:*" : ""}`,
   "media-src 'none'",
   "object-src 'none'",
   "frame-ancestors 'none'", // equivalent to X-Frame-Options DENY

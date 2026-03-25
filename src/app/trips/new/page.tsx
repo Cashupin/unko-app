@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { DatePicker } from "@/components/date-picker";
-import { UploadPhoto } from "@/components/upload-photo";
+import { DatePicker } from "@/components/ui/date-picker";
+import { UploadPhoto } from "@/components/ui/upload-photo";
 import { toast } from "sonner";
 
 const CURRENCIES = [

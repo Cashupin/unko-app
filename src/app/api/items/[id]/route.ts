@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
+import { broadcast } from "@/lib/supabase-broadcast";
 
 // ─── PATCH /api/items/[id] ─────────────────────────────────────────────────────
 
@@ -100,6 +101,7 @@ export async function PATCH(
     select: { id: true, title: true, updatedAt: true },
   });
 
+  broadcast(`trip:${item.tripId}`, "update");
   return NextResponse.json(updated);
 }
 
@@ -149,5 +151,6 @@ export async function DELETE(
     prisma.item.delete({ where: { id: itemId } }),
   ]);
   void deleteCloudinaryImage(item.imageUrl);
+  broadcast(`trip:${item.tripId}`, "update");
   return new NextResponse(null, { status: 204 });
 }

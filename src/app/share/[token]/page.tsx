@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ShareExpenseClaim } from "@/components/share-expense-claim";
+import { ShareExpenseClaim } from "@/modules/share/components/share-expense-claim";
 
 export default async function SharePage({
   params,

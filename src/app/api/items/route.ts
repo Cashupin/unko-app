@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { broadcast } from "@/lib/supabase-broadcast";
 
 // ─── Shared auth guard ─────────────────────────────────────────────────────────
 
@@ -145,6 +146,6 @@ export async function POST(req: NextRequest) {
   });
 
   logger.info("item.created", { itemId: item.id, type, userId });
-
+  broadcast(`trip:${tripId}`, "update");
   return NextResponse.json(item, { status: 201 });
 }

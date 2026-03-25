@@ -3,6 +3,8 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { createNotification } from "@/modules/notifications/lib/notifications";
+import { broadcast } from "@/lib/supabase-broadcast";
 
 async function requireActiveSession() {
   const session = await auth();
@@ -201,6 +203,17 @@ export async function POST(
     role,
     addedBy: session.user.id,
   });
+
+  // Notificación al usuario agregado (fire-and-forget)
+  const trip = await prisma.trip.findUnique({ where: { id: tripId }, select: { name: true } });
+  createNotification({
+    userId: targetUser.id,
+    type: "TRIP_ADDED",
+    title: `Te agregaron al viaje "${trip?.name ?? "un viaje"}"`,
+    body: `${session.user.name ?? "Alguien"} te agregó como participante.`,
+    link: `/trips/${tripId}`,
+  }).catch(() => {});
+  broadcast(`trip:${tripId}`, "update");
 
   return NextResponse.json(participant, { status: 201 });
 }

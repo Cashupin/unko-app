@@ -4,14 +4,16 @@ import { CURRENCY_SYMBOLS as SYM, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { calculateSettlement } from "@/lib/settlement";
-import { InviteUserForm } from "@/components/invite-user-form";
-import { UserMenu } from "@/components/user-menu";
-import { DashboardMobileMenu } from "@/components/dashboard-mobile-menu";
-import { StandaloneExpenseForm } from "@/components/standalone-expense-form";
-import { DashboardExpenses } from "@/components/dashboard-expenses";
-import type { TripSummary } from "@/types/trip";
-import type { StandaloneExpenseData } from "@/components/standalone-expense-card";
+import { calculateSettlement } from "@/modules/expenses/lib/settlement";
+import { InviteUserForm } from "@/modules/trips/components/invite-user-form";
+import { UserMenu } from "@/components/ui/user-menu";
+import { DashboardMobileMenu } from "@/modules/dashboard/components/dashboard-mobile-menu";
+import { NotificationsBell } from "@/modules/notifications/components/notifications-bell";
+import { TutorialButton } from "@/components/ui/tutorial-button";
+import { StandaloneExpenseForm } from "@/modules/dashboard/components/standalone-expense-form";
+import { DashboardExpenses } from "@/modules/dashboard/components/dashboard-expenses";
+import type { TripSummary } from "@/modules/trips/types/trip";
+import type { StandaloneExpenseData } from "@/modules/dashboard/components/standalone-expense-card";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   CLP: "$", JPY: "¥", USD: "$", EUR: "€", GBP: "£", KRW: "₩", CNY: "¥", THB: "฿",
@@ -70,6 +72,7 @@ async function getStandaloneExpenses(userId: string): Promise<StandaloneExpenseD
       receiptUrl: true,
       expenseDate: true,
       splitType: true,
+      category: true,
       isActive: true,
       createdById: true,
       trip: { select: { id: true } },
@@ -213,21 +216,25 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-[#0E1113]">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-700/80 dark:bg-zinc-900/80 backdrop-blur sticky top-0 z-30">
+      <header className="border-b border-zinc-200 bg-white dark:border-zinc-700/80 dark:bg-zinc-900 sticky top-0 z-30">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 md:px-6">
           <span className="text-sm font-semibold text-zinc-400 dark:text-zinc-500 tracking-tight">
             ✈ UnkoTrip
           </span>
-          <div className="hidden md:flex items-center gap-2">
-            <InviteUserForm />
-            <UserMenu
-              userName={session.user.name ?? null}
-              userEmail={session.user.email ?? null}
-              userImage={session.user.image ?? null}
-              signOutSlot={signOutSlot}
-            />
+          <div className="flex items-center gap-2">
+            <TutorialButton tutorialId="dashboard" />
+            <NotificationsBell />
+            <div className="hidden md:flex items-center gap-2">
+              <InviteUserForm />
+              <UserMenu
+                userName={session.user.name ?? null}
+                userEmail={session.user.email ?? null}
+                userImage={session.user.image ?? null}
+                signOutSlot={signOutSlot}
+              />
+            </div>
+            <DashboardMobileMenu signOutSlot={signOutSlot} inviteSlot={inviteSlot} />
           </div>
-          <DashboardMobileMenu signOutSlot={signOutSlot} inviteSlot={inviteSlot} />
         </div>
       </header>
 
@@ -251,7 +258,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Metrics ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-3 gap-3 md:gap-4">
+        <div id="tutorial-metrics" className="grid grid-cols-3 gap-3 md:gap-4">
           <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-800/60 px-4 py-4 flex flex-col gap-1">
             <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
               Viajes
@@ -306,12 +313,13 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Mis viajes ─────────────────────────────────────────────── */}
-        <section>
+        <section id="tutorial-trips">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
               Mis viajes
             </h2>
             <Link
+              id="tutorial-new-trip"
               href="/trips/new"
               className="text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
             >
@@ -356,7 +364,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* ── Gastos independientes ─────────────────────────────────── */}
-        <section>
+        <section id="tutorial-standalone">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
