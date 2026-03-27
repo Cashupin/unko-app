@@ -245,6 +245,7 @@ export function CreateItemForm({ tripId }: { tripId: string }) {
                   label={imageUrl ? "Cambiar imagen" : "Subir imagen"}
                   onUpload={(url) => setImageUrl(url)}
                   disabled={loading}
+                  subfolder={`${tripId}/activities/covers`}
                 />
               </div>
 

@@ -446,7 +446,7 @@ export function CreateExpenseForm({
                     />
                   </div>
                 ) : (
-                  <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder="receipts" />
+                  <UploadPhoto onUpload={setReceiptUrl} label="+ Subir boleta" disabled={loading} subfolder={`${tripId}/receipts`} />
                 )}
               </div>
 

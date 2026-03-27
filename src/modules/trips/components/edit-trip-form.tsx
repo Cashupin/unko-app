@@ -201,7 +201,7 @@ export function EditTripForm({
                   <UploadPhoto
                     onUpload={setCoverImageUrl}
                     label="Subir foto de portada"
-                    subfolder="trip-covers"
+                    subfolder={`${trip.id}/trip-covers`}
                     disabled={loading}
                   />
                 )}

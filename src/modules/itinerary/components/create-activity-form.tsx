@@ -281,6 +281,7 @@ export function CreateActivityForm({
                     onUpload={setPhotoUrl}
                     label="+ Subir foto"
                     disabled={loading}
+                    subfolder={`${tripId}/itinerary`}
                   />
                 )}
               </div>

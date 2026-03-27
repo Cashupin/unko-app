@@ -36,8 +36,12 @@ function isDuplicate(pin: KmlPin, existing: ExistingItemStub[]): boolean {
   return false;
 }
 
-async function uploadImageFile(file: File): Promise<string> {
-  const sigRes = await fetch("/api/upload/signature", { method: "POST" });
+async function uploadImageFile(file: File, tripId: string): Promise<string> {
+  const sigRes = await fetch("/api/upload/signature", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subfolder: `${tripId}/activities/covers` }),
+  });
   if (!sigRes.ok) throw new Error("No se pudo obtener la firma de subida");
   const sig = await sigRes.json() as {
     signature: string; timestamp: number; apiKey: string;
@@ -123,7 +127,7 @@ export function KmlImport({ tripId }: { tripId: string }) {
   async function handleImageUpload(idx: number, file: File) {
     setItems((prev) => prev.map((it, i) => i === idx ? { ...it, uploading: true } : it));
     try {
-      const url = await uploadImageFile(file);
+      const url = await uploadImageFile(file, tripId);
       setItems((prev) => prev.map((it, i) => i === idx ? { ...it, imageUrl: url, uploading: false } : it));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al subir la imagen");
