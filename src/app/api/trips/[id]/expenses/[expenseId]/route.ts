@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getExchangeRates, convertAmount } from "@/lib/exchange-rates";
 
 async function requireMember(tripId: string, userId: string) {
   return prisma.tripParticipant.findFirst({
@@ -105,6 +106,30 @@ export async function PATCH(
 
   const data = result.data;
 
+  // Fetch trip's default currency for conversion
+  const trip = await prisma.trip.findUniqueOrThrow({
+    where: { id: tripId },
+    select: { defaultCurrency: true },
+  });
+  const tripCurrency = trip.defaultCurrency;
+  const needsConversion = data.currency !== tripCurrency;
+
+  let rate = 1;
+  if (needsConversion) {
+    try {
+      const rates = await getExchangeRates();
+      rate = convertAmount(1, data.currency, tripCurrency, rates);
+    } catch {
+      return NextResponse.json(
+        { error: "No se pudo obtener la tasa de cambio. Intenta de nuevo." },
+        { status: 502 },
+      );
+    }
+  }
+
+  const toTrip = (amount: number) =>
+    needsConversion ? Math.round(amount * rate * 100) / 100 : amount;
+
   if (data.splitType === "EQUAL") {
     const { description, amount, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, participantIds, category } = data;
     const participantCount = await prisma.tripParticipant.count({
@@ -113,8 +138,10 @@ export async function PATCH(
     if (participantCount !== participantIds.length) {
       return NextResponse.json({ error: "Uno o más participantes no pertenecen al viaje" }, { status: 400 });
     }
-    const perPerson = Math.floor((amount / participantIds.length) * 100) / 100;
-    const remainder = Math.round((amount - perPerson * participantIds.length) * 100) / 100;
+
+    const convertedAmount = toTrip(amount);
+    const perPerson = Math.floor((convertedAmount / participantIds.length) * 100) / 100;
+    const remainder = Math.round((convertedAmount - perPerson * participantIds.length) * 100) / 100;
 
     const updated = await prisma.$transaction(async (tx) => {
       await tx.expenseParticipant.deleteMany({ where: { expenseId } });
@@ -123,8 +150,11 @@ export async function PATCH(
         where: { id: expenseId },
         data: {
           description,
-          amount,
-          currency,
+          amount: convertedAmount,
+          currency: tripCurrency,
+          originalAmount: needsConversion ? amount : null,
+          originalCurrency: needsConversion ? currency : null,
+          exchangeRate: needsConversion ? rate : null,
           paymentMethod: paymentMethod ?? "CASH",
           receiptUrl: receiptUrl ?? null,
           paidByParticipantId: paidByParticipantId ?? null,
@@ -153,10 +183,14 @@ export async function PATCH(
   if (participantCount !== allParticipantIds.length) {
     return NextResponse.json({ error: "Uno o más participantes no pertenecen al viaje" }, { status: 400 });
   }
-  const totalAmount = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
+
+  const originalTotal = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
+  const totalAmount = toTrip(originalTotal);
+
   const amountByParticipant = new Map<string, number>();
   for (const item of items) {
-    const share = item.amount / item.participantIds.length;
+    const convertedItemAmount = toTrip(item.amount);
+    const share = convertedItemAmount / item.participantIds.length;
     for (const pid of item.participantIds) {
       amountByParticipant.set(pid, (amountByParticipant.get(pid) ?? 0) + share);
     }
@@ -174,7 +208,10 @@ export async function PATCH(
       data: {
         description,
         amount: totalAmount,
-        currency,
+        currency: tripCurrency,
+        originalAmount: needsConversion ? originalTotal : null,
+        originalCurrency: needsConversion ? currency : null,
+        exchangeRate: needsConversion ? rate : null,
         paymentMethod: paymentMethod ?? "CASH",
         receiptUrl: receiptUrl ?? null,
         paidByParticipantId: paidByParticipantId ?? null,
@@ -195,7 +232,7 @@ export async function PATCH(
         data: {
           expenseId,
           description: item.description,
-          amount: item.amount,
+          amount: toTrip(item.amount),
           groupKey: item.groupKey ?? null,
           groupQty: item.groupQty ?? null,
           itemQty: item.itemQty ?? null,

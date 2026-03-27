@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotificationMany } from "@/modules/notifications/lib/notifications";
 import { broadcast } from "@/lib/supabase-broadcast";
+import { getExchangeRates, convertAmount } from "@/lib/exchange-rates";
 
 async function requireMember(tripId: string, userId: string) {
   return prisma.tripParticipant.findFirst({
@@ -81,6 +82,9 @@ export async function GET(
       description: true,
       amount: true,
       currency: true,
+      originalAmount: true,
+      originalCurrency: true,
+      exchangeRate: true,
       expenseDate: true,
       splitType: true,
       createdAt: true,
@@ -144,6 +148,31 @@ export async function POST(
 
   const data = result.data;
 
+  // Fetch trip's default currency for conversion
+  const trip = await prisma.trip.findUniqueOrThrow({
+    where: { id: tripId },
+    select: { defaultCurrency: true },
+  });
+  const tripCurrency = trip.defaultCurrency;
+  const needsConversion = data.currency !== tripCurrency;
+
+  // Get exchange rate if currencies differ
+  let rate = 1;
+  if (needsConversion) {
+    try {
+      const rates = await getExchangeRates();
+      rate = convertAmount(1, data.currency, tripCurrency, rates);
+    } catch {
+      return NextResponse.json(
+        { error: "No se pudo obtener la tasa de cambio. Intenta de nuevo." },
+        { status: 502 },
+      );
+    }
+  }
+
+  const toTrip = (amount: number) =>
+    needsConversion ? Math.round(amount * rate * 100) / 100 : amount;
+
   if (data.splitType === "EQUAL") {
     const { description, amount, currency, paymentMethod, receiptUrl, paidByParticipantId, expenseDate, participantIds, category } = data;
 
@@ -158,9 +187,10 @@ export async function POST(
       );
     }
 
-    const perPerson = Math.floor((amount / participantIds.length) * 100) / 100;
+    const convertedAmount = toTrip(amount);
+    const perPerson = Math.floor((convertedAmount / participantIds.length) * 100) / 100;
     const remainder =
-      Math.round((amount - perPerson * participantIds.length) * 100) / 100;
+      Math.round((convertedAmount - perPerson * participantIds.length) * 100) / 100;
 
     const expense = await prisma.expense.create({
       data: {
@@ -168,8 +198,13 @@ export async function POST(
         createdById: session.user.id,
         paidByParticipantId: paidByParticipantId ?? null,
         description,
-        amount,
-        currency,
+        amount: convertedAmount,
+        currency: tripCurrency,
+        ...(needsConversion && {
+          originalAmount: amount,
+          originalCurrency: currency,
+          exchangeRate: rate,
+        }),
         paymentMethod: paymentMethod ?? "CASH",
         receiptUrl: receiptUrl ?? null,
         expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
@@ -193,7 +228,7 @@ export async function POST(
         userId: p.userId!,
         type: "EXPENSE_CREATED" as const,
         title: `Nuevo gasto: ${description}`,
-        body: `Debes ${perPerson.toLocaleString("es-CL")} ${currency}.`,
+        body: `Debes ${perPerson.toLocaleString("es-CL")} ${tripCurrency}.`,
         link: `/trips/${tripId}?tab=gastos`,
       }));
     createNotificationMany(debtorNotifications).catch(() => {});
@@ -219,12 +254,14 @@ export async function POST(
     );
   }
 
-  const totalAmount = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
+  const originalTotal = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
+  const totalAmount = toTrip(originalTotal);
 
-  // Calculate per-participant amounts from items
+  // Calculate per-participant amounts from items (converted to trip currency)
   const amountByParticipant = new Map<string, number>();
   for (const item of items) {
-    const share = item.amount / item.participantIds.length;
+    const convertedItemAmount = toTrip(item.amount);
+    const share = convertedItemAmount / item.participantIds.length;
     for (const pid of item.participantIds) {
       amountByParticipant.set(pid, (amountByParticipant.get(pid) ?? 0) + share);
     }
@@ -242,7 +279,12 @@ export async function POST(
         paidByParticipantId: paidByParticipantId ?? null,
         description,
         amount: totalAmount,
-        currency,
+        currency: tripCurrency,
+        ...(needsConversion && {
+          originalAmount: originalTotal,
+          originalCurrency: currency,
+          exchangeRate: rate,
+        }),
         paymentMethod: paymentMethod ?? "CASH",
         receiptUrl: receiptUrl ?? null,
         expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
@@ -263,7 +305,7 @@ export async function POST(
         data: {
           expenseId: created.id,
           description: item.description,
-          amount: item.amount,
+          amount: toTrip(item.amount),
           groupKey: item.groupKey ?? null,
           groupQty: item.groupQty ?? null,
           itemQty: item.itemQty ?? null,
@@ -303,6 +345,9 @@ const expenseSelect = {
   description: true,
   amount: true,
   currency: true,
+  originalAmount: true,
+  originalCurrency: true,
+  exchangeRate: true,
   paymentMethod: true,
   receiptUrl: true,
   expenseDate: true,

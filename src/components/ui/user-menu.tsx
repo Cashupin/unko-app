@@ -80,7 +80,7 @@ export function UserMenu({ userName, userEmail, userImage, signOutSlot }: Props)
           </div>
 
           {/* Sign out */}
-          <div className="px-3 py-2" onClick={() => setOpen(false)}>
+          <div className="px-3 py-2">
             {signOutSlot}
           </div>
         </div>

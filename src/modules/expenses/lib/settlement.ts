@@ -4,7 +4,10 @@
  * Dado un conjunto de gastos y pagos realizados, calcula el mínimo número
  * de transferencias para que todos los participantes queden al día.
  *
- * Se calcula por moneda por separado, ya que no tenemos tasas de cambio.
+ * Los montos de gastos se almacenan siempre en la moneda del viaje
+ * (convertidos al momento de crear), por lo que la liquidación opera
+ * en una sola moneda. El algoritmo sigue soportando múltiples monedas
+ * para pagos legacy o registrados manualmente.
  */
 
 export interface ParticipantBalance {

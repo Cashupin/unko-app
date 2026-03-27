@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -319,12 +320,12 @@ export function ManageParticipantsPanel({
         {variant === "menu" ? "Gestionar participantes" : "Gestionar →"}
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 md:p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
+          <div className="w-full h-full md:h-auto md:max-w-md md:rounded-2xl bg-white shadow-2xl md:max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-100 dark:border-zinc-700">
               <div className="flex items-center gap-2">
@@ -396,7 +397,8 @@ export function ManageParticipantsPanel({
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

@@ -23,7 +23,6 @@ import { HotelCollapsible } from "@/modules/itinerary/components/hotel-collapsib
 import { CreateHotelForm } from "@/modules/itinerary/components/create-hotel-form";
 import { TripHome } from "@/modules/trips/components/trip-home";
 import { ExpenseList } from "@/modules/expenses/components/expense-list";
-import { CreateExpenseForm } from "@/modules/expenses/components/create-expense-form";
 import { ItemFilterChips } from "@/modules/proposals/components/item-filter-chips";
 import { NearbyActivitiesServer } from "@/modules/proposals/components/nearby-activities-server";
 import { HashHighlight } from "@/modules/proposals/components/hash-highlight";
@@ -34,7 +33,7 @@ import type { ParticipantSummary } from "@/modules/trips/types/trip";
 
 type Tab = "home" | "actividades" | "itinerario" | "gastos" | "galería";
 const TABS: { id: Tab; label: string }[] = [
-  { id: "home", label: "Inicio" },
+  { id: "home", label: "Resumen del Viaje" },
   { id: "actividades", label: "Actividades" },
   { id: "itinerario", label: "Itinerario" },
   { id: "gastos", label: "Gastos" },
@@ -81,7 +80,7 @@ export default async function TripPage({
   ]);
 
   if (!trip) notFound();
-  if (!myParticipant) redirect("/dashboard"); // not a member
+  if (!myParticipant) redirect("/"); // not a member
 
   const isAdmin = myParticipant.role === "ADMIN";
   const canEdit = myParticipant.role !== "VIEWER";
@@ -150,7 +149,7 @@ export default async function TripPage({
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 md:px-6">
           <div className="flex items-center gap-3 min-w-0">
             <Link
-              href="/dashboard"
+              href="/"
               className="shrink-0 flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-700 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
             >
               <svg className="sm:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -175,16 +174,16 @@ export default async function TripPage({
             <TutorialButton
               tutorialId={
                 activeTab === "actividades" ? "trip-actividades"
-                : activeTab === "itinerario" ? "trip-itinerario"
-                : activeTab === "gastos" ? "trip-gastos"
-                : "trip-home"
+                  : activeTab === "itinerario" ? "trip-itinerario"
+                    : activeTab === "gastos" ? "trip-gastos"
+                      : "trip-home"
               }
             />
             <NotificationsBell />
             <div className="hidden md:flex items-center gap-1">
               {isAdmin && (
                 <div id="tutorial-trip-admin-menu">
-                <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} manageParticipantsSlot={manageParticipantsSlot} />
+                  <TripHeaderMenu editSlot={editSlot} deleteSlot={deleteSlot} manageParticipantsSlot={manageParticipantsSlot} />
                 </div>
               )}
               <UserMenu
@@ -215,11 +214,10 @@ export default async function TripPage({
                 key={tab.id}
                 id={`tutorial-tab-${tab.id}`}
                 href={`/trips/${tripId}?tab=${tab.id}`}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-700"
-                }`}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab.id
+                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                  : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-700"
+                  }`}
               >
                 {tab.label}
               </Link>
@@ -352,15 +350,15 @@ export default async function TripPage({
         {activeTab === "gastos" && (
           <div id="tutorial-expense-list">
             <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando gastos...</div>}>
-            <ExpenseList
-              tripId={tripId}
-              participants={participantOptions}
-              defaultCurrency={trip.defaultCurrency}
-              canEdit={canEdit}
-              myParticipantId={myParticipant.id}
-              myUserId={session.user.id!}
-              isAdmin={isAdmin}
-            />
+              <ExpenseList
+                tripId={tripId}
+                participants={participantOptions}
+                defaultCurrency={trip.defaultCurrency}
+                canEdit={canEdit}
+                myParticipantId={myParticipant.id}
+                myUserId={session.user.id!}
+                isAdmin={isAdmin}
+              />
             </Suspense>
           </div>
         )}

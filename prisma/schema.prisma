@@ -330,6 +330,9 @@ model Expense {
   description         String
   amount              Float
   currency            Currency  @default(CLP)
+  originalAmount      Float?
+  originalCurrency    Currency?
+  exchangeRate        Float?
   expenseDate         DateTime  @default(now())
   splitType           SplitType @default(EQUAL)
   paymentMethod       String    @default("CASH")

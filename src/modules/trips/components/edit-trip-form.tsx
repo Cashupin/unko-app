@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS } from "@/lib/constants";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -104,12 +105,12 @@ export function EditTripForm({
         Editar viaje
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 md:p-4"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
+          <div className="w-full h-full md:h-auto max-w-md md:rounded-2xl bg-white p-6 shadow-2xl md:max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Editar viaje</h2>
               <button onClick={closeModal} className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300" aria-label="Cerrar">✕</button>
@@ -122,6 +123,7 @@ export function EditTripForm({
                 </label>
                 <input
                   id="edit-name" name="name" type="text" required
+                  maxLength={50}
                   defaultValue={trip.name}
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
                 />
@@ -223,7 +225,8 @@ export function EditTripForm({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

@@ -12,7 +12,7 @@ async function requireAdmin(tripId: string, userId: string) {
 }
 
 const updateTripSchema = z.object({
-  name: z.string().trim().min(1).max(200).optional(),
+  name: z.string().trim().min(1).max(50).optional(),
   description: z.string().trim().max(1000).optional().or(z.literal("")),
   destination: z.string().trim().max(500).optional().or(z.literal("")),
   startDate: z.string().optional().or(z.literal("")),
