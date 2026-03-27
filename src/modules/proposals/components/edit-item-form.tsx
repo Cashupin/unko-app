@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 type ItemData = {
   id: string;
+  tripId: string;
   title: string;
   type: "PLACE" | "FOOD";
   description: string | null;
@@ -223,6 +224,7 @@ export function EditItemForm({ item }: { item: ItemData }) {
                   label={imageUrl ? "Cambiar imagen" : "Subir imagen"}
                   onUpload={(url) => setImageUrl(url)}
                   disabled={loading}
+                  subfolder={`${item.tripId}/activities/covers`}
                 />
               </div>
 

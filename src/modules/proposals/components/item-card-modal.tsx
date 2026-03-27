@@ -399,7 +399,7 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
                   className="flex flex-col gap-2 mt-4"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <CheckInButton itemId={item.id} myCheck={item.myCheck} />
+                  <CheckInButton itemId={item.id} tripId={item.tripId} myCheck={item.myCheck} />
 
                   <VoteButtons
                     itemId={item.id}

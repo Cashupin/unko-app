@@ -9,10 +9,11 @@ import type { CheckSummary } from "@/modules/proposals/types/item";
 
 interface CheckInButtonProps {
   itemId: string;
+  tripId: string;
   myCheck: CheckSummary | null;
 }
 
-export function CheckInButton({ itemId, myCheck }: CheckInButtonProps) {
+export function CheckInButton({ itemId, tripId, myCheck }: CheckInButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
@@ -78,6 +79,7 @@ export function CheckInButton({ itemId, myCheck }: CheckInButtonProps) {
             label={pendingUrl ? "Cambiar foto" : "Subir foto (opcional)"}
             onUpload={(url) => setPendingUrl(url)}
             disabled={saving}
+            subfolder={`${tripId}/activities/checkins`}
           />
 
           <div className="flex gap-2">
