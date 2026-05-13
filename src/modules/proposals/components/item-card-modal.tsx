@@ -211,7 +211,7 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
                   currentUserId={item.currentUserId}
                   participants={item.participants}
                 />
-              )}}
+              )}
               {item.canDelete && <DeleteItemButton itemId={item.id} />}
             </div>
           )}
