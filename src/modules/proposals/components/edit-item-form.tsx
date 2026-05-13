@@ -20,17 +20,74 @@ type ItemData = {
   address: string | null;
   externalUrl: string | null;
   imageUrl: string | null;
+  createdById: string | null;
 };
 
-export function EditItemForm({ item }: { item: ItemData }) {
+export function EditItemForm({
+  item,
+  canClaim = false,
+  isAdmin = false,
+  currentUserId,
+  participants = [],
+}: {
+  item: ItemData;
+  canClaim?: boolean;
+  isAdmin?: boolean;
+  currentUserId?: string;
+  participants?: { id: string; name: string }[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(item.imageUrl);
+  const [claiming, setClaiming] = useState(false);
+  const [assignValue, setAssignValue] = useState<string>(item.createdById ?? "");
 
   function closeModal() {
     setOpen(false);
     setImageUrl(item.imageUrl);
+    setAssignValue(item.createdById ?? "");
+  }
+
+  async function handleClaim() {
+    if (!currentUserId) return;
+    setClaiming(true);
+    try {
+      const res = await fetch(`/api/items/${item.id}/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUserId }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) { toast.error(data.error ?? "Error al adjudicarse el ítem"); return; }
+      closeModal();
+      router.refresh();
+      toast.success("Ítem adjudicado");
+    } catch {
+      toast.error("Error de red. Intenta de nuevo.");
+    } finally {
+      setClaiming(false);
+    }
+  }
+
+  async function handleAssign(userId: string | null) {
+    setClaiming(true);
+    try {
+      const res = await fetch(`/api/items/${item.id}/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) { toast.error(data.error ?? "Error al asignar el ítem"); return; }
+      setAssignValue(userId ?? "");
+      router.refresh();
+      toast.success(userId ? "Ítem asignado" : "Ítem desasignado");
+    } catch {
+      toast.error("Error de red. Intenta de nuevo.");
+    } finally {
+      setClaiming(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -227,6 +284,40 @@ export function EditItemForm({ item }: { item: ItemData }) {
                   subfolder={`${item.tripId}/activities/covers`}
                 />
               </div>
+
+              {/* Claim / Assign */}
+              {canClaim && (
+                <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-700">
+                  <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">Esta actividad no tiene propietario</p>
+                  <button
+                    type="button"
+                    onClick={handleClaim}
+                    disabled={claiming}
+                    className="w-full rounded-lg bg-zinc-900 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                  >
+                    {claiming ? "Guardando..." : "Adjudicarse esta actividad"}
+                  </button>
+                </div>
+              )}
+
+              {isAdmin && (
+                <div className="flex flex-col gap-1.5 rounded-xl border border-zinc-200 p-3 dark:border-zinc-700">
+                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    Propuesto por
+                  </label>
+                  <select
+                    value={assignValue}
+                    onChange={(e) => handleAssign(e.target.value || null)}
+                    disabled={claiming}
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
+                  >
+                    <option value="">— Sistema / Sin dueño —</option>
+                    {participants.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-1">
                 <button

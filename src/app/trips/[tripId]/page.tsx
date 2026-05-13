@@ -283,6 +283,7 @@ export default async function TripPage({
                   currentUserId={session.user.id}
                   tripId={tripId}
                   isAdmin={isAdmin}
+                  canMutate={canEdit}
                   tripStartDate={trip.startDate}
                   tripEndDate={trip.endDate}
                   typeFilter={itemType}

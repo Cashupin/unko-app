@@ -32,6 +32,7 @@ export type ItemCardData = {
   imageUrl: string | null;
   tripId: string;
   createdAt: string;
+  createdById: string | null;
   createdByName: string | null;
   createdByImage: string | null;
   approvals: number;
@@ -44,6 +45,10 @@ export type ItemCardData = {
   checks: { id: string; photoUrl: string | null; userName: string | null }[];
   canEdit: boolean;
   canDelete: boolean;
+  canClaim: boolean;
+  isAdmin: boolean;
+  currentUserId: string;
+  participants: { id: string; name: string }[];
   inItinerary: boolean;
   canAddToItinerary: boolean;
   tripStartDate: string | null;
@@ -198,7 +203,15 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
               className="absolute bottom-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={(e) => e.stopPropagation()}
             >
-              {item.canEdit && <EditItemForm item={item.itemSummary} />}
+              {item.canEdit && (
+                <EditItemForm
+                  item={item.itemSummary}
+                  canClaim={item.canClaim}
+                  isAdmin={item.isAdmin}
+                  currentUserId={item.currentUserId}
+                  participants={item.participants}
+                />
+              )}}
               {item.canDelete && <DeleteItemButton itemId={item.id} />}
             </div>
           )}

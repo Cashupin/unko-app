@@ -148,7 +148,7 @@ export async function importKmlItems(
           address,
           externalUrl: null,
           imageUrl: item.imageUrl ?? null,
-          createdById: userId,
+          createdById: null,
           tripId,
         },
       });

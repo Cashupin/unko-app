@@ -17,11 +17,12 @@ export type ItemSummary = {
   imageUrl: string | null;
   tripId: string;
   createdAt: Date | string;
+  createdById: string | null;
   createdBy: {
     id: string;
     name: string | null;
     image: string | null;
-  };
+  } | null;
   _count: { checks: number };
   // Vote breakdown (computed from all votes in the query)
   approvals: number;
