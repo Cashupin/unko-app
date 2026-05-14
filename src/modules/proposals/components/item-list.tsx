@@ -7,24 +7,35 @@ export async function ItemList({
   currentUserId,
   tripId,
   isAdmin = false,
+  canMutate = false,
   tripStartDate,
   tripEndDate,
   typeFilter,
   search,
+  proposerFilter,
 }: {
   currentUserId: string;
   tripId: string;
   isAdmin?: boolean;
+  canMutate?: boolean;
   tripStartDate?: Date | null;
   tripEndDate?: Date | null;
   typeFilter?: string;
   search?: string;
+  proposerFilter?: string;
 }) {
-  const [rawItems, registeredParticipants] = await Promise.all([
+  const createdByIdFilter = proposerFilter === "none"
+    ? null
+    : proposerFilter
+      ? proposerFilter
+      : undefined;
+
+  const [rawItems, registeredParticipants, tripParticipants] = await Promise.all([
     prisma.item.findMany({
       where: {
         tripId,
         type: typeFilter ? (typeFilter as ItemType) : undefined,
+        createdById: createdByIdFilter,
         OR: search
           ? [
               { title: { contains: search, mode: "insensitive" } },
@@ -73,6 +84,10 @@ export async function ItemList({
     prisma.tripParticipant.count({
       where: { tripId, type: "REGISTERED", user: { status: "ACTIVE" } },
     }),
+    prisma.tripParticipant.findMany({
+      where: { tripId, type: "REGISTERED", user: { status: "ACTIVE" } },
+      select: { userId: true, name: true },
+    }),
   ]);
 
   const required = Math.floor(registeredParticipants / 2) + 1;
@@ -88,8 +103,9 @@ export async function ItemList({
   const items: ItemCardData[] = rawItems.map((raw) => {
     const approvals = raw.votes.filter((v) => v.value === "APPROVE").length;
     const rejections = raw.votes.filter((v) => v.value === "REJECT").length;
-    const isOwner = raw.createdBy.id === currentUserId;
-    const otherVoteCount = raw.votes.filter((v) => v.userId !== raw.createdBy.id).length;
+    const isOwner = raw.createdBy?.id === currentUserId;
+    const otherVoteCount = raw.votes.filter((v) => v.userId !== raw.createdBy?.id).length;
+    const hasOwner = raw.createdBy !== null;
     const hasMajority = approvals >= required;
     const myVote =
       (raw.votes.find((v) => v.userId === currentUserId)?.value as "APPROVE" | "REJECT" | undefined) ??
@@ -112,7 +128,8 @@ export async function ItemList({
       imageUrl: raw.imageUrl,
       tripId: raw.tripId,
       createdAt: raw.createdAt,
-      createdBy: raw.createdBy,
+      createdById: raw.createdBy?.id ?? null,
+      createdBy: raw.createdBy ?? null,
       _count: raw._count,
       approvals,
       rejections,
@@ -137,8 +154,9 @@ export async function ItemList({
       imageUrl: raw.imageUrl,
       tripId: raw.tripId,
       createdAt: raw.createdAt.toISOString(),
-      createdByName: raw.createdBy.name,
-      createdByImage: raw.createdBy.image,
+      createdById: raw.createdBy?.id ?? null,
+      createdByName: raw.createdBy?.name ?? null,
+      createdByImage: raw.createdBy?.image ?? null,
       approvals,
       rejections,
       checksCount: raw._count.checks,
@@ -153,6 +171,10 @@ export async function ItemList({
       checks: raw.checks.map(({ id, photoUrl, user }) => ({ id, photoUrl, userName: user?.name ?? null })),
       canEdit: (isOwner && otherVoteCount === 0) || isAdmin,
       canDelete: isOwner || isAdmin,
+      canClaim: !hasOwner && canMutate && !isAdmin,
+      isAdmin,
+      currentUserId,
+      participants: tripParticipants.map((p) => ({ id: p.userId!, name: p.name })),
       inItinerary: raw.activities.length > 0,
       canAddToItinerary: isAdmin || hasMajority,
       tripStartDate: tripStartDate ? tripStartDate.toISOString() : null,

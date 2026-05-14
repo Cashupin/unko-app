@@ -32,6 +32,9 @@ export type ExpenseCardData = {
   description: string;
   amount: number;
   currency: string;
+  originalAmount: number | null;
+  originalCurrency: string | null;
+  exchangeRate: number | null;
   paymentMethod: string;
   receiptUrl: string | null;
   expenseDate: Date;
@@ -79,12 +82,12 @@ export function ExpenseCard({
   const fmtDate = (d: Date) =>
     new Date(d).toLocaleDateString("es-CL", { day: "numeric", month: "short" });
 
-  // Build data for EditExpenseForm
+  // Build data for EditExpenseForm — if it was converted, show original values for editing
   const editData: EditExpenseData = {
     id: expense.id,
     description: expense.description,
-    amount: expense.amount,
-    currency: expense.currency,
+    amount: expense.originalAmount ?? expense.amount,
+    currency: expense.originalCurrency ?? expense.currency,
     paymentMethod: expense.paymentMethod,
     receiptUrl: expense.receiptUrl,
     expenseDate: expense.expenseDate,
@@ -93,11 +96,11 @@ export function ExpenseCard({
     paidByParticipantId: expense.paidBy?.id ?? null,
     participants: expense.participants.map((ep) => ({
       participantId: ep.participantId,
-      amount: ep.amount,
+      amount: expense.exchangeRate ? Math.round(ep.amount / expense.exchangeRate * 100) / 100 : ep.amount,
     })),
     items: expense.items.map((item) => ({
       description: item.description,
-      amount: item.amount,
+      amount: expense.exchangeRate ? Math.round(item.amount / expense.exchangeRate * 100) / 100 : item.amount,
       participantIds: item.participants.map((ip) => ip.participant.id),
     })),
   };
@@ -202,6 +205,7 @@ export function ExpenseCard({
                     tripId={tripId}
                     expense={editData}
                     participants={tripParticipants}
+                    defaultCurrency={expense.currency}
                   />
                   <button
                     onClick={handleDelete}
@@ -219,6 +223,12 @@ export function ExpenseCard({
           <p className="text-2xl font-black tracking-tight tabular-nums text-zinc-900 leading-none mb-2 dark:text-zinc-100">
             <ConvertedAmount amount={expense.amount} currency={expense.currency} />
           </p>
+          {expense.originalCurrency && expense.originalAmount != null && (
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 -mt-1 mb-2">
+              Originalmente {sym(expense.originalCurrency)}{fmtAmount(expense.originalAmount, expense.originalCurrency)}
+              {" "}({expense.originalCurrency})
+            </p>
+          )}
 
           {/* Paid by */}
           {expense.paidBy && (

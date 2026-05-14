@@ -28,7 +28,7 @@ export function DeleteTripButton({
         return;
       }
       toast.success("Viaje eliminado");
-      router.push("/dashboard");
+      router.push("/");
     } catch {
       toast.error("Error al eliminar el viaje");
     } finally {

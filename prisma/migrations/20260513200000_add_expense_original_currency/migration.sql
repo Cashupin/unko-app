@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "originalAmount" DOUBLE PRECISION;
+ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "originalCurrency" "Currency";
+ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "exchangeRate" DOUBLE PRECISION;

@@ -72,7 +72,7 @@ export default function NewTripPage() {
       <header className="border-b border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
         <div className="mx-auto flex max-w-2xl items-center gap-4 px-4 py-4 md:px-6">
           <Link
-            href="/dashboard"
+            href="/"
             className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors dark:text-zinc-400 dark:hover:text-zinc-100"
           >
             ← Mis viajes
@@ -97,7 +97,7 @@ export default function NewTripPage() {
               type="text"
               required
               minLength={1}
-              maxLength={255}
+              maxLength={50}
               placeholder="Ej: Japón 2025"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
             />
@@ -112,7 +112,7 @@ export default function NewTripPage() {
               id="destination"
               name="destination"
               type="text"
-              maxLength={500}
+              maxLength={50}
               placeholder="Ej: Tokyo, Osaka, Kyoto"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
             />
@@ -204,7 +204,7 @@ export default function NewTripPage() {
 
           <div className="flex justify-end gap-2 pt-1">
             <Link
-              href="/dashboard"
+              href="/"
               className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700"
             >
               Cancelar

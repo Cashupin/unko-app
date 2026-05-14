@@ -223,8 +223,8 @@ model Item {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  createdById String
-  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String?
+  createdBy   User?  @relation(fields: [createdById], references: [id])
 
   tripId String
   trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
@@ -330,6 +330,9 @@ model Expense {
   description         String
   amount              Float
   currency            Currency  @default(CLP)
+  originalAmount      Float?
+  originalCurrency    Currency?
+  exchangeRate        Float?
   expenseDate         DateTime  @default(now())
   splitType           SplitType @default(EQUAL)
   paymentMethod       String    @default("CASH")

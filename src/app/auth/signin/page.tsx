@@ -10,12 +10,12 @@ export default async function SignInPage({
   // Redirect already-authenticated users away from sign-in
   const session = await auth();
   if (session?.user?.status === "ACTIVE") {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   const { callbackUrl } = await searchParams;
   // Only allow relative URLs to prevent open-redirect attacks
-  const safeCallbackUrl = callbackUrl?.startsWith("/") ? callbackUrl : "/dashboard";
+  const safeCallbackUrl = callbackUrl?.startsWith("/") ? callbackUrl : "/";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-white dark:bg-[#0E1113]">

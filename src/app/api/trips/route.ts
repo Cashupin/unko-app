@@ -13,7 +13,7 @@ async function requireActiveSession() {
 // ─── Validation ────────────────────────────────────────────────────────────────
 
 const createTripSchema = z.object({
-  name: z.string().trim().min(1, "El nombre es requerido").max(255),
+  name: z.string().trim().min(1, "El nombre es requerido").max(50, "El nombre no puede tener más de 50 caracteres"),
   description: z.string().trim().max(1000).optional(),
   destination: z.string().trim().max(500).optional(),
   startDate: z.string().datetime({ offset: true }).optional().or(z.literal("")),

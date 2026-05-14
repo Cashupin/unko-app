@@ -9,6 +9,7 @@ import { UploadPhoto } from "@/components/ui/upload-photo";
 import { ReceiptButton } from "@/modules/expenses/components/receipt-button";
 import { ReceiptAiButton, type ParsedReceiptItem } from "@/modules/expenses/components/receipt-ai-button";
 import { toast } from "sonner";
+import { useCurrency } from "@/providers/currency-provider";
 import { CATEGORY_CONFIG, detectCategory, type ExpenseCategory } from "@/modules/expenses/lib/expense-categories";
 
 // Format raw numeric string for display inside the input (es-CL thousands separator)
@@ -64,6 +65,7 @@ export function CreateExpenseForm({
   defaultCurrency: string;
 }) {
   const router = useRouter();
+  const { convert, exchangeRates } = useCurrency();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [splitMode, setSplitMode] = useState<"EQUAL" | "ITEMIZED">("ITEMIZED");
@@ -493,6 +495,22 @@ export function CreateExpenseForm({
                   </select>
                 </div>
               </div>
+
+              {/* Conversion preview */}
+              {currency !== defaultCurrency && exchangeRates.status === "ready" && (() => {
+                const previewAmount = splitMode === "EQUAL"
+                  ? parseFloat(amountValue) || 0
+                  : items.reduce((s, item) => s + (parseFloat(item.amount) || 0), 0);
+                if (previewAmount <= 0) return null;
+                const converted = convert(previewAmount, currency);
+                return (
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 dark:bg-amber-900/20 dark:border-amber-800/50">
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      Se guardará como <span className="font-semibold">≈ {fmtAmount(converted, defaultCurrency)} {defaultCurrency}</span> (moneda del viaje)
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* Paid by + Date */}
               <div className="grid grid-cols-2 gap-3">

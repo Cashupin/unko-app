@@ -8,7 +8,7 @@ import { CURRENCIES, CURRENCY_NAMES } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 
 const TABS = [
-  { id: "home", label: "Inicio", icon: "🏠" },
+  { id: "home", label: "Resumen del Viaje", icon: "🏠" },
   { id: "actividades", label: "Actividades", icon: "💡" },
   { id: "itinerario", label: "Itinerario", icon: "🗓️" },
   { id: "gastos", label: "Gastos", icon: "💰" },
@@ -62,9 +62,8 @@ export function TripMobileMenu({
 
       {/* Drawer — slides from right */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 flex w-72 flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-900 md:hidden ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed inset-y-0 right-0 z-50 flex w-72 flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-900 md:hidden ${open ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-700">
@@ -90,11 +89,10 @@ export function TripMobileMenu({
               key={tab.id}
               href={`/trips/${tripId}?tab=${tab.id}`}
               onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab.id
+              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
                   ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                   : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
-              }`}
+                }`}
             >
               <span className="text-base">{tab.icon}</span>
               {tab.label}

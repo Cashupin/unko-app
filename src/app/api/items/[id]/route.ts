@@ -54,7 +54,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const isCreator = item.createdById === session.user.id;
+  const isCreator = item.createdById !== null && item.createdById === session.user.id;
   const isAdmin = membership.role === "ADMIN";
   const otherVoteCount = item.votes.filter((v) => v.userId !== item.createdById).length;
   const canEdit = (isCreator && otherVoteCount === 0) || isAdmin;
@@ -138,7 +138,7 @@ export async function DELETE(
   }
 
   // Only creator or ADMIN can delete
-  const isCreator = item.createdById === session.user.id;
+  const isCreator = item.createdById !== null && item.createdById === session.user.id;
   const isAdmin = membership.role === "ADMIN";
 
   if (!isCreator && !isAdmin) {
