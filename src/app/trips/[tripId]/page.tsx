@@ -47,13 +47,13 @@ export default async function TripPage({
   searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ tab?: string; itemType?: string; search?: string; hotelId?: string }>;
+  searchParams: Promise<{ tab?: string; itemType?: string; search?: string; hotelId?: string; proposer?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
   const { tripId } = await params;
-  const { tab: tabParam, itemType, search, hotelId } = await searchParams;
+  const { tab: tabParam, itemType, search, hotelId, proposer } = await searchParams;
   const activeTab: Tab =
     TABS.find((t) => t.id === tabParam)?.id ?? "home";
 
@@ -105,6 +105,11 @@ export default async function TripPage({
     id: p.id,
     name: p.name,
   }));
+
+  // Participant options for the proposer filter (keyed by userId)
+  const proposerOptions = rawParticipants
+    .filter((p) => p.user?.id)
+    .map((p) => ({ id: p.user!.id, name: p.name }));
 
   // Extended participant list for trip home chips
   const participantsWithRoles = rawParticipants.map((p) => ({
@@ -271,7 +276,7 @@ export default async function TripPage({
               </div>
 
               <div id="tutorial-item-filters" className="mb-4">
-                <ItemFilterChips />
+                <ItemFilterChips participants={proposerOptions} />
               </div>
 
               <Suspense
@@ -288,6 +293,7 @@ export default async function TripPage({
                   tripEndDate={trip.endDate}
                   typeFilter={itemType}
                   search={search}
+                  proposerFilter={proposer}
                 />
               </Suspense>
             </div>

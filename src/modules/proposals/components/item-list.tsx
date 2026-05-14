@@ -12,6 +12,7 @@ export async function ItemList({
   tripEndDate,
   typeFilter,
   search,
+  proposerFilter,
 }: {
   currentUserId: string;
   tripId: string;
@@ -21,12 +22,20 @@ export async function ItemList({
   tripEndDate?: Date | null;
   typeFilter?: string;
   search?: string;
+  proposerFilter?: string;
 }) {
+  const createdByIdFilter = proposerFilter === "none"
+    ? null
+    : proposerFilter
+      ? proposerFilter
+      : undefined;
+
   const [rawItems, registeredParticipants, tripParticipants] = await Promise.all([
     prisma.item.findMany({
       where: {
         tripId,
         type: typeFilter ? (typeFilter as ItemType) : undefined,
+        createdById: createdByIdFilter,
         OR: search
           ? [
               { title: { contains: search, mode: "insensitive" } },
