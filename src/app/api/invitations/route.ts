@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { sendInvitationEmail } from "@/lib/resend";
 
 const createInvitationSchema = z.object({
   email: z
@@ -129,6 +130,7 @@ export async function POST(req: NextRequest) {
       invitedBy: {
         select: { id: true, name: true, email: true },
       },
+      trip: { select: { name: true } },
     },
   });
 
@@ -137,6 +139,13 @@ export async function POST(req: NextRequest) {
     email,
     invitedBy: session.user.id,
     expiresAt: expiresAt.toISOString(),
+  });
+
+  void sendInvitationEmail({
+    to: email,
+    invitedByName: invitation.invitedBy.name ?? "Alguien",
+    tripName: invitation.trip?.name ?? null,
+    expiresAt,
   });
 
   return NextResponse.json(invitation, { status: 201 });
