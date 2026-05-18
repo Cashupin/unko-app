@@ -13,6 +13,7 @@ export type ItemSummary = {
   locationLat: number | null;
   locationLng: number | null;
   address: string | null;
+  city: string | null;
   externalUrl: string | null;
   imageUrl: string | null;
   tripId: string;
