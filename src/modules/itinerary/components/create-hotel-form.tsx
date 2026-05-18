@@ -157,6 +157,7 @@ export function CreateHotelForm({
                   placeholder="Seleccionar fecha"
                   min={toYMD(tripStartDate)}
                   max={toYMD(tripEndDate)}
+                  initialMonth={toYMD(tripStartDate)}
                 />
               </div>
 
@@ -170,6 +171,7 @@ export function CreateHotelForm({
                   placeholder="Seleccionar fecha"
                   min={toYMD(tripStartDate)}
                   max={toYMD(tripEndDate)}
+                  initialMonth={toYMD(tripStartDate)}
                 />
               </div>
 

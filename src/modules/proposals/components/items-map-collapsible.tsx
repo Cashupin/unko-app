@@ -103,7 +103,7 @@ export function ItemsMapCollapsible({
               )}
 
               {/* Map */}
-              <div className="h-80 md:h-96">
+              <div className="isolate h-80 md:h-96">
                 <ItemsMapLeaflet items={items} selectedCity={selectedCity} />
               </div>
             </>

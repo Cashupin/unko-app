@@ -160,6 +160,7 @@ export function EditHotelForm({
                   defaultValue={toYMD(hotel.checkInDate)}
                   min={toYMD(tripStartDate)}
                   max={toYMD(tripEndDate)}
+                  initialMonth={toYMD(tripStartDate)}
                 />
               </div>
 
@@ -174,6 +175,7 @@ export function EditHotelForm({
                   defaultValue={toYMD(hotel.checkOutDate)}
                   min={toYMD(tripStartDate)}
                   max={toYMD(tripEndDate)}
+                  initialMonth={toYMD(tripStartDate)}
                 />
               </div>
 

@@ -48,6 +48,7 @@ export function DatePicker({
   onChange,
   min,
   max,
+  initialMonth,
   placeholder = "Seleccionar fecha",
   id,
 }: {
@@ -57,6 +58,7 @@ export function DatePicker({
   onChange?: (value: string) => void;
   min?: string;
   max?: string;
+  initialMonth?: string;
   placeholder?: string;
   id?: string;
 }) {
@@ -68,7 +70,11 @@ export function DatePicker({
   const [view, setView] = useState<CalendarView>("day");
   const [dropdownPos, setDropdownPos] = useState<DropdownPos | null>(null);
 
-  const initialDate = value ? new Date(value + "T00:00:00") : new Date();
+  const initialDate = value
+    ? new Date(value + "T00:00:00")
+    : initialMonth
+    ? new Date(initialMonth + "T00:00:00")
+    : new Date();
   const [viewYear, setViewYear] = useState(initialDate.getFullYear());
   const [viewMonth, setViewMonth] = useState(initialDate.getMonth());
 

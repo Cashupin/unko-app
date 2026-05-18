@@ -353,7 +353,7 @@ export default async function TripPage({
               </div>
               {canEdit && view !== "calendar" && (
                 <div className="hidden md:block">
-                  <CreateActivityForm tripId={tripId} />
+                  <CreateActivityForm tripId={tripId} tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined} />
                 </div>
               )}
             </div>
