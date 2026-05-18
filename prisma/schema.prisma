@@ -218,6 +218,7 @@ model Item {
   locationLat Float?
   locationLng Float?
   address     String?
+  city        String?
   externalUrl String?
   imageUrl    String?
   createdAt   DateTime   @default(now())

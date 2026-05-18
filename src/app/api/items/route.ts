@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { broadcast } from "@/lib/supabase-broadcast";
+import { geocodeCity } from "@/modules/proposals/lib/geocode";
 
 // ─── Shared auth guard ─────────────────────────────────────────────────────────
 
@@ -101,6 +102,11 @@ export async function POST(req: NextRequest) {
 
   const { title, type, tripId, description, location, locationLat, locationLng, address, externalUrl, imageUrl } = result.data;
 
+  const city =
+    locationLat != null && locationLng != null
+      ? await geocodeCity(locationLat, locationLng)
+      : null;
+
   // ── Double-submit protection ──────────────────────────────────────────────────
   // Reject if the same user created an identical title+type within the last 30s.
   // Guards against accidental duplicate submissions from slow networks or double-clicks.
@@ -137,6 +143,7 @@ export async function POST(req: NextRequest) {
       locationLat: locationLat ?? null,
       locationLng: locationLng ?? null,
       address: address ?? null,
+      city,
       externalUrl: externalUrl || null,
       imageUrl: imageUrl ?? null,
       createdById: userId,

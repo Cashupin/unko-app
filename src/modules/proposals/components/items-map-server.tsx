@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { ItemType } from "@/generated/prisma/client";
-import { enrichItemsWithCity, computeCityCounts } from "@/modules/proposals/lib/geocode";
+import { computeCityCounts } from "@/modules/proposals/lib/geocode";
 import { ItemsMapCollapsible } from "@/modules/proposals/components/items-map-collapsible";
 
 export async function ItemsMapServer({
@@ -39,11 +39,12 @@ export async function ItemsMapServer({
       imageUrl: true,
       locationLat: true,
       locationLng: true,
+      city: true,
     },
     orderBy: { createdAt: "desc" },
   });
 
-  const baseItems = items.map((i) => ({
+  const mapItems = items.map((i) => ({
     id: i.id,
     title: i.title,
     type: i.type,
@@ -51,10 +52,10 @@ export async function ItemsMapServer({
     imageUrl: i.imageUrl,
     locationLat: i.locationLat!,
     locationLng: i.locationLng!,
+    city: i.city,
   }));
 
-  const enrichedItems = baseItems.length > 0 ? await enrichItemsWithCity(baseItems) : [];
-  const cityCounts = computeCityCounts(enrichedItems);
+  const cityCounts = computeCityCounts(mapItems);
 
-  return <ItemsMapCollapsible items={enrichedItems} cityCounts={cityCounts} />;
+  return <ItemsMapCollapsible items={mapItems} cityCounts={cityCounts} />;
 }
