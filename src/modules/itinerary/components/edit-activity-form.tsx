@@ -24,9 +24,11 @@ type ActivityData = {
 export function EditActivityForm({
   tripId,
   activity,
+  tripStartDate,
 }: {
   tripId: string;
   activity: ActivityData;
+  tripStartDate?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -190,6 +192,7 @@ export function EditActivityForm({
                   name="activityDate"
                   defaultValue={activity.activityDate ?? ""}
                   placeholder="Seleccionar fecha"
+                  initialMonth={tripStartDate}
                 />
               </div>
 

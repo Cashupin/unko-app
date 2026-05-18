@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
 import { broadcast } from "@/lib/supabase-broadcast";
+import { geocodeCity } from "@/modules/proposals/lib/geocode";
 
 // ─── PATCH /api/items/[id] ─────────────────────────────────────────────────────
 
@@ -37,6 +38,8 @@ export async function PATCH(
       tripId: true,
       createdById: true,
       imageUrl: true,
+      locationLat: true,
+      locationLng: true,
       votes: { select: { userId: true } },
     },
   });
@@ -85,6 +88,13 @@ export async function PATCH(
     void deleteCloudinaryImage(item.imageUrl);
   }
 
+  const coordsChanged =
+    locationLat !== item.locationLat || locationLng !== item.locationLng;
+  const city =
+    coordsChanged && locationLat != null && locationLng != null
+      ? await geocodeCity(locationLat, locationLng)
+      : undefined;
+
   const updated = await prisma.item.update({
     where: { id: itemId },
     data: {
@@ -95,6 +105,7 @@ export async function PATCH(
       locationLat: locationLat ?? null,
       locationLng: locationLng ?? null,
       address: address ?? null,
+      ...(city !== undefined ? { city } : {}),
       externalUrl: externalUrl ?? null,
       imageUrl: imageUrl ?? null,
     },

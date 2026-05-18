@@ -86,6 +86,7 @@ type Activity = {
 type HotelForItinerary = {
   id: string;
   name: string;
+  city: string | null;
   checkInDate: Date;
   checkOutDate: Date;
 };
@@ -102,6 +103,7 @@ export async function ActivityList({
   endDate?: Date | null;
 }) {
   const today = todayDateStr();
+  const tripStartYMD = startDate ? toDateStr(new Date(startDate)) : undefined;
 
   const [activities, hotels, participants] = await Promise.all([
     prisma.activity.findMany({
@@ -137,7 +139,7 @@ export async function ActivityList({
     }),
     prisma.hotel.findMany({
       where: { tripId },
-      select: { id: true, name: true, checkInDate: true, checkOutDate: true },
+      select: { id: true, name: true, city: true, checkInDate: true, checkOutDate: true },
       orderBy: { checkInDate: "asc" },
     }),
     prisma.tripParticipant.findMany({
@@ -210,6 +212,7 @@ export async function ActivityList({
             isToday={false}
             isPast={true}
             participants={participants}
+            tripStartDate={tripStartYMD}
           />
         ))}
       </PastDaysCollapsible>
@@ -226,6 +229,7 @@ export async function ActivityList({
             isToday={dateStr === today}
             isPast={false}
             participants={participants}
+            tripStartDate={tripStartYMD}
           />
         </div>
       ))}
@@ -249,6 +253,7 @@ export async function ActivityList({
                 tripId={tripId}
                 canEdit={canEdit}
                 participants={participants}
+                tripStartDate={tripStartYMD}
               />
             ))}
           </div>
@@ -269,6 +274,7 @@ function DayCard({
   isToday,
   isPast,
   participants,
+  tripStartDate,
 }: {
   dateStr: string;
   acts: Activity[];
@@ -278,6 +284,7 @@ function DayCard({
   isToday: boolean;
   isPast: boolean;
   participants: Participant[];
+  tripStartDate?: string;
 }) {
   const { dayNum, weekday, dateLabel } = parseDateHeader(dateStr);
   const isEmpty = acts.length === 0;
@@ -339,7 +346,7 @@ function DayCard({
                   className="flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/15 px-2.5 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/20 transition-colors"
                 >
                   <span>🏨</span>
-                  <span className="max-w-28 truncate">{hotels[0].name}</span>
+                  <span className="max-w-28 truncate">{hotels[0].city ?? hotels[0].name}</span>
                 </a>
               ) : (
                 <div className="flex items-center gap-1">
@@ -351,7 +358,7 @@ function DayCard({
                         className="flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/15 px-2.5 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/20 transition-colors"
                       >
                         {i === 0 && <span>🏨</span>}
-                        <span className="max-w-20 truncate">{h.name}</span>
+                        <span className="max-w-20 truncate">{h.city ?? h.name}</span>
                       </a>
                     </span>
                   ))}
@@ -360,7 +367,7 @@ function DayCard({
             </div>
           )}
           {canEdit && (
-            <CreateActivityForm tripId={tripId} defaultDate={dateStr} compact />
+            <CreateActivityForm tripId={tripId} defaultDate={dateStr} tripStartDate={tripStartDate} compact />
           )}
         </div>
       </div>
@@ -379,6 +386,7 @@ function DayCard({
               tripId={tripId}
               canEdit={canEdit}
               participants={participants}
+              tripStartDate={tripStartDate}
             />
           ))}
         </div>
@@ -394,11 +402,13 @@ function ActivityRow({
   tripId,
   canEdit,
   participants,
+  tripStartDate,
 }: {
   act: Activity;
   tripId: string;
   canEdit: boolean;
   participants: Participant[];
+  tripStartDate?: string;
 }) {
   const activityForEdit = {
     id: act.id,
@@ -512,7 +522,7 @@ function ActivityRow({
         <div className="flex shrink-0 flex-col items-center gap-1.5 self-start pt-0.5">
           {canEdit && (
             <div className="flex items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <EditActivityForm tripId={tripId} activity={activityForEdit} />
+              <EditActivityForm tripId={tripId} activity={activityForEdit} tripStartDate={tripStartDate} />
               <DeleteActivityButton tripId={tripId} activityId={act.id} />
             </div>
           )}
@@ -522,7 +532,7 @@ function ActivityRow({
         <div className="flex shrink-0 flex-col items-center gap-1.5 self-start pt-0.5">
           {canEdit && (
             <div className="flex items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <EditActivityForm tripId={tripId} activity={activityForEdit} />
+              <EditActivityForm tripId={tripId} activity={activityForEdit} tripStartDate={tripStartDate} />
               <DeleteActivityButton tripId={tripId} activityId={act.id} />
             </div>
           )}

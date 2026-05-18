@@ -34,6 +34,7 @@ export async function HotelList({
         numberOfNights: true,
         currency: true,
         address: true,
+        city: true,
         notes: true,
         reserved: true,
       },

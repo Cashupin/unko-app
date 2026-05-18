@@ -119,6 +119,7 @@ export function AddToItineraryButton({
                   onChange={setDate}
                   min={minDate || undefined}
                   max={maxDate || undefined}
+                  initialMonth={minDate || undefined}
                   placeholder="Seleccionar fecha"
                 />
               </div>

@@ -41,12 +41,13 @@ export async function DELETE(
 const patchHotelSchema = z.object({
   reserved: z.boolean().optional(),
   name: z.string().trim().min(1).max(200).optional(),
-  link: z.string().url().optional().or(z.literal("")).optional(),
+  link: z.string().url().or(z.literal("")).nullable().optional(),
   checkInDate: z.string().min(1).optional(),
   checkOutDate: z.string().min(1).optional(),
   pricePerNight: z.number().positive().nullable().optional(),
   currency: z.enum(["CLP", "JPY", "USD", "EUR", "GBP", "KRW", "CNY", "THB"]).optional(),
   address: z.string().trim().max(500).nullable().optional(),
+  city: z.string().trim().max(200).nullable().optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
 });
 
@@ -84,7 +85,7 @@ export async function PATCH(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  const { name, link, checkInDate, checkOutDate, pricePerNight, currency, address, notes, reserved } = result.data;
+  const { name, link, checkInDate, checkOutDate, pricePerNight, currency, address, city, notes, reserved } = result.data;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data: Record<string, any> = {};
@@ -93,6 +94,7 @@ export async function PATCH(
   if (link !== undefined) data.link = link || null;
   if (currency !== undefined) data.currency = currency;
   if (address !== undefined) data.address = address ?? null;
+  if (city !== undefined) data.city = city ?? null;
   if (notes !== undefined) data.notes = notes ?? null;
   if (pricePerNight !== undefined) data.pricePerNight = pricePerNight ?? null;
 

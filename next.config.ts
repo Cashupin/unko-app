@@ -15,8 +15,8 @@ const csp = [
   // 'unsafe-eval' is only needed for HMR in development.
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'", // Tailwind CSS inlines styles
-  // Allow images from Cloudinary (photo uploads) and Google (OAuth avatars).
-  "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
+  // Allow images from Cloudinary, Google avatars, and map tiles (CartoDB + OSM fallback).
+  "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com",
   "font-src 'self'",
   // Cloudinary upload endpoint is called directly from the browser.
   // In development, Next.js HMR uses WebSockets on a dynamic port — allow them.

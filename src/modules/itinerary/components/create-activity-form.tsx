@@ -11,10 +11,12 @@ import { toast } from "sonner";
 export function CreateActivityForm({
   tripId,
   defaultDate,
+  tripStartDate,
   compact = false,
 }: {
   tripId: string;
   defaultDate?: string;
+  tripStartDate?: string;
   compact?: boolean;
 }) {
   const router = useRouter();
@@ -220,6 +222,7 @@ export function CreateActivityForm({
                   name="activityDate"
                   defaultValue={defaultDate}
                   placeholder="Seleccionar fecha"
+                  initialMonth={tripStartDate}
                 />
               </div>
 

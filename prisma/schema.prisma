@@ -218,6 +218,7 @@ model Item {
   locationLat Float?
   locationLng Float?
   address     String?
+  city        String?
   externalUrl String?
   imageUrl    String?
   createdAt   DateTime   @default(now())
@@ -309,6 +310,7 @@ model Hotel {
   numberOfNights Int
   currency       Currency @default(CLP)
   address        String?
+  city           String?
   notes          String?
   reserved       Boolean  @default(false)
   createdAt      DateTime @default(now())

@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { geocodeCity } from "@/modules/proposals/lib/geocode";
 
 export type ImportKmlItem = {
   name: string;
@@ -132,10 +133,13 @@ export async function importKmlItems(
         }
       }
 
-      const address =
+      const [address, city] =
         item.lat != null && item.lng != null
-          ? await reverseGeocodeAddress(item.lat, item.lng)
-          : null;
+          ? await Promise.all([
+              reverseGeocodeAddress(item.lat, item.lng),
+              geocodeCity(item.lat, item.lng),
+            ])
+          : [null, null];
 
       await prisma.item.create({
         data: {
@@ -146,6 +150,7 @@ export async function importKmlItems(
           locationLat: item.lat ?? null,
           locationLng: item.lng ?? null,
           address,
+          city,
           externalUrl: null,
           imageUrl: item.imageUrl ?? null,
           createdById: null,

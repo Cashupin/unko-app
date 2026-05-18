@@ -21,6 +21,7 @@ type Hotel = {
   pricePerNight: number | null;
   currency: string;
   address: string | null;
+  city: string | null;
   notes: string | null;
   reserved: boolean;
 };
@@ -54,6 +55,7 @@ export function EditHotelForm({
       reserved: fd.get("reserved") === "on",
       link: (fd.get("link") as string).trim() || null,
       address: (fd.get("address") as string).trim() || null,
+      city: (fd.get("city") as string).trim() || null,
       notes: (fd.get("notes") as string).trim() || null,
       pricePerNight: rawPrice ? parseFloat(rawPrice) : null,
     };
@@ -126,6 +128,16 @@ export function EditHotelForm({
               </div>
 
               <div className="flex flex-col gap-1">
+                <label htmlFor="edit-hotel-city" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Ciudad</label>
+                <input
+                  id="edit-hotel-city" name="city" type="text" maxLength={200}
+                  defaultValue={hotel.city ?? ""}
+                  placeholder="Ej: Osaka (opcional)"
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
                 <label htmlFor="edit-hotel-address" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Dirección</label>
                 <LocationInput
                   id="edit-hotel-address"
@@ -148,6 +160,7 @@ export function EditHotelForm({
                   defaultValue={toYMD(hotel.checkInDate)}
                   min={toYMD(tripStartDate)}
                   max={toYMD(tripEndDate)}
+                  initialMonth={toYMD(tripStartDate)}
                 />
               </div>
 
@@ -162,6 +175,7 @@ export function EditHotelForm({
                   defaultValue={toYMD(hotel.checkOutDate)}
                   min={toYMD(tripStartDate)}
                   max={toYMD(tripEndDate)}
+                  initialMonth={toYMD(tripStartDate)}
                 />
               </div>
 
