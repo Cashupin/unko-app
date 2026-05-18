@@ -18,6 +18,8 @@ import { ManageParticipantsPanel } from "@/modules/trips/components/manage-parti
 import { EditTripForm } from "@/modules/trips/components/edit-trip-form";
 import { DeleteTripButton } from "@/modules/trips/components/delete-trip-button";
 import { ActivityList } from "@/modules/itinerary/components/activity-list";
+import { ItineraryCalendarServer } from "@/modules/itinerary/components/itinerary-calendar-server";
+import { ItineraryViewToggle } from "@/modules/itinerary/components/itinerary-view-toggle";
 import { CreateActivityForm } from "@/modules/itinerary/components/create-activity-form";
 import { HotelList } from "@/modules/itinerary/components/hotel-list";
 import { HotelCollapsible } from "@/modules/itinerary/components/hotel-collapsible";
@@ -48,13 +50,13 @@ export default async function TripPage({
   searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ tab?: string; itemType?: string; search?: string; hotelId?: string; proposer?: string }>;
+  searchParams: Promise<{ tab?: string; itemType?: string; search?: string; hotelId?: string; proposer?: string; view?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
   const { tripId } = await params;
-  const { tab: tabParam, itemType, search, hotelId, proposer } = await searchParams;
+  const { tab: tabParam, itemType, search, hotelId, proposer, view } = await searchParams;
   const activeTab: Tab =
     TABS.find((t) => t.id === tabParam)?.id ?? "home";
 
@@ -343,23 +345,39 @@ export default async function TripPage({
               />
             </div>
 
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Itinerario</h2>
-              {canEdit && (
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Itinerario</h2>
+                {/* View toggle */}
+                <ItineraryViewToggle tripId={tripId} view={view} />
+              </div>
+              {canEdit && view !== "calendar" && (
                 <div className="hidden md:block">
                   <CreateActivityForm tripId={tripId} />
                 </div>
               )}
             </div>
             <div id="tutorial-activity-list">
-              <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando itinerario...</div>}>
-                <ActivityList
-                  tripId={tripId}
-                  canEdit={canEdit}
-                  startDate={trip.startDate}
-                  endDate={trip.endDate}
-                />
-              </Suspense>
+              {view === "calendar" ? (
+                <div className="relative w-[100vw] md:w-[80vw] left-1/2 -translate-x-1/2">
+                  <Suspense fallback={<div className="px-4 py-4 text-sm text-zinc-400 md:px-6">Cargando calendario...</div>}>
+                    <ItineraryCalendarServer
+                      tripId={tripId}
+                      startDate={trip.startDate}
+                      endDate={trip.endDate}
+                    />
+                  </Suspense>
+                </div>
+              ) : (
+                <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando itinerario...</div>}>
+                  <ActivityList
+                    tripId={tripId}
+                    canEdit={canEdit}
+                    startDate={trip.startDate}
+                    endDate={trip.endDate}
+                  />
+                </Suspense>
+              )}
             </div>
           </div>
         )}
