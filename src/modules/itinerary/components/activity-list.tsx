@@ -86,6 +86,7 @@ type Activity = {
 type HotelForItinerary = {
   id: string;
   name: string;
+  city: string | null;
   checkInDate: Date;
   checkOutDate: Date;
 };
@@ -137,7 +138,7 @@ export async function ActivityList({
     }),
     prisma.hotel.findMany({
       where: { tripId },
-      select: { id: true, name: true, checkInDate: true, checkOutDate: true },
+      select: { id: true, name: true, city: true, checkInDate: true, checkOutDate: true },
       orderBy: { checkInDate: "asc" },
     }),
     prisma.tripParticipant.findMany({
@@ -339,7 +340,7 @@ function DayCard({
                   className="flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/15 px-2.5 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/20 transition-colors"
                 >
                   <span>🏨</span>
-                  <span className="max-w-28 truncate">{hotels[0].name}</span>
+                  <span className="max-w-28 truncate">{hotels[0].city ?? hotels[0].name}</span>
                 </a>
               ) : (
                 <div className="flex items-center gap-1">
@@ -351,7 +352,7 @@ function DayCard({
                         className="flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/15 px-2.5 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/20 transition-colors"
                       >
                         {i === 0 && <span>🏨</span>}
-                        <span className="max-w-20 truncate">{h.name}</span>
+                        <span className="max-w-20 truncate">{h.city ?? h.name}</span>
                       </a>
                     </span>
                   ))}

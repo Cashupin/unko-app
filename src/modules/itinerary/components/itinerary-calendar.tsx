@@ -18,6 +18,7 @@ export type CalendarActivity = {
 export type CalendarHotel = {
   id: string;
   name: string;
+  city: string | null;
   checkInDate: string;
   checkOutDate: string;
 };
@@ -119,7 +120,7 @@ function DayDetailModal({
                     : `${activities.length} actividad${activities.length !== 1 ? "es" : ""}`}
                 </p>
                 {hotel && (
-                  <p className="mt-0.5 text-sm text-zinc-400">📍 {hotel.name}</p>
+                  <p className="mt-0.5 text-sm text-zinc-400">📍 {hotel.city ?? hotel.name}</p>
                 )}
               </div>
             </div>
@@ -326,24 +327,22 @@ export function ItineraryCalendar({
                   selectedDay === dateStr ? "ring-1 ring-violet-500/40" : "",
                 ].join(" ")}
               >
-                {/* Day number */}
-                <div className="mb-1 flex items-start justify-between sm:mb-2">
+                {/* Day number + city */}
+                <div className="mb-1 flex flex-col gap-0.5 sm:mb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-1">
                   <span
                     className={[
-                      "text-xs font-semibold sm:text-sm",
+                      "shrink-0 text-xs font-semibold sm:text-sm",
                       isToday ? "text-violet-400" : hasActs ? "text-zinc-100" : "text-zinc-500",
                     ].join(" ")}
                   >
                     {day}
                   </span>
+                  {hotel && (
+                    <span className="min-w-0 overflow-hidden whitespace-nowrap rounded border border-sky-700/40 bg-sky-900/30 px-1 py-0.5 text-[10px] font-semibold text-sky-300 sm:px-1.5">
+                      {hotel.city ?? hotel.name}
+                    </span>
+                  )}
                 </div>
-
-                {/* City */}
-                {hotel && (
-                  <div className="mb-1 -mx-2 truncate border-y border-sky-700/40 bg-sky-900/30 px-2 py-0.5 text-[10px] font-semibold text-sky-300 sm:mb-2 sm:-mx-3 sm:px-3 sm:py-1 sm:text-xs">
-                    {hotel.name}
-                  </div>
-                )}
 
                 {/* Pills */}
                 <div className="flex flex-col gap-0.5 sm:gap-1">

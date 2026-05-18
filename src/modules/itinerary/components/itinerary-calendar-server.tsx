@@ -28,7 +28,7 @@ export async function ItineraryCalendarServer({
     }),
     prisma.hotel.findMany({
       where: { tripId },
-      select: { id: true, name: true, checkInDate: true, checkOutDate: true },
+      select: { id: true, name: true, city: true, checkInDate: true, checkOutDate: true },
       orderBy: { checkInDate: "asc" },
     }),
   ]);
@@ -49,6 +49,7 @@ export async function ItineraryCalendarServer({
       hotels={hotels.map((h) => ({
         id: h.id,
         name: h.name,
+        city: h.city,
         checkInDate: h.checkInDate.toISOString().slice(0, 10),
         checkOutDate: h.checkOutDate.toISOString().slice(0, 10),
       }))}

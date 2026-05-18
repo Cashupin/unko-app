@@ -52,10 +52,12 @@ export function CreateHotelForm({
 
     const link = (fd.get("link") as string).trim();
     const address = (fd.get("address") as string).trim();
+    const city = (fd.get("city") as string).trim();
     const notes = (fd.get("notes") as string).trim();
 
     if (link) body.link = link;
     if (address) body.address = address;
+    if (city) body.city = city;
     if (notes) body.notes = notes;
     if (rawPrice) body.pricePerNight = parseFloat(rawPrice);
 
@@ -121,6 +123,15 @@ export function CreateHotelForm({
                 <input
                   id="hotel-link" name="link" type="url"
                   placeholder="https://... (opcional)"
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label htmlFor="hotel-city" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Ciudad</label>
+                <input
+                  id="hotel-city" name="city" type="text" maxLength={200}
+                  placeholder="Ej: Osaka (opcional)"
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />
               </div>
