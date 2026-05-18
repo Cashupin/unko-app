@@ -159,7 +159,7 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
           {/* Edit/Delete — bottom right, hover only, stop propagation */}
           {(item.canEdit || item.canDelete) && (
             <div
-              className="absolute bottom-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute bottom-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg bg-black/60 px-1 py-0.5 backdrop-blur-sm"
               onClick={(e) => e.stopPropagation()}
             >
               {item.canEdit && (
@@ -379,6 +379,24 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
                     approvals={item.approvals}
                     rejections={item.rejections}
                   />
+
+                  {item.canEdit && (
+                    <EditItemForm
+                      item={item.itemSummary}
+                      canClaim={item.canClaim}
+                      isAdmin={item.isAdmin}
+                      currentUserId={item.currentUserId}
+                      participants={item.participants}
+                      trigger={
+                        <button
+                          type="button"
+                          className="w-full rounded-xl border border-[#27272a] bg-[#18191c] px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-[#27272a] hover:text-zinc-100"
+                        >
+                          ✎ Editar
+                        </button>
+                      }
+                    />
+                  )}
 
                   {item.canAddToItinerary && (
                     <AddToItineraryButton

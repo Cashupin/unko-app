@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import type React from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { UploadPhoto } from "@/components/ui/upload-photo";
@@ -18,6 +19,7 @@ type ItemData = {
   locationLat: number | null;
   locationLng: number | null;
   address: string | null;
+  city: string | null;
   externalUrl: string | null;
   imageUrl: string | null;
   createdById: string | null;
@@ -29,12 +31,14 @@ export function EditItemForm({
   isAdmin = false,
   currentUserId,
   participants = [],
+  trigger,
 }: {
   item: ItemData;
   canClaim?: boolean;
   isAdmin?: boolean;
   currentUserId?: string;
   participants?: { id: string; name: string }[];
+  trigger?: React.ReactNode;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -116,6 +120,7 @@ export function EditItemForm({
     body.locationLat = locationLat;
     body.locationLng = locationLng;
     body.address = address;
+    if (isAdmin) body.city = (fd.get("city") as string | null)?.trim() || null;
     body.externalUrl = externalUrl;
     body.imageUrl = imageUrl;
 
@@ -145,17 +150,21 @@ export function EditItemForm({
 
   return (
     <>
-      {/* Trigger — pencil icon */}
-      <button
-        onClick={() => setOpen(true)}
-        className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
-        aria-label="Editar ítem"
-        title="Editar"
-      >
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M11.5 2.5a2.121 2.121 0 0 1 3 3L5 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
-      </button>
+      {/* Trigger */}
+      {trigger ? (
+        <div onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>{trigger}</div>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+          aria-label="Editar ítem"
+          title="Editar"
+        >
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11.5 2.5a2.121 2.121 0 0 1 3 3L5 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+        </button>
+      )}
 
       {/* Modal — rendered via portal to escape card's stacking context */}
       {open && createPortal(
@@ -244,6 +253,24 @@ export function EditItemForm({
                   placeholder="Ej: Cartagena, Colombia (opcional)"
                 />
               </div>
+
+              {/* City — admin only */}
+              {isAdmin && (
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="edit-city" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    Ciudad <span className="text-zinc-400">(auto-detectada, editable)</span>
+                  </label>
+                  <input
+                    id="edit-city"
+                    name="city"
+                    type="text"
+                    maxLength={200}
+                    defaultValue={item.city ?? ""}
+                    placeholder="Ej: Osaka (opcional)"
+                    className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
+                  />
+                </div>
+              )}
 
               {/* External URL */}
               <div className="flex flex-col gap-1">

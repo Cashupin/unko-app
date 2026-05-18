@@ -16,6 +16,7 @@ const patchSchema = z.object({
   locationLat: z.number().nullable().optional(),
   locationLng: z.number().nullable().optional(),
   address: z.string().trim().max(500).nullable().optional(),
+  city: z.string().trim().max(200).nullable().optional(),
   externalUrl: z.string().url().nullable().optional().or(z.literal("").transform(() => null)),
   imageUrl: z.string().url().nullable().optional(),
 });
@@ -81,19 +82,23 @@ export async function PATCH(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  const { title, type, description, location, locationLat, locationLng, address, externalUrl, imageUrl } = result.data;
+  const { title, type, description, location, locationLat, locationLng, address, city: cityFromBody, externalUrl, imageUrl } = result.data;
 
   // If image changed, delete old one from Cloudinary
   if (imageUrl !== item.imageUrl) {
     void deleteCloudinaryImage(item.imageUrl);
   }
 
-  const coordsChanged =
-    locationLat !== item.locationLat || locationLng !== item.locationLng;
-  const city =
-    coordsChanged && locationLat != null && locationLng != null
+  // If admin explicitly sent a city value, use it. Otherwise auto-geocode when coords change.
+  let city: string | null | undefined;
+  if (cityFromBody !== undefined) {
+    city = cityFromBody;
+  } else {
+    const coordsChanged = locationLat !== item.locationLat || locationLng !== item.locationLng;
+    city = coordsChanged && locationLat != null && locationLng != null
       ? await geocodeCity(locationLat, locationLng)
       : undefined;
+  }
 
   const updated = await prisma.item.update({
     where: { id: itemId },
