@@ -12,6 +12,7 @@ import { TripBottomNav } from "@/modules/trips/components/trip-bottom-nav";
 import { TripLiveUpdater } from "@/modules/trips/components/trip-live-updater";
 import { GalleryView } from "@/modules/gallery/components/gallery-view";
 import { ItemList } from "@/modules/proposals/components/item-list";
+import { ItemsMapServer } from "@/modules/proposals/components/items-map-server";
 import { CreateItemForm } from "@/modules/proposals/components/create-item-form";
 import { ManageParticipantsPanel } from "@/modules/trips/components/manage-participants-panel";
 import { EditTripForm } from "@/modules/trips/components/edit-trip-form";
@@ -273,6 +274,17 @@ export default async function TripPage({
                   {isAdmin && <KmlImport tripId={tripId} />}
                   <CreateItemForm tripId={tripId} />
                 </div>
+              </div>
+
+              <div className="mb-4">
+                <Suspense fallback={null}>
+                  <ItemsMapServer
+                    tripId={tripId}
+                    typeFilter={itemType}
+                    proposerFilter={proposer}
+                    search={search}
+                  />
+                </Suspense>
               </div>
 
               <div id="tutorial-item-filters" className="mb-4">
