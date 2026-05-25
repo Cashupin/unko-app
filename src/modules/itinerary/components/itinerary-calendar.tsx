@@ -210,17 +210,17 @@ export function ItineraryCalendar({
 }: {
   activities: CalendarActivity[];
   hotels: CalendarHotel[];
-  startDate: Date | null;
-  endDate: Date | null;
+  startDate: string | null;
+  endDate: string | null;
 }) {
-  const initial = startDate ?? new Date();
-  const [year, setYear] = useState(initial.getFullYear());
-  const [month, setMonth] = useState(initial.getMonth()); // 0-indexed
+  const initialStr = startDate ?? todayStr();
+  const [year, setYear] = useState(parseInt(initialStr.slice(0, 4)));
+  const [month, setMonth] = useState(parseInt(initialStr.slice(5, 7)) - 1); // 0-indexed
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const today = todayStr();
-  const tripStart = startDate ? toDateStr(startDate) : null;
-  const tripEnd   = endDate   ? toDateStr(endDate)   : null;
+  const tripStart = startDate;
+  const tripEnd   = endDate;
 
   // Group activities by date
   const actsByDate = new Map<string, CalendarActivity[]>();
