@@ -364,12 +364,14 @@ export function ItineraryCalendar({
                           const hs = inTrip ? getHotelDayState(ds, hotels) : null;
                           return (
                             <td key={ds} style={{ border: "1px solid #27272a", padding: 4, height: 80, verticalAlign: "top", background: inTrip ? "rgba(24,25,28,0.6)" : "transparent" }}>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: inTrip ? "#f4f4f5" : "#3f3f46", marginBottom: 3 }}>{day}</div>
-                              {hs && (
-                                <div style={{ fontSize: 9, fontWeight: 600, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", border: hs.isTransition ? "1px solid rgba(167,139,250,0.4)" : "1px solid rgba(56,189,248,0.4)", background: hs.isTransition ? "rgba(109,40,217,0.3)" : "rgba(14,165,233,0.3)", color: hs.isTransition ? "#c4b5fd" : "#7dd3fc" }}>
-                                  {hs.label}
-                                </div>
-                              )}
+                              <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3, overflow: "hidden" }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: inTrip ? "#f4f4f5" : "#3f3f46", flexShrink: 0 }}>{day}</span>
+                                {hs && (
+                                  <span style={{ fontSize: 8, fontWeight: 600, padding: "1px 4px", borderRadius: 3, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", border: hs.isTransition ? "1px solid rgba(167,139,250,0.4)" : "1px solid rgba(56,189,248,0.4)", background: hs.isTransition ? "rgba(109,40,217,0.3)" : "rgba(14,165,233,0.3)", color: hs.isTransition ? "#c4b5fd" : "#7dd3fc" }}>
+                                    {hs.label}
+                                  </span>
+                                )}
+                              </div>
                               {dayActs.slice(0, 2).map((act) => (
                                 <div key={act.id} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", ...(getActivityPillClass(act.title).includes("blue-") ? { border: "1px solid rgba(99,102,241,0.5)", background: "rgba(79,70,229,0.3)", color: "#a5b4fc" } : { border: "1px solid rgba(52,211,153,0.5)", background: "rgba(16,185,129,0.3)", color: "#6ee7b7" }) }}>
                                   {act.title}

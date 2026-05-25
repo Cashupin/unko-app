@@ -141,12 +141,14 @@ function PrintCalendarMonth({
                     className={`border border-zinc-200 p-1 align-top text-[10px] ${inTrip ? "bg-white" : "bg-zinc-50"}`}
                     style={{ height: 72 }}
                   >
-                    <div className={`mb-0.5 font-bold ${inTrip ? "text-zinc-800" : "text-zinc-300"}`}>{day}</div>
-                    {city && (
-                      <div className="mb-0.5 truncate rounded px-1 text-[9px] font-semibold" style={{ background: "#dbeafe", color: "#1d4ed8" }}>
-                        {city}
-                      </div>
-                    )}
+                    <div className="mb-0.5 flex items-center gap-1 overflow-hidden">
+                      <span className={`shrink-0 font-bold ${inTrip ? "text-zinc-800" : "text-zinc-300"}`}>{day}</span>
+                      {city && (
+                        <span className="truncate rounded px-1 text-[9px] font-semibold" style={{ background: "#dbeafe", color: "#1d4ed8" }}>
+                          {city}
+                        </span>
+                      )}
+                    </div>
                     {dayActs.slice(0, 2).map((a) => (
                       <div
                         key={a.id}
