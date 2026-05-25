@@ -19,7 +19,9 @@
       "Bash(ls -la \"d:\\\\Proyectos\\\\app-mierda\\\\src\\\\app\\\\api\\\\trips\\\\[id]\"\" 2>&1 | grep \"route.ts \")",
       "Bash(node -e \"const p = require\\(''./package.json''\\); console.log\\(''next-auth:'', p.dependencies[''next-auth'']\\); console.log\\(''next:'', p.dependencies[''next'']\\);\")",
       "Bash(ls src/app/trips/[tripId]/)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(Get-ChildItem c:\\\\Projects\\\\unko-app)",
+      "Bash(Select-Object Name, LastWriteTime)"
     ],
     "additionalDirectories": [
       "d:\\Proyectos\\app-mierda\\src\\app\\trips",

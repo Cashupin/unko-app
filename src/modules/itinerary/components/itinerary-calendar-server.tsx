@@ -53,8 +53,8 @@ export async function ItineraryCalendarServer({
         checkInDate: h.checkInDate.toISOString().slice(0, 10),
         checkOutDate: h.checkOutDate.toISOString().slice(0, 10),
       }))}
-      startDate={startDate}
-      endDate={endDate}
+      startDate={startDate ? startDate.toISOString().slice(0, 10) : null}
+      endDate={endDate ? endDate.toISOString().slice(0, 10) : null}
     />
   );
 }
