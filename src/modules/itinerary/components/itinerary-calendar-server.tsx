@@ -55,6 +55,7 @@ export async function ItineraryCalendarServer({
       }))}
       startDate={startDate ? startDate.toISOString().slice(0, 10) : null}
       endDate={endDate ? endDate.toISOString().slice(0, 10) : null}
+      tripId={tripId}
     />
   );
 }

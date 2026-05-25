@@ -21,13 +21,15 @@
       "Bash(ls src/app/trips/[tripId]/)",
       "Bash(npm run build)",
       "Bash(Get-ChildItem c:\\\\Projects\\\\unko-app)",
-      "Bash(Select-Object Name, LastWriteTime)"
+      "Bash(Select-Object Name, LastWriteTime)",
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/trips/[tripId]/print\" 2>/dev/null; echo \"ok\")"
     ],
     "additionalDirectories": [
       "d:\\Proyectos\\app-mierda\\src\\app\\trips",
       "D:\\Proyectos\\unko-trip\\unko-trip\\src\\lib",
       "d:\\Proyectos\\app-mierda\\src\\app\\api\\trips\\[id]\\activities",
-      "C:\\Users\\ralej\\.claude\\projects\\d--Proyectos-app-mierda\\memory"
+      "C:\\Users\\ralej\\.claude\\projects\\d--Proyectos-app-mierda\\memory",
+      "c:\\Projects\\unko-app\\src\\app\\trips\\[tripId]"
     ]
   }
 }

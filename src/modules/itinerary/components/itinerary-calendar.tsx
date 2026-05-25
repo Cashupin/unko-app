@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { ExportButtons } from "@/modules/itinerary/components/export-buttons";
 
 export type CalendarActivity = {
   id: string;
@@ -66,8 +67,56 @@ function formatDayHeader(dateStr: string): string {
   return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)}, ${d} de ${MONTHS_ES_LONG[m - 1]} ${y}`;
 }
 
-function getHotelForDay(dateStr: string, hotels: CalendarHotel[]): CalendarHotel | null {
-  return hotels.find((h) => h.checkInDate <= dateStr && dateStr <= h.checkOutDate) ?? null;
+type HotelDayState = { label: string; isTransition: boolean };
+
+function getHotelDayState(dateStr: string, hotels: CalendarHotel[]): HotelDayState | null {
+  const covering = hotels.filter((h) => h.checkInDate <= dateStr && dateStr <= h.checkOutDate);
+  if (covering.length === 0) return null;
+  if (covering.length >= 2) {
+    const sorted = [...covering].sort((a, b) => a.checkInDate.localeCompare(b.checkInDate));
+    return {
+      label: `${sorted[0].city ?? sorted[0].name} → ${sorted[1].city ?? sorted[1].name}`,
+      isTransition: true,
+    };
+  }
+  return { label: covering[0].city ?? covering[0].name, isTransition: false };
+}
+
+function countNights(checkIn: string, checkOut: string): number {
+  return Math.round(
+    (new Date(checkOut + "T00:00:00Z").getTime() - new Date(checkIn + "T00:00:00Z").getTime()) /
+      (1000 * 60 * 60 * 24),
+  );
+}
+
+function fmtShort(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("es-CL", { day: "numeric", month: "short" });
+}
+
+const MONTHS_ES_EXPORT = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const WEEKDAYS_EXPORT   = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+
+function numDaysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+function firstWeekdayMonStart(year: number, month: number): number {
+  const dow = new Date(year, month - 1, 1).getDay();
+  return dow === 0 ? 6 : dow - 1;
+}
+
+function getMonthsInRange(start: string | null, end: string | null): { year: number; month: number }[] {
+  if (!start || !end) return [];
+  const [sy, sm] = start.split("-").map(Number);
+  const [ey, em] = end.split("-").map(Number);
+  const months: { year: number; month: number }[] = [];
+  let y = sy, m = sm;
+  while (y < ey || (y === ey && m <= em)) {
+    months.push({ year: y, month: m });
+    m++; if (m > 12) { m = 1; y++; }
+  }
+  return months;
 }
 
 // ─── Day Detail Modal ─────────────────────────────────────────────────────────
@@ -75,12 +124,12 @@ function getHotelForDay(dateStr: string, hotels: CalendarHotel[]): CalendarHotel
 function DayDetailModal({
   dateStr,
   activities,
-  hotel,
+  hotelLabel,
   onClose,
 }: {
   dateStr: string;
   activities: CalendarActivity[];
-  hotel: CalendarHotel | null;
+  hotelLabel: string | null;
   onClose: () => void;
 }) {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -119,8 +168,8 @@ function DayDetailModal({
                     ? "Día libre"
                     : `${activities.length} actividad${activities.length !== 1 ? "es" : ""}`}
                 </p>
-                {hotel && (
-                  <p className="mt-0.5 text-sm text-zinc-400">📍 {hotel.city ?? hotel.name}</p>
+                {hotelLabel && (
+                  <p className="mt-0.5 text-sm text-zinc-400">📍 {hotelLabel}</p>
                 )}
               </div>
             </div>
@@ -207,12 +256,15 @@ export function ItineraryCalendar({
   hotels,
   startDate,
   endDate,
+  tripId,
 }: {
   activities: CalendarActivity[];
   hotels: CalendarHotel[];
   startDate: string | null;
   endDate: string | null;
+  tripId: string;
 }) {
+  const exportRef = useRef<HTMLDivElement>(null);
   const initialStr = startDate ?? todayStr();
   const [year, setYear] = useState(parseInt(initialStr.slice(0, 4)));
   const [month, setMonth] = useState(parseInt(initialStr.slice(5, 7)) - 1); // 0-indexed
@@ -244,12 +296,128 @@ export function ItineraryCalendar({
     else setMonth((m) => m + 1);
   }
 
-  const selectedDateStr = selectedDay;
-  const selectedActs    = selectedDateStr ? (actsByDate.get(selectedDateStr) ?? []) : [];
-  const selectedHotel   = selectedDateStr ? getHotelForDay(selectedDateStr, hotels) : null;
+  const selectedDateStr    = selectedDay;
+  const selectedActs       = selectedDateStr ? (actsByDate.get(selectedDateStr) ?? []) : [];
+  const selectedHotelState = selectedDateStr ? getHotelDayState(selectedDateStr, hotels) : null;
 
   return (
     <>
+      {/* Export buttons — fuera del área capturada */}
+      <div className="no-export mb-3 flex justify-end">
+        <ExportButtons tripId={tripId} captureRef={exportRef} />
+      </div>
+
+      {/* Div oculto fuera de pantalla — captura todos los meses del viaje */}
+      <div ref={exportRef} style={{ position: "fixed", top: 0, left: 0, opacity: 0, pointerEvents: "none", width: 920, willChange: "opacity" }} aria-hidden="true">
+        <div style={{ background: "#0f1419", padding: 24, width: 920 }}>
+          {/* Route summary */}
+          {hotels.length > 0 && (
+            <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, border: "1px solid #27272a", background: "#18191c" }}>
+              <p style={{ marginBottom: 12, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#71717a" }}>Ruta del viaje</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                {hotels.map((hotel, i) => (
+                  <div key={hotel.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {i > 0 && <span style={{ color: "#52525b" }}>→</span>}
+                    <div style={{ borderRadius: 8, border: "1px solid #2a2a3a", background: "#0f1419", padding: "8px 12px" }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#f4f4f5" }}>{hotel.city ?? hotel.name}</div>
+                      <div style={{ fontSize: 11, color: "#71717a" }}>
+                        {countNights(hotel.checkInDate, hotel.checkOutDate)} noches · {fmtShort(hotel.checkInDate)}–{fmtShort(hotel.checkOutDate)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* All months */}
+          {getMonthsInRange(startDate, endDate).map(({ year: ey, month: em }) => {
+            const leading   = firstWeekdayMonStart(ey, em);
+            const totalDays = numDaysInMonth(ey, em);
+            type EC = { empty: true } | { empty: false; day: number; ds: string };
+            const cells: EC[] = [
+              ...Array.from({ length: leading }, (): EC => ({ empty: true })),
+              ...Array.from({ length: totalDays }, (_, idx): EC => {
+                const d = idx + 1;
+                return { empty: false, day: d, ds: `${ey}-${String(em).padStart(2, "0")}-${String(d).padStart(2, "0")}` };
+              }),
+            ];
+            while (cells.length % 7 !== 0) cells.push({ empty: true });
+            const mRows: EC[][] = [];
+            for (let i = 0; i < cells.length; i += 7) mRows.push(cells.slice(i, i + 7));
+            return (
+              <div key={`${ey}-${em}`} style={{ marginBottom: 24 }}>
+                <div style={{ marginBottom: 8, fontSize: 16, fontWeight: 600, color: "#e4e4e7" }}>{MONTHS_ES_EXPORT[em - 1]} {ey}</div>
+                <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse" }}>
+                  <thead><tr>
+                    {WEEKDAYS_EXPORT.map((w) => (
+                      <th key={w} style={{ border: "1px solid #27272a", background: "#18191c", padding: 6, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#71717a" }}>{w}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>
+                    {mRows.map((row, ri) => (
+                      <tr key={ri}>
+                        {row.map((cell, ci) => {
+                          if (cell.empty) return <td key={ci} style={{ border: "1px solid #27272a", padding: 4, height: 80 }} />;
+                          const { day, ds } = cell;
+                          const inTrip = !!tripStart && !!tripEnd && ds >= tripStart && ds <= tripEnd;
+                          const dayActs = actsByDate.get(ds) ?? [];
+                          const hs = inTrip ? getHotelDayState(ds, hotels) : null;
+                          return (
+                            <td key={ds} style={{ border: "1px solid #27272a", padding: 4, height: 80, verticalAlign: "top", background: inTrip ? "rgba(24,25,28,0.6)" : "transparent" }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: inTrip ? "#f4f4f5" : "#3f3f46", marginBottom: 3 }}>{day}</div>
+                              {hs && (
+                                <div style={{ fontSize: 9, fontWeight: 600, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", border: hs.isTransition ? "1px solid rgba(167,139,250,0.4)" : "1px solid rgba(56,189,248,0.4)", background: hs.isTransition ? "rgba(109,40,217,0.3)" : "rgba(14,165,233,0.3)", color: hs.isTransition ? "#c4b5fd" : "#7dd3fc" }}>
+                                  {hs.label}
+                                </div>
+                              )}
+                              {dayActs.slice(0, 2).map((act) => (
+                                <div key={act.id} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", ...(getActivityPillClass(act.title).includes("blue-") ? { border: "1px solid rgba(99,102,241,0.5)", background: "rgba(79,70,229,0.3)", color: "#a5b4fc" } : { border: "1px solid rgba(52,211,153,0.5)", background: "rgba(16,185,129,0.3)", color: "#6ee7b7" }) }}>
+                                  {act.title}
+                                </div>
+                              ))}
+                              {dayActs.length > 2 && <div style={{ fontSize: 9, color: "#71717a" }}>+{dayActs.length - 2}</div>}
+                              {inTrip && dayActs.length === 0 && !hs && (
+                                <div style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, border: "1px solid rgba(217,119,6,0.5)", background: "rgba(146,64,14,0.4)", color: "#fcd34d", overflow: "hidden", whiteSpace: "nowrap" }}>Libre</div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Hotel Route Summary */}
+      {hotels.length > 0 && (
+        <div className="mb-4 rounded-xl border border-[#27272a] bg-[#18191c]/60 p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+            Ruta del viaje
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {hotels.map((hotel, i) => {
+              const nights = countNights(hotel.checkInDate, hotel.checkOutDate);
+              const label = hotel.city ?? hotel.name;
+              return (
+                <div key={hotel.id} className="flex items-center gap-2">
+                  {i > 0 && <span className="text-zinc-600">→</span>}
+                  <div className="rounded-lg border border-[#2a2a3a] bg-[#0f1419] px-3 py-2">
+                    <p className="text-sm font-semibold text-zinc-100">{label}</p>
+                    <p className="text-xs text-zinc-500">
+                      {nights} noche{nights !== 1 ? "s" : ""} · {fmtShort(hotel.checkInDate)}–{fmtShort(hotel.checkOutDate)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="w-full rounded-2xl bg-[#0f1419] p-4 sm:p-6">
         {/* Header */}
         <div className="mb-5 flex items-center justify-between gap-3">
@@ -299,10 +467,10 @@ export function ItineraryCalendar({
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const isInTrip = !!tripStart && !!tripEnd && dateStr >= tripStart && dateStr <= tripEnd;
-            const isToday  = dateStr === today;
-            const dayActs  = isInTrip ? (actsByDate.get(dateStr) ?? []) : [];
-            const hotel    = isInTrip ? getHotelForDay(dateStr, hotels) : null;
+            const isInTrip   = !!tripStart && !!tripEnd && dateStr >= tripStart && dateStr <= tripEnd;
+            const isToday    = dateStr === today;
+            const dayActs    = isInTrip ? (actsByDate.get(dateStr) ?? []) : [];
+            const hotelState = isInTrip ? getHotelDayState(dateStr, hotels) : null;
             const hasActs  = dayActs.length > 0;
             const visible  = dayActs.slice(0, MAX_PILLS);
             const overflow = dayActs.length - MAX_PILLS;
@@ -337,9 +505,9 @@ export function ItineraryCalendar({
                   >
                     {day}
                   </span>
-                  {hotel && (
-                    <span className="min-w-0 overflow-hidden whitespace-nowrap rounded border border-sky-700/40 bg-sky-900/30 px-1 py-0.5 text-[10px] font-semibold text-sky-300 sm:px-1.5">
-                      {hotel.city ?? hotel.name}
+                  {hotelState && (
+                    <span className={`min-w-0 overflow-hidden whitespace-nowrap rounded border px-1 py-0.5 text-[10px] font-semibold sm:px-1.5 ${hotelState.isTransition ? "border-violet-700/40 bg-violet-900/30 text-violet-300" : "border-sky-700/40 bg-sky-900/30 text-sky-300"}`}>
+                      {hotelState.label}
                     </span>
                   )}
                 </div>
@@ -379,7 +547,7 @@ export function ItineraryCalendar({
         <DayDetailModal
           dateStr={selectedDay}
           activities={selectedActs}
-          hotel={selectedHotel}
+          hotelLabel={selectedHotelState?.label ?? null}
           onClose={() => setSelectedDay(null)}
         />
       )}
