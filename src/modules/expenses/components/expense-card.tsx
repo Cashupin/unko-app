@@ -67,6 +67,7 @@ export function ExpenseCard({
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [togglingPaid, setTogglingPaid] = useState<string | null>(null);
+  const [settlingAll, setSettlingAll] = useState(false);
 
   const isItemized = expense.splitType === "ITEMIZED";
   const hasPaidSplits = expense.participants.some((ep) => ep.paid);
@@ -123,6 +124,23 @@ export function ExpenseCard({
       },
       cancel: { label: "Cancelar", onClick: () => {} },
     });
+  }
+
+  async function settleAll() {
+    setSettlingAll(true);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/expenses/${expense.id}/settle`, { method: "POST" });
+      if (res.ok) {
+        router.refresh();
+      } else {
+        const data = (await res.json()) as { error?: string };
+        toast.error(data.error ?? "Error al saldar el gasto");
+      }
+    } catch {
+      toast.error("Error de red. Intenta de nuevo.");
+    } finally {
+      setSettlingAll(false);
+    }
   }
 
   async function togglePaid(participantId: string) {
@@ -243,6 +261,19 @@ export function ExpenseCard({
           {/* 1 — Liquidación: debtors */}
           {expense.paidBy && debtors.length > 0 && (
             <div className="mt-3 flex flex-col gap-1">
+              {/* Saldar todo — visible only to creditor/admin when there are unpaid splits */}
+              {(isCreditor || isAdmin) && debtors.some((ep) => !ep.paid) && (
+                <div className="mb-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={settleAll}
+                    disabled={settlingAll}
+                    className="rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-2.5 py-1 text-xs font-semibold text-emerald-400 transition-colors hover:bg-emerald-900/40 disabled:opacity-50 dark:border-emerald-700/40"
+                  >
+                    {settlingAll ? "Saldando…" : "✓ Saldar todo"}
+                  </button>
+                </div>
+              )}
               {debtors.map((ep) => {
                 const canToggle = canTogglePaid(ep.participantId);
                 const isLoading = togglingPaid === ep.participantId;
