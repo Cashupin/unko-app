@@ -4,7 +4,7 @@ import { ExpenseCard } from "@/modules/expenses/components/expense-card";
 import { MySettlementBanner } from "@/modules/expenses/components/my-settlement-banner";
 import { ConvertedAmount } from "@/components/ui/converted-amount";
 import { ExpenseStatsCard } from "@/modules/expenses/components/expense-stats-card";
-import { ExpenseSettlementPanel } from "@/modules/expenses/components/expense-settlement-panel";
+import { ExpenseSettlementPanel, type ParticipantBreakdown } from "@/modules/expenses/components/expense-settlement-panel";
 import { CreateExpenseForm } from "@/modules/expenses/components/create-expense-form";
 
 type Participant = { id: string; name: string };
@@ -128,6 +128,34 @@ export async function ExpenseList({
     [...paymentsForSettlement, ...paidSplitPayments],
   );
 
+  const participantBreakdowns: ParticipantBreakdown[] = participants.map((p) => ({
+    id: p.id,
+    name: p.name,
+    splits: activeExpenses
+      .filter((e) => e.paidBy && e.paidBy.id !== p.id)
+      .flatMap((e) =>
+        e.participants
+          .filter((ep) => ep.participantId === p.id)
+          .map((ep) => ({
+            expenseId: e.id,
+            description: e.description,
+            share: ep.amount,
+            currency: e.currency,
+            paidByName: e.paidBy!.name,
+            isPaid: ep.paid,
+          })),
+      ),
+    paymentsGiven: rawPayments
+      .filter((pay) => pay.fromParticipant.id === p.id)
+      .map((pay) => ({
+        id: pay.id,
+        amount: pay.amount,
+        currency: pay.currency,
+        toName: pay.toParticipant.name,
+        paidAt: pay.paidAt.toISOString(),
+      })),
+  }));
+
   const mySettlements = settlements.filter(
     (s) => s.fromId === myParticipantId || s.toId === myParticipantId,
   );
@@ -161,6 +189,7 @@ export async function ExpenseList({
           tripId={tripId}
           participants={participants}
           defaultCurrency={defaultCurrency}
+          participantBreakdowns={participantBreakdowns}
         />
       </div>
 

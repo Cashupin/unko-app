@@ -22,14 +22,20 @@
       "Bash(npm run build)",
       "Bash(Get-ChildItem c:\\\\Projects\\\\unko-app)",
       "Bash(Select-Object Name, LastWriteTime)",
-      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/trips/[tripId]/print\" 2>/dev/null; echo \"ok\")"
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/trips/[tripId]/print\" 2>/dev/null; echo \"ok\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Projects\\\\unko-app\\\\src\\\\app\\\\trips\" -Recurse -Directory)",
+      "Bash(mkdir -p \"c:\\\\Projects\\\\unko-app\\\\src\\\\app\\\\trips\\\\[tripId]\\\\expenses\\\\print\" 2>&1; ls \"c:\\\\Projects\\\\unko-app\\\\src\\\\app\\\\trips\\\\[tripId]\\\\expenses\\\\\" 2>&1 || echo \"dir doesnt exist yet\")",
+      "Bash(New-Item -ItemType Directory -Force -Path 'c:\\\\Projects\\\\unko-app\\\\src\\\\app\\\\trips\\\\[tripId]\\\\expenses\\\\print')",
+      "Bash(Out-Null)",
+      "Bash(Write-Host \"OK\")"
     ],
     "additionalDirectories": [
       "d:\\Proyectos\\app-mierda\\src\\app\\trips",
       "D:\\Proyectos\\unko-trip\\unko-trip\\src\\lib",
       "d:\\Proyectos\\app-mierda\\src\\app\\api\\trips\\[id]\\activities",
       "C:\\Users\\ralej\\.claude\\projects\\d--Proyectos-app-mierda\\memory",
-      "c:\\Projects\\unko-app\\src\\app\\trips\\[tripId]"
+      "c:\\Projects\\unko-app\\src\\app\\trips\\[tripId]",
+      "c:\\Projects\\unko-app\\src\\app\\trips\\[tripId]\\expenses"
     ]
   }
 }
