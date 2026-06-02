@@ -123,13 +123,14 @@ model User {
   sessions        Session[]
   invitationsSent Invitation[]     @relation("InvitedBy")
   invitationUsed  Invitation?      @relation("AcceptedBy")
-  createdItems    Item[]
-  votes           Vote[]
-  checks          Check[]
-  createdTrips    Trip[]           @relation("TripCreatedBy")
-  participations  TripParticipant[] @relation("UserParticipant")
-  expenses        Expense[]        @relation("ExpenseCreatedBy")
-  notifications   Notification[]
+  createdItems        Item[]
+  votes               Vote[]
+  checks              Check[]
+  createdTrips        Trip[]             @relation("TripCreatedBy")
+  participations      TripParticipant[]  @relation("UserParticipant")
+  expenses            Expense[]          @relation("ExpenseCreatedBy")
+  notifications       Notification[]
+  personalActivities  PersonalActivity[]
 }
 
 model Invitation {
@@ -172,13 +173,14 @@ model Trip {
   createdById String
   createdBy   User   @relation("TripCreatedBy", fields: [createdById], references: [id])
 
-  participants TripParticipant[]
-  items        Item[]
-  activities   Activity[]
-  hotels       Hotel[]
-  expenses     Expense[]
-  payments     Payment[]
-  invitations  Invitation[]
+  participants       TripParticipant[]
+  items              Item[]
+  activities         Activity[]
+  hotels             Hotel[]
+  expenses           Expense[]
+  payments           Payment[]
+  invitations        Invitation[]
+  personalActivities PersonalActivity[]
 
   @@index([createdById])
   @@index([startDate, endDate])
@@ -294,6 +296,28 @@ model Activity {
   @@index([tripId])
   @@index([activityDate])
   @@index([itemId])
+}
+
+// ─── Personal Activities ─────────────────────────────────────────────────────
+
+model PersonalActivity {
+  id          String   @id @default(cuid())
+  tripId      String
+  userId      String
+  date        String   // YYYY-MM-DD
+  title       String
+  description String?
+  time        String?
+  location    String?
+  notes       String?
+  photoUrl    String?
+  createdAt   DateTime @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, userId])
+  @@index([date])
 }
 
 // ─── Hotels ───────────────────────────────────────────────────────────────────

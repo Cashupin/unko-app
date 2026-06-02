@@ -24,6 +24,15 @@ export type CalendarHotel = {
   checkOutDate: string;
 };
 
+type PersonalActivity = {
+  id: string;
+  date: string;
+  title: string;
+  time: string | null;
+  notes: string | null;
+  location: string | null;
+};
+
 const WEEKDAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const MONTHS_ES = [
   "Enero","Febrero","Marzo","Abril","Mayo","Junio",
@@ -126,15 +135,63 @@ function DayDetailModal({
   activities,
   hotelLabel,
   onClose,
+  personalMode,
+  personalActivities,
+  tripId,
+  onPersonalChange,
 }: {
   dateStr: string;
   activities: CalendarActivity[];
   hotelLabel: string | null;
   onClose: () => void;
+  personalMode: boolean;
+  personalActivities: PersonalActivity[];
+  tripId: string;
+  onPersonalChange: () => void;
 }) {
   const [y, m, d] = dateStr.split("-").map(Number);
   const date = new Date(y, m - 1, d);
   const weekdayShort = WEEKDAYS_SHORT[date.getDay()];
+
+  const [addingPersonal, setAddingPersonal] = useState(false);
+  const [personalTitle, setPersonalTitle] = useState("");
+  const [personalTime, setPersonalTime] = useState("");
+  const [savingPersonal, setSavingPersonal] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleAddPersonal() {
+    if (!personalTitle.trim()) return;
+    setSavingPersonal(true);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/personal-activities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: dateStr,
+          title: personalTitle.trim(),
+          time: personalTime || undefined,
+        }),
+      });
+      if (res.ok) {
+        setPersonalTitle("");
+        setPersonalTime("");
+        setAddingPersonal(false);
+        onPersonalChange();
+      }
+    } finally {
+      setSavingPersonal(false);
+    }
+  }
+
+  async function handleDeletePersonal(id: string) {
+    setDeletingId(id);
+    try {
+      await fetch(`/api/trips/${tripId}/personal-activities/${id}`, { method: "DELETE" });
+      onPersonalChange();
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   const content = (
     <div
@@ -185,6 +242,102 @@ function DayDetailModal({
             </button>
           </div>
         </div>
+
+        {/* Mi plan personal */}
+        {personalMode && (
+          <div className="border-t border-[#27272a] px-5 py-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-widest text-violet-400">
+                🔒 Mi plan
+              </p>
+              {!addingPersonal && (
+                <button
+                  type="button"
+                  onClick={() => setAddingPersonal(true)}
+                  className="rounded-lg border border-violet-700/40 bg-violet-900/20 px-2.5 py-1 text-xs font-semibold text-violet-400 transition-colors hover:bg-violet-900/40"
+                >
+                  + Añadir
+                </button>
+              )}
+            </div>
+
+            {/* Personal activities list */}
+            {personalActivities.length > 0 && (
+              <div className="mb-3 flex flex-col gap-2">
+                {personalActivities.map((pa) => (
+                  <div key={pa.id} className="flex items-center justify-between rounded-xl border border-violet-700/30 bg-violet-900/20 px-3 py-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        {pa.time && (
+                          <span className="shrink-0 rounded bg-violet-900/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-violet-300">
+                            {pa.time}
+                          </span>
+                        )}
+                        <span className="truncate text-sm font-medium text-violet-100">{pa.title}</span>
+                      </div>
+                      {pa.location && (
+                        <p className="mt-0.5 text-xs text-violet-400/70">📍 {pa.location}</p>
+                      )}
+                      {pa.notes && (
+                        <p className="mt-0.5 text-xs italic text-violet-400/60">{pa.notes}</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePersonal(pa.id)}
+                      disabled={deletingId === pa.id}
+                      className="ml-2 shrink-0 rounded p-1 text-violet-500 transition-colors hover:bg-violet-900/40 hover:text-violet-300 disabled:opacity-40"
+                    >
+                      {deletingId === pa.id ? "…" : "✕"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {personalActivities.length === 0 && !addingPersonal && (
+              <p className="text-xs text-violet-400/60">Sin plan personal para este día.</p>
+            )}
+
+            {/* Add form */}
+            {addingPersonal && (
+              <div className="flex flex-col gap-2 rounded-xl border border-violet-700/40 bg-violet-900/20 p-3">
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="¿Qué vas a hacer?"
+                  value={personalTitle}
+                  onChange={(e) => setPersonalTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddPersonal()}
+                  className="w-full rounded-lg border border-violet-700/40 bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-violet-500"
+                />
+                <input
+                  type="time"
+                  value={personalTime}
+                  onChange={(e) => setPersonalTime(e.target.value)}
+                  className="w-32 rounded-lg border border-violet-700/40 bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 outline-none focus:border-violet-500"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAddPersonal}
+                    disabled={savingPersonal || !personalTitle.trim()}
+                    className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+                  >
+                    {savingPersonal ? "Guardando…" : "Guardar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAddingPersonal(false); setPersonalTitle(""); setPersonalTime(""); }}
+                    className="rounded-lg px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:bg-[#27272a] hover:text-zinc-300"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Activities */}
         <div className="flex flex-col gap-3 p-5">
@@ -269,10 +422,32 @@ export function ItineraryCalendar({
   const [year, setYear] = useState(parseInt(initialStr.slice(0, 4)));
   const [month, setMonth] = useState(parseInt(initialStr.slice(5, 7)) - 1); // 0-indexed
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [personalMode, setPersonalMode] = useState(false);
+  const [personalActs, setPersonalActs] = useState<PersonalActivity[]>([]);
+  const [loadingPersonal, setLoadingPersonal] = useState(false);
 
   const today = todayStr();
   const tripStart = startDate;
   const tripEnd   = endDate;
+
+  async function fetchPersonalActs() {
+    setLoadingPersonal(true);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/personal-activities`);
+      if (res.ok) {
+        const data = (await res.json()) as { activities: PersonalActivity[] };
+        setPersonalActs(data.activities);
+      }
+    } finally {
+      setLoadingPersonal(false);
+    }
+  }
+
+  async function togglePersonalMode() {
+    const next = !personalMode;
+    setPersonalMode(next);
+    if (next && personalActs.length === 0) await fetchPersonalActs();
+  }
 
   // Group activities by date
   const actsByDate = new Map<string, CalendarActivity[]>();
@@ -296,14 +471,34 @@ export function ItineraryCalendar({
     else setMonth((m) => m + 1);
   }
 
+  // Group personal activities by date
+  const personalByDate = new Map<string, PersonalActivity[]>();
+  for (const pa of personalActs) {
+    if (!personalByDate.has(pa.date)) personalByDate.set(pa.date, []);
+    personalByDate.get(pa.date)!.push(pa);
+  }
+
   const selectedDateStr    = selectedDay;
   const selectedActs       = selectedDateStr ? (actsByDate.get(selectedDateStr) ?? []) : [];
   const selectedHotelState = selectedDateStr ? getHotelDayState(selectedDateStr, hotels) : null;
+  const selectedPersonalActs = selectedDateStr ? (personalByDate.get(selectedDateStr) ?? []) : [];
 
   return (
     <>
-      {/* Export buttons — fuera del área capturada */}
-      <div className="no-export mb-3 flex justify-end">
+      {/* Toolbar — fuera del área capturada */}
+      <div className="no-export mb-3 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={togglePersonalMode}
+          disabled={loadingPersonal}
+          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+            personalMode
+              ? "border-violet-700/60 bg-violet-900/30 text-violet-300 hover:bg-violet-900/50"
+              : "border-[#27272a] bg-[#18191c]/60 text-zinc-400 hover:bg-[#27272a] hover:text-zinc-200"
+          }`}
+        >
+          🔒 {loadingPersonal ? "Cargando…" : personalMode ? "Vista grupal" : "Mi plan"}
+        </button>
         <ExportButtons tripId={tripId} captureRef={exportRef} />
       </div>
 
@@ -472,8 +667,9 @@ export function ItineraryCalendar({
             const isInTrip   = !!tripStart && !!tripEnd && dateStr >= tripStart && dateStr <= tripEnd;
             const isToday    = dateStr === today;
             const dayActs    = isInTrip ? (actsByDate.get(dateStr) ?? []) : [];
+            const myActs     = personalMode && isInTrip ? (personalByDate.get(dateStr) ?? []) : [];
             const hotelState = isInTrip ? getHotelDayState(dateStr, hotels) : null;
-            const hasActs  = dayActs.length > 0;
+            const hasActs  = dayActs.length > 0 || myActs.length > 0;
             const visible  = dayActs.slice(0, MAX_PILLS);
             const overflow = dayActs.length - MAX_PILLS;
 
@@ -516,9 +712,9 @@ export function ItineraryCalendar({
 
                 {/* Pills */}
                 <div className="flex flex-col gap-0.5 sm:gap-1">
-                  {dayActs.length === 0 ? (
+                  {dayActs.length === 0 && myActs.length === 0 ? (
                     <div className="truncate rounded border border-amber-700/50 bg-amber-900/40 px-1 py-0.5 text-[10px] font-medium text-amber-300 sm:px-2 sm:py-1 sm:text-xs">
-                      Libre
+                      {personalMode ? "Sin plan" : "Libre"}
                     </div>
                   ) : (
                     <>
@@ -536,6 +732,15 @@ export function ItineraryCalendar({
                           +{overflow} más
                         </div>
                       )}
+                      {myActs.map((pa) => (
+                        <div
+                          key={pa.id}
+                          className="truncate rounded border border-violet-700/50 bg-violet-900/40 px-1 py-0.5 text-[10px] font-medium text-violet-300 sm:px-2 sm:py-1 sm:text-xs"
+                          title={pa.title}
+                        >
+                          🔒 {pa.title}
+                        </div>
+                      ))}
                     </>
                   )}
                 </div>
@@ -551,6 +756,10 @@ export function ItineraryCalendar({
           activities={selectedActs}
           hotelLabel={selectedHotelState?.label ?? null}
           onClose={() => setSelectedDay(null)}
+          personalMode={personalMode}
+          personalActivities={selectedPersonalActs}
+          tripId={tripId}
+          onPersonalChange={fetchPersonalActs}
         />
       )}
     </>
