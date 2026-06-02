@@ -87,20 +87,55 @@ export async function POST(
     return NextResponse.json({ error: "Participantes inválidos" }, { status: 400 });
   }
 
-  const payment = await prisma.payment.create({
-    data: {
-      tripId,
-      fromParticipantId,
-      toParticipantId,
-      amount,
-      currency,
-      paidAt: paidAt ? new Date(paidAt) : new Date(),
-    },
-    select: {
-      id: true, amount: true, currency: true, paidAt: true, createdAt: true,
-      fromParticipant: { select: { id: true, name: true } },
-      toParticipant: { select: { id: true, name: true } },
-    },
+  const { payment } = await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.create({
+      data: {
+        tripId,
+        fromParticipantId,
+        toParticipantId,
+        amount,
+        currency,
+        paidAt: paidAt ? new Date(paidAt) : new Date(),
+      },
+      select: {
+        id: true, amount: true, currency: true, paidAt: true, createdAt: true,
+        fromParticipant: { select: { id: true, name: true } },
+        toParticipant: { select: { id: true, name: true } },
+      },
+    });
+
+    // Auto-mark: all of fromParticipant's pending splits on toParticipant's expenses
+    await tx.expenseParticipant.updateMany({
+      where: {
+        expense: { tripId, isActive: true, paidByParticipantId: toParticipantId },
+        participantId: fromParticipantId,
+        paid: false,
+      },
+      data: { paid: true },
+    });
+
+    // Deactivate expenses where every non-payer split is now paid
+    const affected = await tx.expense.findMany({
+      where: { tripId, isActive: true, paidByParticipantId: toParticipantId },
+      select: {
+        id: true,
+        participants: {
+          where: { participantId: { not: toParticipantId } },
+          select: { paid: true },
+        },
+      },
+    });
+    const toDeactivate = affected
+      .filter((e) => e.participants.length > 0 && e.participants.every((ep) => ep.paid))
+      .map((e) => e.id);
+    if (toDeactivate.length > 0) {
+      await tx.expense.updateMany({
+        where: { id: { in: toDeactivate } },
+        data: { isActive: false },
+      });
+    }
+
+    return { payment };
   });
 
   broadcast(`trip:${tripId}`, "update");

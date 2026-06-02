@@ -141,6 +141,7 @@ export async function ExpenseList({
             description: e.description,
             share: ep.amount,
             currency: e.currency,
+            paidById: e.paidBy!.id,
             paidByName: e.paidBy!.name,
             isPaid: ep.paid,
           })),

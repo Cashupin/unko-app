@@ -23,6 +23,7 @@ export type SplitBreakdown = {
   description: string;
   share: number;
   currency: string;
+  paidById: string;
   paidByName: string;
   isPaid: boolean;
 };
@@ -294,6 +295,42 @@ export function ExpenseSettlementPanel({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [compensating, setCompensating] = useState(false);
+
+  // Detect mutual pairs: A has unpaid splits on B's expenses AND B has unpaid splits on A's expenses
+  const hasMutualPairs = (() => {
+    const owesMap = new Map<string, Set<string>>();
+    for (const pb of participantBreakdowns) {
+      for (const split of pb.splits) {
+        if (!split.isPaid) {
+          if (!owesMap.has(split.paidById)) owesMap.set(split.paidById, new Set());
+          owesMap.get(split.paidById)!.add(pb.id);
+        }
+      }
+    }
+    for (const [payerId, debtors] of owesMap) {
+      for (const debtorId of debtors) {
+        if (owesMap.get(debtorId)?.has(payerId)) return true;
+      }
+    }
+    return false;
+  })();
+
+  async function handleCompensate() {
+    setCompensating(true);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/compensate`, { method: "POST" });
+      if (res.ok) {
+        const data = (await res.json()) as { pairs: number };
+        window.location.reload();
+        void data;
+      }
+    } catch {
+      // silent — page reload handles feedback
+    } finally {
+      setCompensating(false);
+    }
+  }
 
   const groups = Array.from(
     settlements.reduce((map, s) => {
@@ -381,14 +418,26 @@ export function ExpenseSettlementPanel({
             )}
 
             {/* Footer con acciones */}
-            <div className="flex items-center justify-between border-t border-zinc-100 px-3 py-2.5 dark:border-[#2d2d31]">
-              <button
-                type="button"
-                onClick={() => setShowBreakdown(true)}
-                className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-[#27272a] dark:hover:text-zinc-200"
-              >
-                Ver desglose →
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 px-3 py-2.5 dark:border-[#2d2d31]">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowBreakdown(true)}
+                  className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-[#27272a] dark:hover:text-zinc-200"
+                >
+                  Ver desglose →
+                </button>
+                {isAdmin && hasMutualPairs && (
+                  <button
+                    type="button"
+                    onClick={handleCompensate}
+                    disabled={compensating}
+                    className="rounded-lg border border-violet-700/40 bg-violet-900/20 px-2.5 py-1.5 text-xs font-semibold text-violet-400 transition-colors hover:bg-violet-900/40 disabled:opacity-50"
+                  >
+                    {compensating ? "Compensando…" : "⇄ Compensar mutuos"}
+                  </button>
+                )}
+              </div>
               {isAdmin && (
                 <CreatePaymentForm
                   tripId={tripId}
