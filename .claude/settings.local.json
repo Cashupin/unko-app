@@ -27,7 +27,13 @@
       "Bash(mkdir -p \"c:\\\\Projects\\\\unko-app\\\\src\\\\app\\\\trips\\\\[tripId]\\\\expenses\\\\print\" 2>&1; ls \"c:\\\\Projects\\\\unko-app\\\\src\\\\app\\\\trips\\\\[tripId]\\\\expenses\\\\\" 2>&1 || echo \"dir doesnt exist yet\")",
       "Bash(New-Item -ItemType Directory -Force -Path 'c:\\\\Projects\\\\unko-app\\\\src\\\\app\\\\trips\\\\[tripId]\\\\expenses\\\\print')",
       "Bash(Out-Null)",
-      "Bash(Write-Host \"OK\")"
+      "Bash(Write-Host \"OK\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path 'c:\\\\Projects\\\\unko-app\\\\prisma\\\\migrations\\\\20260602174842_add_personal_activities')",
+      "Bash(psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -c \"DELETE FROM \\\\\"_prisma_migrations\\\\\" WHERE migration_name IN \\('20260602174842_add_personal_activities', '20260602225106_personal_activity_add_description_photo'\\);\")",
+      "PowerShell(& 'C:\\\\Program Files\\\\Supabase\\\\supabase.exe' db query --db-url 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' 'DELETE FROM \"_prisma_migrations\" WHERE migration_name IN \\(''20260602174842_add_personal_activities'', ''20260602225106_personal_activity_add_description_photo''\\)' 2>&1)",
+      "Bash(node -e ' *)",
+      "Bash(which psql *)",
+      "Bash(ls /usr/local/bin/psql)"
     ],
     "additionalDirectories": [
       "d:\\Proyectos\\app-mierda\\src\\app\\trips",

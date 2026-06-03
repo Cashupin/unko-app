@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import { DeleteActivityButton } from "@/modules/itinerary/components/delete-activity-button";
 import { CreateActivityForm } from "@/modules/itinerary/components/create-activity-form";
 import { EditActivityForm } from "@/modules/itinerary/components/edit-activity-form";
@@ -7,6 +8,11 @@ import { PhotoThumbnail } from "@/components/ui/photo-thumbnail";
 import { getMapsUrl } from "@/lib/maps-url";
 import { PastDaysCollapsible } from "@/modules/itinerary/components/past-days-collapsible";
 import { CreateItemFromActivityButton } from "@/modules/proposals/components/create-item-from-activity-button";
+import {
+  PersonalModeProvider,
+  PersonalModeToggle,
+  PersonalActivitySection,
+} from "@/modules/itinerary/components/personal-mode-provider";
 
 function toDateStr(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -83,6 +89,17 @@ type Activity = {
   } | null;
 };
 
+type PersonalActivityItem = {
+  id: string;
+  date: string;
+  title: string;
+  description: string | null;
+  time: string | null;
+  location: string | null;
+  notes: string | null;
+  photoUrl: string | null;
+};
+
 type HotelForItinerary = {
   id: string;
   name: string;
@@ -102,10 +119,13 @@ export async function ActivityList({
   startDate?: Date | null;
   endDate?: Date | null;
 }) {
+  const session = await auth();
+  const userId = session?.user?.id ?? null;
+
   const today = todayDateStr();
   const tripStartYMD = startDate ? toDateStr(new Date(startDate)) : undefined;
 
-  const [activities, hotels, participants] = await Promise.all([
+  const [activities, hotels, participants, personalActivities] = await Promise.all([
     prisma.activity.findMany({
       where: { tripId },
       select: {
@@ -150,10 +170,23 @@ export async function ActivityList({
         user: { select: { id: true, image: true } },
       },
     }),
+    userId
+      ? prisma.personalActivity.findMany({
+          where: { tripId, userId },
+          orderBy: [{ date: "asc" }, { time: "asc" }],
+          select: { id: true, date: true, title: true, description: true, time: true, location: true, notes: true, photoUrl: true },
+        })
+      : Promise.resolve([] as PersonalActivityItem[]),
   ]);
 
   const byDate = new Map<string, typeof activities>();
   const noDateActivities: typeof activities = [];
+
+  const personalByDate = new Map<string, PersonalActivityItem[]>();
+  for (const pa of personalActivities) {
+    if (!personalByDate.has(pa.date)) personalByDate.set(pa.date, []);
+    personalByDate.get(pa.date)!.push(pa);
+  }
 
   for (const act of activities) {
     if (act.activityDate) {
@@ -198,7 +231,11 @@ export async function ActivityList({
   }
 
   return (
+    <PersonalModeProvider>
     <div className="flex flex-col gap-3">
+      <div className="flex justify-start">
+        <PersonalModeToggle />
+      </div>
       {/* Past days — collapsed by default */}
       <PastDaysCollapsible count={pastDates.length}>
         {pastDates.map((dateStr) => (
@@ -213,6 +250,7 @@ export async function ActivityList({
             isPast={true}
             participants={participants}
             tripStartDate={tripStartYMD}
+            personalActs={personalByDate.get(dateStr) ?? []}
           />
         ))}
       </PastDaysCollapsible>
@@ -230,6 +268,7 @@ export async function ActivityList({
             isPast={false}
             participants={participants}
             tripStartDate={tripStartYMD}
+            personalActs={personalByDate.get(dateStr) ?? []}
           />
         </div>
       ))}
@@ -260,6 +299,7 @@ export async function ActivityList({
         </div>
       )}
     </div>
+    </PersonalModeProvider>
   );
 }
 
@@ -275,6 +315,7 @@ function DayCard({
   isPast,
   participants,
   tripStartDate,
+  personalActs,
 }: {
   dateStr: string;
   acts: Activity[];
@@ -285,6 +326,7 @@ function DayCard({
   isPast: boolean;
   participants: Participant[];
   tripStartDate?: string;
+  personalActs: PersonalActivityItem[];
 }) {
   const { dayNum, weekday, dateLabel } = parseDateHeader(dateStr);
   const isEmpty = acts.length === 0;
@@ -374,9 +416,12 @@ function DayCard({
 
       {/* Body */}
       {isEmpty ? (
-        <div className="flex items-center justify-center px-5 py-10">
-          <p className="text-sm font-medium text-zinc-600">☀️ Día libre</p>
-        </div>
+        <>
+          <div className="flex items-center justify-center px-5 py-10">
+            <p className="text-sm font-medium text-zinc-600">☀️ Día libre</p>
+          </div>
+          <PersonalActivitySection activities={personalActs} tripId={tripId} date={dateStr} />
+        </>
       ) : (
         <div className="flex flex-col gap-2 p-3">
           {acts.map((act) => (
@@ -389,6 +434,7 @@ function DayCard({
               tripStartDate={tripStartDate}
             />
           ))}
+          <PersonalActivitySection activities={personalActs} tripId={tripId} date={dateStr} />
         </div>
       )}
     </div>
