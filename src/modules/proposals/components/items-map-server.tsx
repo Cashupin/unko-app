@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import type { ItemType } from "@/generated/prisma/client";
-import { computeCityCounts } from "@/modules/proposals/lib/geocode";
 import { ItemsMapCollapsible } from "@/modules/proposals/components/items-map-collapsible";
 
 export async function ItemsMapServer({
@@ -8,11 +7,13 @@ export async function ItemsMapServer({
   typeFilter,
   proposerFilter,
   search,
+  cityFilter,
 }: {
   tripId: string;
   typeFilter?: string;
   proposerFilter?: string;
   search?: string;
+  cityFilter?: string;
 }) {
   const createdByIdFilter =
     proposerFilter === "none" ? null : proposerFilter || undefined;
@@ -24,6 +25,7 @@ export async function ItemsMapServer({
       locationLng: { not: null },
       type: typeFilter ? (typeFilter as ItemType) : undefined,
       createdById: createdByIdFilter,
+      city: cityFilter ? { equals: cityFilter } : undefined,
       OR: search
         ? [
             { title: { contains: search, mode: "insensitive" } },
@@ -55,7 +57,5 @@ export async function ItemsMapServer({
     city: i.city,
   }));
 
-  const cityCounts = computeCityCounts(mapItems);
-
-  return <ItemsMapCollapsible items={mapItems} cityCounts={cityCounts} />;
+  return <ItemsMapCollapsible items={mapItems} selectedCity={cityFilter ?? null} />;
 }

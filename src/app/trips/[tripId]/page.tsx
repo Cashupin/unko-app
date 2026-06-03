@@ -26,7 +26,7 @@ import { HotelCollapsible } from "@/modules/itinerary/components/hotel-collapsib
 import { CreateHotelForm } from "@/modules/itinerary/components/create-hotel-form";
 import { TripHome } from "@/modules/trips/components/trip-home";
 import { ExpenseList } from "@/modules/expenses/components/expense-list";
-import { ItemFilterChips } from "@/modules/proposals/components/item-filter-chips";
+import { ItemFilterChipsServer } from "@/modules/proposals/components/item-filter-chips-server";
 import { NearbyActivitiesServer } from "@/modules/proposals/components/nearby-activities-server";
 import { HashHighlight } from "@/modules/proposals/components/hash-highlight";
 import { KmlImport } from "@/modules/proposals/components/kml-import";
@@ -50,13 +50,13 @@ export default async function TripPage({
   searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ tab?: string; itemType?: string; search?: string; hotelId?: string; proposer?: string; view?: string }>;
+  searchParams: Promise<{ tab?: string; itemType?: string; search?: string; hotelId?: string; proposer?: string; view?: string; city?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
   const { tripId } = await params;
-  const { tab: tabParam, itemType, search, hotelId, proposer, view } = await searchParams;
+  const { tab: tabParam, itemType, search, hotelId, proposer, view, city } = await searchParams;
   const activeTab: Tab =
     TABS.find((t) => t.id === tabParam)?.id ?? "home";
 
@@ -278,6 +278,20 @@ export default async function TripPage({
                 </div>
               </div>
 
+              {/* Unified filters — first */}
+              <div id="tutorial-item-filters" className="mb-4">
+                <Suspense fallback={null}>
+                  <ItemFilterChipsServer
+                    tripId={tripId}
+                    typeFilter={itemType}
+                    proposerFilter={proposer}
+                    search={search}
+                    participants={proposerOptions}
+                  />
+                </Suspense>
+              </div>
+
+              {/* Map — second */}
               <div className="mb-4">
                 <Suspense fallback={null}>
                   <ItemsMapServer
@@ -285,14 +299,12 @@ export default async function TripPage({
                     typeFilter={itemType}
                     proposerFilter={proposer}
                     search={search}
+                    cityFilter={city}
                   />
                 </Suspense>
               </div>
 
-              <div id="tutorial-item-filters" className="mb-4">
-                <ItemFilterChips participants={proposerOptions} />
-              </div>
-
+              {/* Proposals list — third */}
               <Suspense
                 fallback={
                   <div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando actividades...</div>
@@ -308,6 +320,7 @@ export default async function TripPage({
                   typeFilter={itemType}
                   search={search}
                   proposerFilter={proposer}
+                  cityFilter={city}
                 />
               </Suspense>
             </div>
