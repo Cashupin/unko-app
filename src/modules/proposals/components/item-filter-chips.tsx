@@ -11,8 +11,10 @@ const TYPE_CHIPS = [
 
 export function ItemFilterChips({
   participants = [],
+  cityCounts = {},
 }: {
   participants?: { id: string; name: string }[];
+  cityCounts?: Record<string, number>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -20,6 +22,7 @@ export function ItemFilterChips({
 
   const currentType = searchParams.get("itemType") ?? "";
   const currentProposer = searchParams.get("proposer") ?? "";
+  const currentCity = searchParams.get("city") ?? "";
   const [searchValue, setSearchValue] = useState(searchParams.get("search") ?? "");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -115,6 +118,43 @@ export function ItemFilterChips({
           </button>
         ))}
       </div>
+
+      {/* Row 3: City chips (only when there are cities) */}
+      {Object.keys(cityCounts).length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+          <button
+            onClick={() => setFilter("city", "")}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              currentCity === ""
+                ? "bg-zinc-100 text-zinc-900"
+                : "border border-[#3f3f46] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+            }`}
+          >
+            Todos
+          </button>
+          {Object.entries(cityCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([city, count]) => {
+              const active = currentCity === city;
+              return (
+                <button
+                  key={city}
+                  onClick={() => setFilter("city", active ? "" : city)}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
+                    active
+                      ? "border-zinc-400 bg-zinc-600 text-zinc-100"
+                      : "border-[#3f3f46] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                  }`}
+                >
+                  <span className="font-medium">{city}</span>
+                  <span className="rounded-full bg-[#3f3f46] px-1.5 py-0.5 text-[10px] font-semibold text-zinc-500">
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+        </div>
+      )}
     </div>
   );
 }

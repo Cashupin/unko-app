@@ -13,6 +13,7 @@ export async function ItemList({
   typeFilter,
   search,
   proposerFilter,
+  cityFilter,
 }: {
   currentUserId: string;
   tripId: string;
@@ -23,6 +24,7 @@ export async function ItemList({
   typeFilter?: string;
   search?: string;
   proposerFilter?: string;
+  cityFilter?: string;
 }) {
   const createdByIdFilter = proposerFilter === "none"
     ? null
@@ -36,6 +38,7 @@ export async function ItemList({
         tripId,
         type: typeFilter ? (typeFilter as ItemType) : undefined,
         createdById: createdByIdFilter,
+        city: cityFilter ? { equals: cityFilter } : undefined,
         OR: search
           ? [
               { title: { contains: search, mode: "insensitive" } },
