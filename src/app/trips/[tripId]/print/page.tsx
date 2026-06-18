@@ -482,6 +482,14 @@ export default async function PrintPage({
             <div className="flex flex-col gap-5">
               {passes.map((p) => {
                 const coveredLegs = transports.filter((t) => t.coveredByPassId === p.id);
+                const coveredValueByCurrency = new Map<string, number>();
+                for (const t of coveredLegs) {
+                  if (!t.cost) continue;
+                  coveredValueByCurrency.set(t.currency, (coveredValueByCurrency.get(t.currency) ?? 0) + t.cost);
+                }
+                const coveredValueLabel = [...coveredValueByCurrency.entries()]
+                  .map(([c, amt]) => `${c} ${amt.toLocaleString("es-CL")}`)
+                  .join(" + ");
                 return (
                   <div key={p.id} className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -498,6 +506,9 @@ export default async function PrintPage({
                       {p.cost != null && (
                         <span>Costo: {p.currency} {p.cost.toLocaleString("es-CL")}</span>
                       )}
+                      {coveredValueLabel && (
+                        <span>Valor cubierto: {coveredValueLabel}</span>
+                      )}
                     </div>
                     {coveredLegs.length > 0 && (
                       <div className="flex flex-col gap-1.5">
@@ -510,6 +521,9 @@ export default async function PrintPage({
                               <span className="text-xs text-zinc-400">
                                 {fmtShort(t.departureDate)}{t.departureTime ? ` ${t.departureTime}` : ""}
                               </span>
+                            )}
+                            {t.cost != null && (
+                              <span className="text-xs text-zinc-400 italic">valor {t.currency} {t.cost.toLocaleString("es-CL")}</span>
                             )}
                           </div>
                         ))}
