@@ -121,6 +121,7 @@ type TransportForItinerary = {
   isPaid: boolean;
   coveredByPassId: string | null;
   coveredByPass: { id: string; name: string } | null;
+  isArrival?: boolean; // true when shown on arrival day (not departure day)
 };
 
 const TRANSPORT_ICONS: Record<string, string> = {
@@ -210,15 +211,22 @@ export async function ActivityList({
     }),
   ]);
 
-  // Index transports by departure date
+  // Index transports by departure date, and also by arrival date when it differs
   const transportsByDate = new Map<string, TransportForItinerary[]>();
   for (const t of transports) {
-    const key = t.departureDate ? toDateStr(new Date(t.departureDate)) : "__nodate__";
-    if (!transportsByDate.has(key)) transportsByDate.set(key, []);
-    transportsByDate.get(key)!.push({
+    const depKey = t.departureDate ? toDateStr(new Date(t.departureDate)) : "__nodate__";
+    const arrKey = t.arrivalDate ? toDateStr(new Date(t.arrivalDate)) : null;
+    const mapped: TransportForItinerary = {
       ...t,
-      arrivalDate: t.arrivalDate ? toDateStr(new Date(t.arrivalDate)) : null,
-    });
+      arrivalDate: arrKey,
+    };
+    if (!transportsByDate.has(depKey)) transportsByDate.set(depKey, []);
+    transportsByDate.get(depKey)!.push(mapped);
+
+    if (arrKey && arrKey !== depKey) {
+      if (!transportsByDate.has(arrKey)) transportsByDate.set(arrKey, []);
+      transportsByDate.get(arrKey)!.push({ ...mapped, isArrival: true });
+    }
   }
 
   const byDate = new Map<string, typeof activities>();
@@ -375,9 +383,11 @@ function DayCard({
   personalActs: PersonalActivityItem[];
 }) {
   const { dayNum, weekday, dateLabel } = parseDateHeader(dateStr);
+  const departureTransports = transports.filter((t) => !t.isArrival);
   const isEmpty = acts.length === 0 && transports.length === 0;
 
   // Merge activities + transports sorted by time for rendering
+  // Arrival entries sort by arrivalTime; departure entries by departureTime
   type MergedItem =
     | { kind: "activity"; item: Activity }
     | { kind: "transport"; item: TransportForItinerary };
@@ -385,8 +395,12 @@ function DayCard({
     ...acts.map((a) => ({ kind: "activity" as const, item: a })),
     ...transports.map((t) => ({ kind: "transport" as const, item: t })),
   ].sort((a, b) => {
-    const timeA = a.kind === "activity" ? (a.item.activityTime ?? "") : (a.item.departureTime ?? "");
-    const timeB = b.kind === "activity" ? (b.item.activityTime ?? "") : (b.item.departureTime ?? "");
+    const timeA = a.kind === "activity"
+      ? (a.item.activityTime ?? "")
+      : (a.item.isArrival ? (a.item.arrivalTime ?? "") : (a.item.departureTime ?? ""));
+    const timeB = b.kind === "activity"
+      ? (b.item.activityTime ?? "")
+      : (b.item.isArrival ? (b.item.arrivalTime ?? "") : (b.item.departureTime ?? ""));
     return timeA.localeCompare(timeB);
   });
 
@@ -433,8 +447,8 @@ function DayCard({
             {!isEmpty && (
               <p className="text-xs font-medium text-zinc-500">
                 {acts.length > 0 && `${acts.length} actividad${acts.length !== 1 ? "es" : ""}`}
-                {acts.length > 0 && transports.length > 0 && " · "}
-                {transports.length > 0 && `${transports.length} transporte${transports.length !== 1 ? "s" : ""}`}
+                {acts.length > 0 && departureTransports.length > 0 && " · "}
+                {departureTransports.length > 0 && `${departureTransports.length} transporte${departureTransports.length !== 1 ? "s" : ""}`}
               </p>
             )}
           </div>
@@ -673,6 +687,33 @@ function TransportBlock({
   const icon = TRANSPORT_ICONS[t.type] ?? "🚌";
   const isCovered = !!t.coveredByPassId;
 
+  if (t.isArrival) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-blue-900/30 bg-[#080f18] px-4 py-3 opacity-80">
+        <div className="w-12 shrink-0">
+          {t.arrivalTime && (
+            <div className="rounded-lg bg-blue-900/30 px-1.5 py-1.5 text-center">
+              <span className="text-xs font-bold tabular-nums text-blue-500">{t.arrivalTime}</span>
+            </div>
+          )}
+        </div>
+        <span className="text-base shrink-0">{icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-blue-300/70">
+            {t.origin} <span className="text-blue-900">→</span> {t.destination}
+          </p>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800">Llegada</span>
+        </div>
+        <a
+          href={`/trips/${tripId}?tab=itinerario&subtab=transporte`}
+          className="shrink-0 text-[10px] font-semibold text-blue-800 hover:text-blue-600 transition-colors"
+        >
+          → Ver
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3 rounded-xl border border-blue-900/50 bg-[#0d1b2e] px-4 py-3">
       {/* Time badge */}
@@ -691,8 +732,7 @@ function TransportBlock({
         <div className="mt-0.5 flex items-center gap-2 flex-wrap">
           {t.arrivalTime && (
             <span className="text-xs text-blue-700">
-              llegada {t.arrivalTime}
-              {t.arrivalDate && t.arrivalDate !== "" ? " +1" : ""}
+              llegada {t.arrivalTime}{t.arrivalDate ? " +1" : ""}
             </span>
           )}
           {isCovered && t.coveredByPass && (
@@ -700,7 +740,7 @@ function TransportBlock({
           )}
           {!isCovered && t.cost && (
             <span className={`text-[10px] font-bold ${t.isPaid ? "text-emerald-600" : "text-blue-500"}`}>
-              {t.isPaid ? "✓ pagado" : `pendiente`}
+              {t.isPaid ? "✓ pagado" : "pendiente"}
             </span>
           )}
         </div>
