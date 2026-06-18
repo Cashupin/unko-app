@@ -716,10 +716,10 @@ export function ItineraryCalendar({
         </div>
       )}
 
-      <div className="w-full rounded-2xl bg-[#0f1419] p-4 sm:p-6">
+      <div className="w-full rounded-2xl bg-[#0f1419] p-4 lg:p-6">
         {/* Header */}
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-zinc-100 sm:text-2xl">
+          <h2 className="text-xl font-semibold text-zinc-100 lg:text-2xl">
             {MONTHS_ES[month]} {year}
           </h2>
           <div className="flex gap-2">
@@ -745,20 +745,20 @@ export function ItineraryCalendar({
         </div>
 
         {/* Weekday headers */}
-        <div className="mb-2 grid grid-cols-7 gap-1 sm:gap-3">
+        <div className="mb-2 grid grid-cols-7 gap-1 lg:gap-3">
           {WEEKDAYS.map((d) => (
-            <div key={d} className="pb-2 text-center text-xs font-medium text-zinc-500 sm:text-sm">
-              <span className="hidden sm:inline">{d}</span>
-              <span className="sm:hidden">{d.slice(0, 3)}</span>
+            <div key={d} className="pb-2 text-center text-xs font-medium text-zinc-500 lg:text-sm">
+              <span className="hidden lg:inline">{d}</span>
+              <span className="lg:hidden">{d.slice(0, 3)}</span>
             </div>
           ))}
         </div>
 
         {/* Day grid */}
-        <div className="grid grid-cols-7 gap-1 sm:gap-3">
+        <div className="grid grid-cols-7 gap-1 lg:gap-3">
           {/* Leading empty cells */}
           {Array.from({ length: leadingEmpties }).map((_, i) => (
-            <div key={`e-${i}`} className="min-h-20 sm:min-h-36" />
+            <div key={`e-${i}`} className="min-h-20 lg:min-h-36" />
           ))}
 
           {/* Days of the month */}
@@ -782,8 +782,8 @@ export function ItineraryCalendar({
 
             if (!isInTrip) {
               return (
-                <div key={day} className="min-h-20 rounded-xl p-2 sm:min-h-36 sm:p-3">
-                  <span className="text-xs font-semibold text-zinc-700 sm:text-sm">{day}</span>
+                <div key={day} className="min-h-20 rounded-xl p-2 lg:min-h-36 lg:p-3">
+                  <span className="text-xs font-semibold text-zinc-700 lg:text-sm">{day}</span>
                 </div>
               );
             }
@@ -793,7 +793,7 @@ export function ItineraryCalendar({
                 key={day}
                 onClick={() => setSelectedDay(selectedDay === dateStr ? null : dateStr)}
                 className={[
-                  "min-h-20 cursor-pointer rounded-xl border p-2 transition-all sm:min-h-36 sm:p-3",
+                  "min-h-20 cursor-pointer rounded-xl border p-2 transition-all lg:min-h-36 lg:p-3",
                   hasActs
                     ? "border-[#27272a] bg-[#18191c]/60 hover:bg-[#18191c]"
                     : "border-[#1e2533] bg-[#18191c]/30 hover:bg-[#18191c]/50",
@@ -801,26 +801,26 @@ export function ItineraryCalendar({
                 ].join(" ")}
               >
                 {/* Day number + city */}
-                <div className="mb-1 flex flex-col gap-0.5 sm:mb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-1">
+                <div className="mb-1 flex flex-col gap-0.5 lg:mb-2 lg:flex-row lg:items-center lg:justify-between lg:gap-1">
                   <span
                     className={[
-                      "shrink-0 text-xs font-semibold sm:text-sm",
+                      "shrink-0 text-xs font-semibold lg:text-sm",
                       isToday ? "text-violet-400" : hasActs ? "text-zinc-100" : "text-zinc-500",
                     ].join(" ")}
                   >
                     {day}
                   </span>
                   {hotelState && (
-                    <span className={`min-w-0 overflow-hidden whitespace-nowrap rounded border px-1 py-0.5 text-[10px] font-semibold sm:px-1.5 ${hotelState.isTransition ? "border-violet-700/40 bg-violet-900/30 text-violet-300" : "border-sky-700/40 bg-sky-900/30 text-sky-300"}`}>
+                    <span className={`min-w-0 overflow-hidden whitespace-nowrap rounded border px-1 py-0.5 text-[10px] font-semibold lg:px-1.5 ${hotelState.isTransition ? "border-violet-700/40 bg-violet-900/30 text-violet-300" : "border-sky-700/40 bg-sky-900/30 text-sky-300"}`}>
                       {hotelState.label}
                     </span>
                   )}
                 </div>
 
                 {/* Pills */}
-                <div className="flex flex-col gap-0.5 sm:gap-1">
+                <div className="flex flex-col gap-0.5 lg:gap-1">
                   {allItems.length === 0 && myActs.length === 0 ? (
-                    <div className="truncate rounded border border-amber-700/50 bg-amber-900/40 px-1 py-0.5 text-[10px] font-medium text-amber-300 sm:px-2 sm:py-1 sm:text-xs">
+                    <div className="truncate rounded border border-amber-700/50 bg-amber-900/40 px-1 py-0.5 text-[10px] font-medium text-amber-300 lg:px-2 lg:py-1 lg:text-xs">
                       {personalMode ? "Sin plan" : "Libre"}
                     </div>
                   ) : (
@@ -830,7 +830,7 @@ export function ItineraryCalendar({
                           item.t.isArrival ? (
                             <div
                               key={`${item.t.id}-arr`}
-                              className="truncate rounded border border-blue-900/30 bg-blue-900/20 px-1 py-0.5 text-[10px] font-medium text-blue-400/50 sm:px-2 sm:py-1 sm:text-xs"
+                              className="truncate rounded border border-blue-900/30 bg-blue-900/20 px-1 py-0.5 text-[10px] font-medium text-blue-400/50 lg:px-2 lg:py-1 lg:text-xs"
                               title={`Llegada: ${item.t.origin} → ${item.t.destination}`}
                             >
                               {TRANSPORT_ICONS[item.t.type]} →{item.t.destination}
@@ -838,7 +838,7 @@ export function ItineraryCalendar({
                           ) : (
                             <div
                               key={item.t.id}
-                              className="truncate rounded border border-blue-700/50 bg-blue-900/40 px-1 py-0.5 text-[10px] font-medium text-blue-300 sm:px-2 sm:py-1 sm:text-xs"
+                              className="truncate rounded border border-blue-700/50 bg-blue-900/40 px-1 py-0.5 text-[10px] font-medium text-blue-300 lg:px-2 lg:py-1 lg:text-xs"
                               title={`${item.t.origin} → ${item.t.destination}`}
                             >
                               {TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
@@ -847,7 +847,7 @@ export function ItineraryCalendar({
                         ) : (
                           <div
                             key={item.a.id}
-                            className={`truncate rounded border px-1 py-0.5 text-[10px] font-medium sm:px-2 sm:py-1 sm:text-xs ${getActivityPillClass(item.a.title)}`}
+                            className={`truncate rounded border px-1 py-0.5 text-[10px] font-medium lg:px-2 lg:py-1 lg:text-xs ${getActivityPillClass(item.a.title)}`}
                             title={item.a.title}
                           >
                             {item.a.title}
@@ -855,14 +855,14 @@ export function ItineraryCalendar({
                         )
                       )}
                       {overflow > 0 && (
-                        <div className="px-1 text-[10px] text-zinc-500 sm:px-2 sm:text-xs">
+                        <div className="px-1 text-[10px] text-zinc-500 lg:px-2 lg:text-xs">
                           +{overflow} más
                         </div>
                       )}
                       {myActs.map((pa) => (
                         <div
                           key={pa.id}
-                          className="truncate rounded border border-violet-700/50 bg-violet-900/40 px-1 py-0.5 text-[10px] font-medium text-violet-300 sm:px-2 sm:py-1 sm:text-xs"
+                          className="truncate rounded border border-violet-700/50 bg-violet-900/40 px-1 py-0.5 text-[10px] font-medium text-violet-300 lg:px-2 lg:py-1 lg:text-xs"
                           title={pa.title}
                         >
                           🔒 {pa.title}
