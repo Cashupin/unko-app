@@ -67,6 +67,25 @@ type ActivityRow = {
   description: string | null; notes: string | null;
 };
 
+type TransportRow = {
+  id: string; origin: string; destination: string; type: string;
+  departureDate: string | null; departureTime: string | null;
+  arrivalDate: string | null; arrivalTime: string | null;
+  cost: number | null; currency: string; isPaid: boolean; notes: string | null;
+  coveredByPassId: string | null;
+};
+
+type PassRow = {
+  id: string; name: string;
+  validFrom: string | null; validTo: string | null;
+  cost: number | null; currency: string; isPaid: boolean; notes: string | null;
+  transports: { id: string }[];
+};
+
+const PRINT_TRANSPORT_ICONS: Record<string, string> = {
+  FLIGHT: "✈️", TRAIN: "🚅", BUS: "🚌", FERRY: "⛴️", CAR: "🚗",
+};
+
 // ─── Print Calendar Month ─────────────────────────────────────────────────────
 
 function isFlightActivity(title: string): boolean {
@@ -78,11 +97,12 @@ function isFlightActivity(title: string): boolean {
 type CalCell = { type: "empty" } | { type: "day"; day: number; dateStr: string };
 
 function PrintCalendarMonth({
-  year, month, tripStart, tripEnd, activities, hotels,
+  year, month, tripStart, tripEnd, activities, hotels, transports,
 }: {
   year: number; month: number;
   tripStart: string; tripEnd: string;
   activities: ActivityRow[]; hotels: HotelRow[];
+  transports: TransportRow[];
 }) {
   const leading = firstWeekdayMonStart(year, month);
   const total   = daysInMonth(year, month);
@@ -92,6 +112,13 @@ function PrintCalendarMonth({
     if (!a.activityDate) continue;
     if (!actsByDate.has(a.activityDate)) actsByDate.set(a.activityDate, []);
     actsByDate.get(a.activityDate)!.push(a);
+  }
+
+  const transByDate = new Map<string, TransportRow[]>();
+  for (const t of transports) {
+    if (!t.departureDate) continue;
+    if (!transByDate.has(t.departureDate)) transByDate.set(t.departureDate, []);
+    transByDate.get(t.departureDate)!.push(t);
   }
 
   function hotelCity(ds: string): string | null {
@@ -134,7 +161,9 @@ function PrintCalendarMonth({
                 const { day, dateStr: ds } = cell;
                 const inTrip = ds >= tripStart && ds <= tripEnd;
                 const dayActs = actsByDate.get(ds) ?? [];
+                const dayTrans = inTrip ? (transByDate.get(ds) ?? []) : [];
                 const city = inTrip ? hotelCity(ds) : null;
+                const calItems = [...dayTrans.map((t) => ({ k: "t" as const, t })), ...dayActs.map((a) => ({ k: "a" as const, a }))];
                 return (
                   <td
                     key={ds}
@@ -149,21 +178,31 @@ function PrintCalendarMonth({
                         </span>
                       )}
                     </div>
-                    {dayActs.slice(0, 2).map((a) => (
-                      <div
-                        key={a.id}
-                        className="mb-0.5 truncate rounded px-1 text-[9px]"
-                        style={isFlightActivity(a.title)
-                          ? { background: "#e0e7ff", color: "#4338ca" }
-                          : { background: "#dcfce7", color: "#15803d" }}
-                      >
-                        {a.title}
-                      </div>
-                    ))}
-                    {dayActs.length > 2 && (
-                      <div className="text-[9px] text-zinc-400">+{dayActs.length - 2} más</div>
+                    {calItems.slice(0, 2).map((item) =>
+                      item.k === "t" ? (
+                        <div
+                          key={item.t.id}
+                          className="mb-0.5 truncate rounded px-1 text-[9px]"
+                          style={{ background: "#dbeafe", color: "#1e40af" }}
+                        >
+                          {PRINT_TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
+                        </div>
+                      ) : (
+                        <div
+                          key={item.a.id}
+                          className="mb-0.5 truncate rounded px-1 text-[9px]"
+                          style={isFlightActivity(item.a.title)
+                            ? { background: "#e0e7ff", color: "#4338ca" }
+                            : { background: "#dcfce7", color: "#15803d" }}
+                        >
+                          {item.a.title}
+                        </div>
+                      )
                     )}
-                    {inTrip && dayActs.length === 0 && !city && (
+                    {calItems.length > 2 && (
+                      <div className="text-[9px] text-zinc-400">+{calItems.length - 2} más</div>
+                    )}
+                    {inTrip && calItems.length === 0 && !city && (
                       <div className="truncate rounded px-1 text-[9px]" style={{ background: "#fef3c7", color: "#b45309" }}>Libre</div>
                     )}
                   </td>
@@ -203,7 +242,7 @@ export default async function PrintPage({
   if (!trip) notFound();
   if (!myParticipant) redirect("/");
 
-  const [rawHotels, rawActivities] = await Promise.all([
+  const [rawHotels, rawActivities, rawTransports, rawPasses] = await Promise.all([
     prisma.hotel.findMany({
       where: { tripId },
       select: {
@@ -222,6 +261,25 @@ export default async function PrintPage({
       },
       orderBy: [{ activityDate: "asc" }, { activityTime: "asc" }],
     }),
+    prisma.transport.findMany({
+      where: { tripId },
+      select: {
+        id: true, origin: true, destination: true, type: true,
+        departureDate: true, departureTime: true,
+        arrivalDate: true, arrivalTime: true,
+        cost: true, currency: true, isPaid: true, notes: true, coveredByPassId: true,
+      },
+      orderBy: [{ departureDate: "asc" }, { departureTime: "asc" }],
+    }),
+    prisma.pass.findMany({
+      where: { tripId },
+      select: {
+        id: true, name: true, validFrom: true, validTo: true,
+        cost: true, currency: true, isPaid: true, notes: true,
+        transports: { select: { id: true } },
+      },
+      orderBy: { validFrom: "asc" },
+    }),
   ]);
 
   const hotels: HotelRow[] = rawHotels.map((h) => ({
@@ -236,6 +294,20 @@ export default async function PrintPage({
     activityDate: a.activityDate ? toStr(a.activityDate) : null,
   }));
 
+  const transports: TransportRow[] = rawTransports.map((t) => ({
+    ...t,
+    departureDate: t.departureDate ? toStr(t.departureDate) : null,
+    arrivalDate: t.arrivalDate ? toStr(t.arrivalDate) : null,
+    currency: t.currency as string,
+  }));
+
+  const passes: PassRow[] = rawPasses.map((p) => ({
+    ...p,
+    validFrom: p.validFrom ? toStr(p.validFrom) : null,
+    validTo: p.validTo ? toStr(p.validTo) : null,
+    currency: p.currency as string,
+  }));
+
   const tripStart = trip.startDate ? toStr(trip.startDate) : null;
   const tripEnd   = trip.endDate   ? toStr(trip.endDate)   : null;
 
@@ -248,6 +320,14 @@ export default async function PrintPage({
     if (!a.activityDate) { undatedActs.push(a); continue; }
     if (!actsByDate.has(a.activityDate)) actsByDate.set(a.activityDate, []);
     actsByDate.get(a.activityDate)!.push(a);
+  }
+
+  // Group transports by departure date
+  const transportsByDate = new Map<string, TransportRow[]>();
+  for (const t of transports) {
+    if (!t.departureDate) continue;
+    if (!transportsByDate.has(t.departureDate)) transportsByDate.set(t.departureDate, []);
+    transportsByDate.get(t.departureDate)!.push(t);
   }
 
   // Generate days in trip range for day-by-day section
@@ -328,6 +408,7 @@ export default async function PrintPage({
                   tripEnd={tripEnd}
                   activities={activities}
                   hotels={hotels}
+                  transports={transports}
                 />
               ))}
             </div>
@@ -369,19 +450,111 @@ export default async function PrintPage({
           )}
         </section>
 
-        {/* ── Sección 3: Itinerario día a día ─────────────────────────────────── */}
+        {/* ── Sección 3: Transportes y Pases ──────────────────────────────────── */}
+        <section className="print-section-break mb-10">
+          <h2 className="mb-4 text-lg font-bold uppercase tracking-wider text-zinc-400">
+            3. Transportes y Pases
+          </h2>
+          {passes.length === 0 && transports.length === 0 ? (
+            <p className="text-sm text-zinc-400">Sin transportes registrados.</p>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {passes.map((p) => {
+                const coveredLegs = transports.filter((t) => t.coveredByPassId === p.id);
+                return (
+                  <div key={p.id} className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <span className="text-base">📦</span>
+                      <p className="font-bold text-blue-800">{p.name}</p>
+                      {p.isPaid && (
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Pagado</span>
+                      )}
+                    </div>
+                    <div className="mb-3 flex flex-wrap gap-4 text-sm text-zinc-600">
+                      {p.validFrom && p.validTo && (
+                        <span>Válido: {fmtShort(p.validFrom)} – {fmtShort(p.validTo)}</span>
+                      )}
+                      {p.cost != null && (
+                        <span>Costo: {p.currency} {p.cost.toLocaleString("es-CL")}</span>
+                      )}
+                    </div>
+                    {coveredLegs.length > 0 && (
+                      <div className="flex flex-col gap-1.5">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-blue-500">Tramos cubiertos</p>
+                        {coveredLegs.map((t) => (
+                          <div key={t.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm">
+                            <span>{PRINT_TRANSPORT_ICONS[t.type]}</span>
+                            <span className="font-medium text-zinc-800">{t.origin} → {t.destination}</span>
+                            {t.departureDate && (
+                              <span className="text-xs text-zinc-400">
+                                {fmtShort(t.departureDate)}{t.departureTime ? ` ${t.departureTime}` : ""}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {p.notes && <p className="mt-2 text-xs italic text-zinc-400">{p.notes}</p>}
+                  </div>
+                );
+              })}
+              {transports.filter((t) => !t.coveredByPassId).length > 0 && (
+                <div>
+                  {passes.length > 0 && (
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Tramos sin pase</p>
+                  )}
+                  <div className="flex flex-col gap-2">
+                    {transports.filter((t) => !t.coveredByPassId).map((t) => (
+                      <div key={t.id} className="rounded-lg border border-zinc-200 p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span>{PRINT_TRANSPORT_ICONS[t.type]}</span>
+                          <span className="font-semibold text-zinc-800">{t.origin} → {t.destination}</span>
+                          {t.isPaid && (
+                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Pagado</span>
+                          )}
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-zinc-500">
+                          {t.departureDate && (
+                            <span>Salida: {fmtShort(t.departureDate)}{t.departureTime ? ` ${t.departureTime}` : ""}</span>
+                          )}
+                          {t.arrivalDate && (
+                            <span>Llegada: {fmtShort(t.arrivalDate)}{t.arrivalTime ? ` ${t.arrivalTime}` : ""}</span>
+                          )}
+                          {t.cost != null && (
+                            <span>Costo: {t.currency} {t.cost.toLocaleString("es-CL")}</span>
+                          )}
+                        </div>
+                        {t.notes && <p className="mt-1 text-xs italic text-zinc-400">{t.notes}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* ── Sección 4: Itinerario día a día ─────────────────────────────────── */}
         <section className="print-section-break">
           <h2 className="mb-4 text-lg font-bold uppercase tracking-wider text-zinc-400">
-            3. Itinerario día a día
+            4. Itinerario día a día
           </h2>
 
-          {tripDays.length === 0 && activities.length === 0 ? (
+          {tripDays.length === 0 && activities.length === 0 && transports.length === 0 ? (
             <p className="text-sm text-zinc-400">Sin itinerario registrado.</p>
           ) : (
             <div className="flex flex-col gap-6">
               {tripDays.map((ds, idx) => {
                 const dayActs = actsByDate.get(ds) ?? [];
+                const dayTrans = transportsByDate.get(ds) ?? [];
                 const hotel = hotels.find((h) => h.checkInDate <= ds && ds <= h.checkOutDate);
+                type DayItem =
+                  | { kind: "transport"; t: TransportRow; time: string }
+                  | { kind: "activity"; a: ActivityRow; time: string };
+                const merged: DayItem[] = [
+                  ...dayTrans.map((t) => ({ kind: "transport" as const, t, time: t.departureTime ?? "" })),
+                  ...dayActs.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "" })),
+                ].sort((x, y) => x.time.localeCompare(y.time));
                 return (
                   <div key={ds} className="break-inside-avoid">
                     <div className="flex items-center gap-3 border-b border-zinc-100 pb-1 mb-2">
@@ -393,25 +566,46 @@ export default async function PrintPage({
                         {hotel && <p className="text-xs text-zinc-400">📍 {hotel.city ?? hotel.name}</p>}
                       </div>
                     </div>
-                    {dayActs.length === 0 ? (
+                    {merged.length === 0 ? (
                       <p className="ml-11 text-sm text-zinc-300 italic">Día libre</p>
                     ) : (
                       <div className="ml-11 flex flex-col gap-2">
-                        {dayActs.map((a) => (
-                          <div key={a.id} className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
-                            <div className="flex items-center gap-2">
-                              {a.activityTime && (
-                                <span className="shrink-0 rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-bold text-zinc-600 tabular-nums">
-                                  {a.activityTime}
-                                </span>
+                        {merged.map((item) =>
+                          item.kind === "transport" ? (
+                            <div key={item.t.id} className="rounded-lg border border-blue-200 bg-blue-50/60 p-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {item.t.departureTime && (
+                                  <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-bold text-blue-700 tabular-nums">
+                                    {item.t.departureTime}
+                                  </span>
+                                )}
+                                <span className="text-base">{PRINT_TRANSPORT_ICONS[item.t.type]}</span>
+                                <p className="font-semibold text-blue-800">{item.t.origin} → {item.t.destination}</p>
+                                {item.t.coveredByPassId && (
+                                  <span className="rounded border border-blue-200 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">📦 pase</span>
+                                )}
+                              </div>
+                              {item.t.arrivalTime && (
+                                <p className="mt-1 text-xs text-zinc-500">Llegada: {item.t.arrivalTime}{item.t.arrivalDate && item.t.arrivalDate !== ds ? ` (${fmtShort(item.t.arrivalDate)})` : ""}</p>
                               )}
-                              <p className="font-semibold text-zinc-800">{a.title}</p>
+                              {item.t.notes && <p className="mt-1 text-xs italic text-zinc-400">{item.t.notes}</p>}
                             </div>
-                            {a.location && <p className="mt-1 text-xs text-zinc-500">📍 {a.location}</p>}
-                            {a.description && <p className="mt-1 text-sm text-zinc-600">{a.description}</p>}
-                            {a.notes && <p className="mt-1 text-xs italic text-zinc-400">{a.notes}</p>}
-                          </div>
-                        ))}
+                          ) : (
+                            <div key={item.a.id} className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+                              <div className="flex items-center gap-2">
+                                {item.a.activityTime && (
+                                  <span className="shrink-0 rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-bold text-zinc-600 tabular-nums">
+                                    {item.a.activityTime}
+                                  </span>
+                                )}
+                                <p className="font-semibold text-zinc-800">{item.a.title}</p>
+                              </div>
+                              {item.a.location && <p className="mt-1 text-xs text-zinc-500">📍 {item.a.location}</p>}
+                              {item.a.description && <p className="mt-1 text-sm text-zinc-600">{item.a.description}</p>}
+                              {item.a.notes && <p className="mt-1 text-xs italic text-zinc-400">{item.a.notes}</p>}
+                            </div>
+                          )
+                        )}
                       </div>
                     )}
                   </div>

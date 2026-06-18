@@ -10,7 +10,7 @@ export async function ItineraryCalendarServer({
   startDate: Date | null;
   endDate: Date | null;
 }) {
-  const [activities, hotels] = await Promise.all([
+  const [activities, hotels, transports] = await Promise.all([
     prisma.activity.findMany({
       where: { tripId, activityDate: { not: null } },
       select: {
@@ -30,6 +30,16 @@ export async function ItineraryCalendarServer({
       where: { tripId },
       select: { id: true, name: true, city: true, checkInDate: true, checkOutDate: true },
       orderBy: { checkInDate: "asc" },
+    }),
+    prisma.transport.findMany({
+      where: { tripId, departureDate: { not: null } },
+      select: {
+        id: true, origin: true, destination: true, type: true,
+        departureDate: true, departureTime: true, arrivalTime: true,
+        isPaid: true,
+        coveredByPass: { select: { name: true } },
+      },
+      orderBy: [{ departureDate: "asc" }, { departureTime: "asc" }],
     }),
   ]);
 
@@ -52,6 +62,17 @@ export async function ItineraryCalendarServer({
         city: h.city,
         checkInDate: h.checkInDate.toISOString().slice(0, 10),
         checkOutDate: h.checkOutDate.toISOString().slice(0, 10),
+      }))}
+      transports={transports.map((t) => ({
+        id: t.id,
+        origin: t.origin,
+        destination: t.destination,
+        type: t.type,
+        departureDate: t.departureDate!.toISOString().slice(0, 10),
+        departureTime: t.departureTime,
+        arrivalTime: t.arrivalTime,
+        isPaid: t.isPaid,
+        coveredByPass: t.coveredByPass,
       }))}
       startDate={startDate ? startDate.toISOString().slice(0, 10) : null}
       endDate={endDate ? endDate.toISOString().slice(0, 10) : null}

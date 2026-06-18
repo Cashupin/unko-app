@@ -24,6 +24,8 @@ import { CreateActivityForm } from "@/modules/itinerary/components/create-activi
 import { HotelList } from "@/modules/itinerary/components/hotel-list";
 import { HotelCollapsible } from "@/modules/itinerary/components/hotel-collapsible";
 import { CreateHotelForm } from "@/modules/itinerary/components/create-hotel-form";
+import { ItinerarySubNav } from "@/modules/itinerary/components/itinerary-sub-nav";
+import { TransportPanel } from "@/modules/itinerary/components/transport-panel";
 import { TripHome } from "@/modules/trips/components/trip-home";
 import { ExpenseList } from "@/modules/expenses/components/expense-list";
 import { ItemFilterChipsServer } from "@/modules/proposals/components/item-filter-chips-server";
@@ -50,13 +52,17 @@ export default async function TripPage({
   searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ tab?: string; itemType?: string; search?: string; hotelId?: string; proposer?: string; view?: string; city?: string }>;
+  searchParams: Promise<{ tab?: string; subtab?: string; itemType?: string; search?: string; hotelId?: string; proposer?: string; view?: string; city?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
   const { tripId } = await params;
-  const { tab: tabParam, itemType, search, hotelId, proposer, view, city } = await searchParams;
+  const { tab: tabParam, subtab: subtabParam, itemType, search, hotelId, proposer, view, city } = await searchParams;
+
+  type SubTab = "itinerario" | "alojamiento" | "transporte";
+  const SUBTABS: SubTab[] = ["itinerario", "alojamiento", "transporte"];
+  const activeSubtab: SubTab = SUBTABS.includes(subtabParam as SubTab) ? (subtabParam as SubTab) : "itinerario";
   const activeTab: Tab =
     TABS.find((t) => t.id === tabParam)?.id ?? "home";
 
@@ -330,68 +336,93 @@ export default async function TripPage({
         {/* ── Itinerario ──────────────────────────────────────────────────── */}
         {activeTab === "itinerario" && (
           <div>
-            {/* Alojamiento collapsible */}
-            <div id="tutorial-hotel-section">
-              <HotelCollapsible
-                autoOpen={!!hotelId}
-                createSlot={
-                  canEdit ? (
-                    <CreateHotelForm
-                      tripId={tripId}
-                      defaultCurrency={trip.defaultCurrency}
-                      tripStartDate={trip.startDate}
-                      tripEndDate={trip.endDate}
-                    />
-                  ) : null
-                }
-                hotelListSlot={
-                  <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando alojamiento...</div>}>
-                    <HotelList
-                      tripId={tripId}
-                      canEdit={canEdit}
-                      tripStartDate={trip.startDate}
-                      tripEndDate={trip.endDate}
-                      highlightHotelId={hotelId}
-                    />
-                  </Suspense>
-                }
-              />
-            </div>
+            <h2 className="mb-4 text-base font-bold text-zinc-900 dark:text-zinc-100">Itinerario</h2>
 
-            <div className="mb-6 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Itinerario</h2>
-                {/* View toggle */}
-                <ItineraryViewToggle tripId={tripId} view={view} />
+            {/* Sub-nav */}
+            <Suspense fallback={null}>
+              <ItinerarySubNav tripId={tripId} activeSubtab={activeSubtab} />
+            </Suspense>
+
+            {/* ── Sub-tab: Itinerario ── */}
+            {activeSubtab === "itinerario" && (
+              <div className="mt-5">
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <ItineraryViewToggle tripId={tripId} view={view} />
+                  {canEdit && view !== "calendar" && (
+                    <div className="hidden md:block">
+                      <CreateActivityForm tripId={tripId} tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined} />
+                    </div>
+                  )}
+                </div>
+                <div id="tutorial-activity-list">
+                  {view === "calendar" ? (
+                    <div className="relative w-[100vw] md:w-[80vw] left-1/2 -translate-x-1/2">
+                      <Suspense fallback={<div className="px-4 py-4 text-sm text-zinc-400 md:px-6">Cargando calendario...</div>}>
+                        <ItineraryCalendarServer
+                          tripId={tripId}
+                          startDate={trip.startDate}
+                          endDate={trip.endDate}
+                        />
+                      </Suspense>
+                    </div>
+                  ) : (
+                    <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando itinerario...</div>}>
+                      <ActivityList
+                        tripId={tripId}
+                        canEdit={canEdit}
+                        startDate={trip.startDate}
+                        endDate={trip.endDate}
+                      />
+                    </Suspense>
+                  )}
+                </div>
               </div>
-              {canEdit && view !== "calendar" && (
-                <div className="hidden md:block">
-                  <CreateActivityForm tripId={tripId} tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined} />
-                </div>
-              )}
-            </div>
-            <div id="tutorial-activity-list">
-              {view === "calendar" ? (
-                <div className="relative w-[100vw] md:w-[80vw] left-1/2 -translate-x-1/2">
-                  <Suspense fallback={<div className="px-4 py-4 text-sm text-zinc-400 md:px-6">Cargando calendario...</div>}>
-                    <ItineraryCalendarServer
-                      tripId={tripId}
-                      startDate={trip.startDate}
-                      endDate={trip.endDate}
-                    />
-                  </Suspense>
-                </div>
-              ) : (
-                <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando itinerario...</div>}>
-                  <ActivityList
+            )}
+
+            {/* ── Sub-tab: Alojamiento ── */}
+            {activeSubtab === "alojamiento" && (
+              <div id="tutorial-hotel-section" className="mt-5">
+                <HotelCollapsible
+                  autoOpen
+                  createSlot={
+                    canEdit ? (
+                      <CreateHotelForm
+                        tripId={tripId}
+                        defaultCurrency={trip.defaultCurrency}
+                        tripStartDate={trip.startDate}
+                        tripEndDate={trip.endDate}
+                      />
+                    ) : null
+                  }
+                  hotelListSlot={
+                    <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando alojamiento...</div>}>
+                      <HotelList
+                        tripId={tripId}
+                        canEdit={canEdit}
+                        tripStartDate={trip.startDate}
+                        tripEndDate={trip.endDate}
+                        highlightHotelId={hotelId}
+                      />
+                    </Suspense>
+                  }
+                />
+              </div>
+            )}
+
+            {/* ── Sub-tab: Transporte ── */}
+            {activeSubtab === "transporte" && (
+              <div className="mt-5">
+                <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando transportes...</div>}>
+                  <TransportPanel
                     tripId={tripId}
                     canEdit={canEdit}
-                    startDate={trip.startDate}
-                    endDate={trip.endDate}
+                    defaultCurrency={trip.defaultCurrency}
+                    tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : null}
+                    tripEndDate={trip.endDate ? trip.endDate.toISOString().slice(0, 10) : null}
                   />
                 </Suspense>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
