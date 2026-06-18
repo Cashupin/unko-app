@@ -213,6 +213,15 @@ function DayDetailModal({
     }
   }
 
+  // Merge transports + activities sorted by time for chronological rendering
+  type ModalItem =
+    | { kind: "transport"; t: CalendarTransport; time: string }
+    | { kind: "activity"; a: CalendarActivity; time: string };
+  const mergedItems: ModalItem[] = [
+    ...transports.map((t) => ({ kind: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
+    ...activities.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "" })),
+  ].sort((x, y) => x.time.localeCompare(y.time));
+
   const content = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -362,106 +371,96 @@ function DayDetailModal({
           </div>
         )}
 
-        {/* Transports */}
-        {transports.length > 0 && (
-          <div className="border-t border-[#27272a] px-5 py-4">
-            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-blue-400">
-              Transportes
-            </p>
-            <div className="flex flex-col gap-2">
-              {transports.map((t) => (
-                <div
-                  key={t.isArrival ? `${t.id}-arr` : t.id}
-                  className={`rounded-xl border p-3 ${t.isArrival ? "border-blue-900/30 bg-[#080f18] opacity-75" : "border-blue-900/50 bg-[#0d1b2e]"}`}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-base">{TRANSPORT_ICONS[t.type]}</span>
-                    <span className={`font-semibold ${t.isArrival ? "text-blue-300/70" : "text-blue-100"}`}>
-                      {t.origin} → {t.destination}
-                    </span>
-                    {t.isArrival && (
-                      <span className="rounded border border-blue-800/40 bg-blue-900/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">
-                        Llegada
-                      </span>
-                    )}
-                    {!t.isArrival && t.coveredByPass && (
-                      <span className="rounded border border-blue-700/40 bg-blue-900/30 px-1.5 py-0.5 text-[10px] font-semibold text-blue-300">
-                        📦 {t.coveredByPass.name}
-                      </span>
-                    )}
-                  </div>
-                  {t.isArrival ? (
-                    t.arrivalTime && (
-                      <p className="mt-1.5 text-xs text-blue-300/50">Llegada: {t.arrivalTime}</p>
-                    )
-                  ) : (
-                    (t.departureTime || t.arrivalTime) && (
-                      <p className="mt-1.5 text-xs text-blue-300/70">
-                        {t.departureTime && `Salida: ${t.departureTime}`}
-                        {t.departureTime && t.arrivalTime && " · "}
-                        {t.arrivalTime && `Llegada: ${t.arrivalTime}`}
-                      </p>
-                    )
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Activities */}
+        {/* Transports + Activities — chronological */}
         <div className="flex flex-col gap-3 p-5">
-          {activities.length === 0 ? (
+          {mergedItems.length === 0 ? (
             <div className="py-8 text-center text-sm text-zinc-500">
               ☀️ No hay actividades programadas para este día
             </div>
           ) : (
-            activities.map((act) => (
-              <div
-                key={act.id}
-                className="rounded-xl border border-[#27272a] bg-[#18191c]/60 p-4 transition-colors hover:bg-[#18191c]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-2">
-                      {act.activityTime && (
-                        <span className="shrink-0 rounded-md bg-[#27272a] px-2 py-0.5 text-xs font-bold tabular-nums text-zinc-300">
-                          {act.activityTime}
-                        </span>
-                      )}
-                      <span
-                        className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getActivityPillClass(act.title)}`}
-                      >
-                        {act.title.toLowerCase().includes("vuelo") || act.title.includes("->") ? "Vuelo" : "Actividad"}
+            mergedItems.map((item) =>
+              item.kind === "transport" ? (
+                <div
+                  key={item.t.isArrival ? `${item.t.id}-arr` : item.t.id}
+                  className={`rounded-xl border p-3 ${item.t.isArrival ? "border-blue-900/30 bg-[#080f18] opacity-75" : "border-blue-900/50 bg-[#0d1b2e]"}`}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-base">{TRANSPORT_ICONS[item.t.type]}</span>
+                    <span className={`font-semibold ${item.t.isArrival ? "text-blue-300/70" : "text-blue-100"}`}>
+                      {item.t.origin} → {item.t.destination}
+                    </span>
+                    {item.t.isArrival && (
+                      <span className="rounded border border-blue-800/40 bg-blue-900/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">
+                        Llegada
                       </span>
-                    </div>
-                    <h3 className="font-semibold text-zinc-100">{act.title}</h3>
-                    {act.description && (
-                      <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{act.description}</p>
                     )}
-                    {act.location && (
-                      <p className="mt-2 flex items-center gap-1.5 text-sm text-zinc-500">
-                        <span className="text-red-400">📍</span> {act.location}
-                      </p>
-                    )}
-                    {act.notes && (
-                      <p className="mt-1.5 text-xs italic text-zinc-600">{act.notes}</p>
+                    {!item.t.isArrival && item.t.coveredByPass && (
+                      <span className="rounded border border-blue-700/40 bg-blue-900/30 px-1.5 py-0.5 text-[10px] font-semibold text-blue-300">
+                        📦 {item.t.coveredByPass.name}
+                      </span>
                     )}
                   </div>
-
-                  {(act.photoUrl ?? act.itemImageUrl) && (
-                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#27272a]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={act.photoUrl ?? act.itemImageUrl!}
-                        alt={act.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
+                  {item.t.isArrival ? (
+                    item.t.arrivalTime && (
+                      <p className="mt-1.5 text-xs text-blue-300/50">Llegada: {item.t.arrivalTime}</p>
+                    )
+                  ) : (
+                    (item.t.departureTime || item.t.arrivalTime) && (
+                      <p className="mt-1.5 text-xs text-blue-300/70">
+                        {item.t.departureTime && `Salida: ${item.t.departureTime}`}
+                        {item.t.departureTime && item.t.arrivalTime && " · "}
+                        {item.t.arrivalTime && `Llegada: ${item.t.arrivalTime}`}
+                      </p>
+                    )
                   )}
                 </div>
-              </div>
-            ))
+              ) : (
+                <div
+                  key={item.a.id}
+                  className="rounded-xl border border-[#27272a] bg-[#18191c]/60 p-4 transition-colors hover:bg-[#18191c]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        {item.a.activityTime && (
+                          <span className="shrink-0 rounded-md bg-[#27272a] px-2 py-0.5 text-xs font-bold tabular-nums text-zinc-300">
+                            {item.a.activityTime}
+                          </span>
+                        )}
+                        <span
+                          className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getActivityPillClass(item.a.title)}`}
+                        >
+                          {item.a.title.toLowerCase().includes("vuelo") || item.a.title.includes("->") ? "Vuelo" : "Actividad"}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-zinc-100">{item.a.title}</h3>
+                      {item.a.description && (
+                        <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{item.a.description}</p>
+                      )}
+                      {item.a.location && (
+                        <p className="mt-2 flex items-center gap-1.5 text-sm text-zinc-500">
+                          <span className="text-red-400">📍</span> {item.a.location}
+                        </p>
+                      )}
+                      {item.a.notes && (
+                        <p className="mt-1.5 text-xs italic text-zinc-600">{item.a.notes}</p>
+                      )}
+                    </div>
+
+                    {(item.a.photoUrl ?? item.a.itemImageUrl) && (
+                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#27272a]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.a.photoUrl ?? item.a.itemImageUrl!}
+                          alt={item.a.title}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            )
           )}
         </div>
       </div>
@@ -643,7 +642,10 @@ export function ItineraryCalendar({
                           const dayActs = actsByDate.get(ds) ?? [];
                           const dayTrans = transportsByDate.get(ds) ?? [];
                           const hs = inTrip ? getHotelDayState(ds, hotels) : null;
-                          const exportItems = [...dayTrans.map((t) => ({ kind: "transport" as const, t })), ...dayActs.map((a) => ({ kind: "activity" as const, a }))];
+                          const exportItems = [
+                            ...dayTrans.map((t) => ({ kind: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
+                            ...dayActs.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "" })),
+                          ].sort((x, y) => x.time.localeCompare(y.time));
                           return (
                             <td key={ds} style={{ border: "1px solid #27272a", padding: 4, height: 80, verticalAlign: "top", background: inTrip ? "rgba(24,25,28,0.6)" : "transparent" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3, overflow: "hidden" }}>
@@ -770,11 +772,11 @@ export function ItineraryCalendar({
             const myActs       = personalMode && isInTrip ? (personalByDate.get(dateStr) ?? []) : [];
             const hotelState   = isInTrip ? getHotelDayState(dateStr, hotels) : null;
             const hasActs      = dayActs.length > 0 || myActs.length > 0 || dayTransports.length > 0;
-            // Transports first, then activities, capped to MAX_PILLS total
-            const allItems: Array<{ type: "transport"; t: CalendarTransport } | { type: "activity"; a: CalendarActivity }> = [
-              ...dayTransports.map((t) => ({ type: "transport" as const, t })),
-              ...dayActs.map((a) => ({ type: "activity" as const, a })),
-            ];
+            // Chronological order, capped to MAX_PILLS total
+            const allItems: Array<{ type: "transport"; t: CalendarTransport; time: string } | { type: "activity"; a: CalendarActivity; time: string }> = [
+              ...dayTransports.map((t) => ({ type: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
+              ...dayActs.map((a) => ({ type: "activity" as const, a, time: a.activityTime ?? "" })),
+            ].sort((x, y) => x.time.localeCompare(y.time));
             const visible  = allItems.slice(0, MAX_PILLS);
             const overflow = allItems.length - MAX_PILLS;
 

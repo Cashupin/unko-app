@@ -169,7 +169,10 @@ function PrintCalendarMonth({
                 const dayActs = actsByDate.get(ds) ?? [];
                 const dayTrans = inTrip ? (transByDate.get(ds) ?? []) : [];
                 const city = inTrip ? hotelCity(ds) : null;
-                const calItems = [...dayTrans.map((t) => ({ k: "t" as const, t })), ...dayActs.map((a) => ({ k: "a" as const, a }))];
+                const calItems = [
+                  ...dayTrans.map((t) => ({ k: "t" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
+                  ...dayActs.map((a) => ({ k: "a" as const, a, time: a.activityTime ?? "" })),
+                ].sort((x, y) => x.time.localeCompare(y.time));
                 return (
                   <td
                     key={ds}
