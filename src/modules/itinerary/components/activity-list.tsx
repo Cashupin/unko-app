@@ -108,6 +108,25 @@ type HotelForItinerary = {
   checkOutDate: Date;
 };
 
+type TransportForItinerary = {
+  id: string;
+  origin: string;
+  destination: string;
+  type: string;
+  departureTime: string | null;
+  arrivalTime: string | null;
+  arrivalDate: string | null; // ISO date string
+  cost: number | null;
+  currency: string;
+  isPaid: boolean;
+  coveredByPassId: string | null;
+  coveredByPass: { id: string; name: string } | null;
+};
+
+const TRANSPORT_ICONS: Record<string, string> = {
+  FLIGHT: "✈️", TRAIN: "🚅", BUS: "🚌", FERRY: "⛴️", CAR: "🚗",
+};
+
 export async function ActivityList({
   tripId,
   canEdit,
@@ -125,7 +144,7 @@ export async function ActivityList({
   const today = todayDateStr();
   const tripStartYMD = startDate ? toDateStr(new Date(startDate)) : undefined;
 
-  const [activities, hotels, participants, personalActivities] = await Promise.all([
+  const [activities, hotels, participants, personalActivities, transports] = await Promise.all([
     prisma.activity.findMany({
       where: { tripId },
       select: {
@@ -177,7 +196,30 @@ export async function ActivityList({
           select: { id: true, date: true, title: true, description: true, time: true, location: true, notes: true, photoUrl: true },
         })
       : Promise.resolve([] as PersonalActivityItem[]),
+    prisma.transport.findMany({
+      where: { tripId },
+      select: {
+        id: true, origin: true, destination: true, type: true,
+        departureDate: true, departureTime: true,
+        arrivalDate: true, arrivalTime: true,
+        cost: true, currency: true, isPaid: true,
+        coveredByPassId: true,
+        coveredByPass: { select: { id: true, name: true } },
+      },
+      orderBy: [{ departureDate: "asc" }, { departureTime: "asc" }],
+    }),
   ]);
+
+  // Index transports by departure date
+  const transportsByDate = new Map<string, TransportForItinerary[]>();
+  for (const t of transports) {
+    const key = t.departureDate ? toDateStr(new Date(t.departureDate)) : "__nodate__";
+    if (!transportsByDate.has(key)) transportsByDate.set(key, []);
+    transportsByDate.get(key)!.push({
+      ...t,
+      arrivalDate: t.arrivalDate ? toDateStr(new Date(t.arrivalDate)) : null,
+    });
+  }
 
   const byDate = new Map<string, typeof activities>();
   const noDateActivities: typeof activities = [];
@@ -244,6 +286,7 @@ export async function ActivityList({
             dateStr={dateStr}
             acts={byDate.get(dateStr) ?? []}
             hotels={hotelsForDay(dateStr)}
+            transports={transportsByDate.get(dateStr) ?? []}
             tripId={tripId}
             canEdit={canEdit}
             isToday={false}
@@ -262,6 +305,7 @@ export async function ActivityList({
             dateStr={dateStr}
             acts={byDate.get(dateStr) ?? []}
             hotels={hotelsForDay(dateStr)}
+            transports={transportsByDate.get(dateStr) ?? []}
             tripId={tripId}
             canEdit={canEdit}
             isToday={dateStr === today}
@@ -309,6 +353,7 @@ function DayCard({
   dateStr,
   acts,
   hotels,
+  transports,
   tripId,
   canEdit,
   isToday,
@@ -320,6 +365,7 @@ function DayCard({
   dateStr: string;
   acts: Activity[];
   hotels: HotelForItinerary[];
+  transports: TransportForItinerary[];
   tripId: string;
   canEdit: boolean;
   isToday: boolean;
@@ -329,7 +375,20 @@ function DayCard({
   personalActs: PersonalActivityItem[];
 }) {
   const { dayNum, weekday, dateLabel } = parseDateHeader(dateStr);
-  const isEmpty = acts.length === 0;
+  const isEmpty = acts.length === 0 && transports.length === 0;
+
+  // Merge activities + transports sorted by time for rendering
+  type MergedItem =
+    | { kind: "activity"; item: Activity }
+    | { kind: "transport"; item: TransportForItinerary };
+  const merged: MergedItem[] = [
+    ...acts.map((a) => ({ kind: "activity" as const, item: a })),
+    ...transports.map((t) => ({ kind: "transport" as const, item: t })),
+  ].sort((a, b) => {
+    const timeA = a.kind === "activity" ? (a.item.activityTime ?? "") : (a.item.departureTime ?? "");
+    const timeB = b.kind === "activity" ? (b.item.activityTime ?? "") : (b.item.departureTime ?? "");
+    return timeA.localeCompare(timeB);
+  });
 
   return (
     <div
@@ -373,7 +432,9 @@ function DayCard({
             </p>
             {!isEmpty && (
               <p className="text-xs font-medium text-zinc-500">
-                {acts.length} actividad{acts.length !== 1 ? "es" : ""}
+                {acts.length > 0 && `${acts.length} actividad${acts.length !== 1 ? "es" : ""}`}
+                {acts.length > 0 && transports.length > 0 && " · "}
+                {transports.length > 0 && `${transports.length} transporte${transports.length !== 1 ? "s" : ""}`}
               </p>
             )}
           </div>
@@ -424,16 +485,20 @@ function DayCard({
         </>
       ) : (
         <div className="flex flex-col gap-2 p-3">
-          {acts.map((act) => (
-            <ActivityRow
-              key={act.id}
-              act={act}
-              tripId={tripId}
-              canEdit={canEdit}
-              participants={participants}
-              tripStartDate={tripStartDate}
-            />
-          ))}
+          {merged.map((entry) =>
+            entry.kind === "activity" ? (
+              <ActivityRow
+                key={entry.item.id}
+                act={entry.item}
+                tripId={tripId}
+                canEdit={canEdit}
+                participants={participants}
+                tripStartDate={tripStartDate}
+              />
+            ) : (
+              <TransportBlock key={entry.item.id} transport={entry.item} tripId={tripId} />
+            )
+          )}
           <PersonalActivitySection activities={personalActs} tripId={tripId} date={dateStr} />
         </div>
       )}
@@ -592,6 +657,60 @@ function ActivityRow({
           <DeleteActivityButton tripId={tripId} activityId={act.id} />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// ─── Transport block (read-only, estilo azul) ──────────────────────────────────
+
+function TransportBlock({
+  transport: t,
+  tripId,
+}: {
+  transport: TransportForItinerary;
+  tripId: string;
+}) {
+  const icon = TRANSPORT_ICONS[t.type] ?? "🚌";
+  const isCovered = !!t.coveredByPassId;
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-blue-900/50 bg-[#0d1b2e] px-4 py-3">
+      {/* Time badge */}
+      <div className="w-12 shrink-0">
+        {t.departureTime && (
+          <div className="rounded-lg bg-blue-900/40 px-1.5 py-1.5 text-center">
+            <span className="text-xs font-bold tabular-nums text-blue-400">{t.departureTime}</span>
+          </div>
+        )}
+      </div>
+      <span className="text-base shrink-0">{icon}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-blue-200">
+          {t.origin} <span className="text-blue-800">→</span> {t.destination}
+        </p>
+        <div className="mt-0.5 flex items-center gap-2 flex-wrap">
+          {t.arrivalTime && (
+            <span className="text-xs text-blue-700">
+              llegada {t.arrivalTime}
+              {t.arrivalDate && t.arrivalDate !== "" ? " +1" : ""}
+            </span>
+          )}
+          {isCovered && t.coveredByPass && (
+            <span className="text-[10px] font-semibold text-blue-600">📦 {t.coveredByPass.name}</span>
+          )}
+          {!isCovered && t.cost && (
+            <span className={`text-[10px] font-bold ${t.isPaid ? "text-emerald-600" : "text-blue-500"}`}>
+              {t.isPaid ? "✓ pagado" : `pendiente`}
+            </span>
+          )}
+        </div>
+      </div>
+      <a
+        href={`/trips/${tripId}?tab=itinerario&subtab=transporte`}
+        className="shrink-0 text-[10px] font-semibold text-blue-700 hover:text-blue-500 transition-colors"
+      >
+        → Ver
+      </a>
     </div>
   );
 }

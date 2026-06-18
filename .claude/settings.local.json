@@ -33,7 +33,11 @@
       "PowerShell(& 'C:\\\\Program Files\\\\Supabase\\\\supabase.exe' db query --db-url 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' 'DELETE FROM \"_prisma_migrations\" WHERE migration_name IN \\(''20260602174842_add_personal_activities'', ''20260602225106_personal_activity_add_description_photo''\\)' 2>&1)",
       "Bash(node -e ' *)",
       "Bash(which psql *)",
-      "Bash(ls /usr/local/bin/psql)"
+      "Bash(ls /usr/local/bin/psql)",
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/trips/[id]/passes\")",
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/trips/[id]/transports\")",
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/passes/[passId]\")",
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/transports/[transportId]\")"
     ],
     "additionalDirectories": [
       "d:\\Proyectos\\app-mierda\\src\\app\\trips",

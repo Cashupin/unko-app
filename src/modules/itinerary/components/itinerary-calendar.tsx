@@ -24,6 +24,22 @@ export type CalendarHotel = {
   checkOutDate: string;
 };
 
+export type CalendarTransport = {
+  id: string;
+  origin: string;
+  destination: string;
+  type: string;
+  departureDate: string;
+  departureTime: string | null;
+  arrivalTime: string | null;
+  isPaid: boolean;
+  coveredByPass: { name: string } | null;
+};
+
+const TRANSPORT_ICONS: Record<string, string> = {
+  FLIGHT: "✈️", TRAIN: "🚅", BUS: "🚌", FERRY: "⛴️", CAR: "🚗",
+};
+
 type PersonalActivity = {
   id: string;
   date: string;
@@ -133,6 +149,7 @@ function getMonthsInRange(start: string | null, end: string | null): { year: num
 function DayDetailModal({
   dateStr,
   activities,
+  transports,
   hotelLabel,
   onClose,
   personalMode,
@@ -142,6 +159,7 @@ function DayDetailModal({
 }: {
   dateStr: string;
   activities: CalendarActivity[];
+  transports: CalendarTransport[];
   hotelLabel: string | null;
   onClose: () => void;
   personalMode: boolean;
@@ -221,9 +239,12 @@ function DayDetailModal({
                   {d} de {MONTHS_ES_LONG[m - 1]}
                 </p>
                 <p className="text-sm text-zinc-500">
-                  {activities.length === 0
+                  {activities.length === 0 && transports.length === 0
                     ? "Día libre"
-                    : `${activities.length} actividad${activities.length !== 1 ? "es" : ""}`}
+                    : [
+                        activities.length > 0 && `${activities.length} actividad${activities.length !== 1 ? "es" : ""}`,
+                        transports.length > 0 && `${transports.length} transporte${transports.length !== 1 ? "s" : ""}`,
+                      ].filter(Boolean).join(" · ")}
                 </p>
                 {hotelLabel && (
                   <p className="mt-0.5 text-sm text-zinc-400">📍 {hotelLabel}</p>
@@ -339,6 +360,39 @@ function DayDetailModal({
           </div>
         )}
 
+        {/* Transports */}
+        {transports.length > 0 && (
+          <div className="border-t border-[#27272a] px-5 py-4">
+            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-blue-400">
+              Transportes
+            </p>
+            <div className="flex flex-col gap-2">
+              {transports.map((t) => (
+                <div key={t.id} className="rounded-xl border border-blue-900/50 bg-[#0d1b2e] p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-base">{TRANSPORT_ICONS[t.type]}</span>
+                    <span className="font-semibold text-blue-100">
+                      {t.origin} → {t.destination}
+                    </span>
+                    {t.coveredByPass && (
+                      <span className="rounded border border-blue-700/40 bg-blue-900/30 px-1.5 py-0.5 text-[10px] font-semibold text-blue-300">
+                        📦 {t.coveredByPass.name}
+                      </span>
+                    )}
+                  </div>
+                  {(t.departureTime || t.arrivalTime) && (
+                    <p className="mt-1.5 text-xs text-blue-300/70">
+                      {t.departureTime && `Salida: ${t.departureTime}`}
+                      {t.departureTime && t.arrivalTime && " · "}
+                      {t.arrivalTime && `Llegada: ${t.arrivalTime}`}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Activities */}
         <div className="flex flex-col gap-3 p-5">
           {activities.length === 0 ? (
@@ -407,12 +461,14 @@ function DayDetailModal({
 export function ItineraryCalendar({
   activities,
   hotels,
+  transports,
   startDate,
   endDate,
   tripId,
 }: {
   activities: CalendarActivity[];
   hotels: CalendarHotel[];
+  transports: CalendarTransport[];
   startDate: string | null;
   endDate: string | null;
   tripId: string;
@@ -456,6 +512,13 @@ export function ItineraryCalendar({
     actsByDate.get(act.activityDate)!.push(act);
   }
 
+  // Group transports by departure date
+  const transportsByDate = new Map<string, CalendarTransport[]>();
+  for (const t of transports) {
+    if (!transportsByDate.has(t.departureDate)) transportsByDate.set(t.departureDate, []);
+    transportsByDate.get(t.departureDate)!.push(t);
+  }
+
   // Calendar geometry for current month
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -478,9 +541,10 @@ export function ItineraryCalendar({
     personalByDate.get(pa.date)!.push(pa);
   }
 
-  const selectedDateStr    = selectedDay;
-  const selectedActs       = selectedDateStr ? (actsByDate.get(selectedDateStr) ?? []) : [];
-  const selectedHotelState = selectedDateStr ? getHotelDayState(selectedDateStr, hotels) : null;
+  const selectedDateStr      = selectedDay;
+  const selectedActs         = selectedDateStr ? (actsByDate.get(selectedDateStr) ?? []) : [];
+  const selectedTransports   = selectedDateStr ? (transportsByDate.get(selectedDateStr) ?? []) : [];
+  const selectedHotelState   = selectedDateStr ? getHotelDayState(selectedDateStr, hotels) : null;
   const selectedPersonalActs = selectedDateStr ? (personalByDate.get(selectedDateStr) ?? []) : [];
 
   return (
@@ -556,7 +620,9 @@ export function ItineraryCalendar({
                           const { day, ds } = cell;
                           const inTrip = !!tripStart && !!tripEnd && ds >= tripStart && ds <= tripEnd;
                           const dayActs = actsByDate.get(ds) ?? [];
+                          const dayTrans = transportsByDate.get(ds) ?? [];
                           const hs = inTrip ? getHotelDayState(ds, hotels) : null;
+                          const exportItems = [...dayTrans.map((t) => ({ kind: "transport" as const, t })), ...dayActs.map((a) => ({ kind: "activity" as const, a }))];
                           return (
                             <td key={ds} style={{ border: "1px solid #27272a", padding: 4, height: 80, verticalAlign: "top", background: inTrip ? "rgba(24,25,28,0.6)" : "transparent" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3, overflow: "hidden" }}>
@@ -567,13 +633,19 @@ export function ItineraryCalendar({
                                   </span>
                                 )}
                               </div>
-                              {dayActs.slice(0, 2).map((act) => (
-                                <div key={act.id} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", ...(getActivityPillClass(act.title).includes("blue-") ? { border: "1px solid rgba(99,102,241,0.5)", background: "rgba(79,70,229,0.3)", color: "#a5b4fc" } : { border: "1px solid rgba(52,211,153,0.5)", background: "rgba(16,185,129,0.3)", color: "#6ee7b7" }) }}>
-                                  {act.title}
-                                </div>
-                              ))}
-                              {dayActs.length > 2 && <div style={{ fontSize: 9, color: "#71717a" }}>+{dayActs.length - 2}</div>}
-                              {inTrip && dayActs.length === 0 && !hs && (
+                              {exportItems.slice(0, 2).map((item) =>
+                                item.kind === "transport" ? (
+                                  <div key={item.t.id} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", border: "1px solid rgba(59,130,246,0.5)", background: "rgba(29,78,216,0.3)", color: "#93c5fd" }}>
+                                    {TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
+                                  </div>
+                                ) : (
+                                  <div key={item.a.id} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", ...(getActivityPillClass(item.a.title).includes("blue-") ? { border: "1px solid rgba(99,102,241,0.5)", background: "rgba(79,70,229,0.3)", color: "#a5b4fc" } : { border: "1px solid rgba(52,211,153,0.5)", background: "rgba(16,185,129,0.3)", color: "#6ee7b7" }) }}>
+                                    {item.a.title}
+                                  </div>
+                                )
+                              )}
+                              {exportItems.length > 2 && <div style={{ fontSize: 9, color: "#71717a" }}>+{exportItems.length - 2}</div>}
+                              {inTrip && exportItems.length === 0 && !hs && (
                                 <div style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, border: "1px solid rgba(217,119,6,0.5)", background: "rgba(146,64,14,0.4)", color: "#fcd34d", overflow: "hidden", whiteSpace: "nowrap" }}>Libre</div>
                               )}
                             </td>
@@ -664,14 +736,20 @@ export function ItineraryCalendar({
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const isInTrip   = !!tripStart && !!tripEnd && dateStr >= tripStart && dateStr <= tripEnd;
-            const isToday    = dateStr === today;
-            const dayActs    = isInTrip ? (actsByDate.get(dateStr) ?? []) : [];
-            const myActs     = personalMode && isInTrip ? (personalByDate.get(dateStr) ?? []) : [];
-            const hotelState = isInTrip ? getHotelDayState(dateStr, hotels) : null;
-            const hasActs  = dayActs.length > 0 || myActs.length > 0;
-            const visible  = dayActs.slice(0, MAX_PILLS);
-            const overflow = dayActs.length - MAX_PILLS;
+            const isInTrip     = !!tripStart && !!tripEnd && dateStr >= tripStart && dateStr <= tripEnd;
+            const isToday      = dateStr === today;
+            const dayActs      = isInTrip ? (actsByDate.get(dateStr) ?? []) : [];
+            const dayTransports = isInTrip ? (transportsByDate.get(dateStr) ?? []) : [];
+            const myActs       = personalMode && isInTrip ? (personalByDate.get(dateStr) ?? []) : [];
+            const hotelState   = isInTrip ? getHotelDayState(dateStr, hotels) : null;
+            const hasActs      = dayActs.length > 0 || myActs.length > 0 || dayTransports.length > 0;
+            // Transports first, then activities, capped to MAX_PILLS total
+            const allItems: Array<{ type: "transport"; t: CalendarTransport } | { type: "activity"; a: CalendarActivity }> = [
+              ...dayTransports.map((t) => ({ type: "transport" as const, t })),
+              ...dayActs.map((a) => ({ type: "activity" as const, a })),
+            ];
+            const visible  = allItems.slice(0, MAX_PILLS);
+            const overflow = allItems.length - MAX_PILLS;
 
             if (!isInTrip) {
               return (
@@ -712,21 +790,31 @@ export function ItineraryCalendar({
 
                 {/* Pills */}
                 <div className="flex flex-col gap-0.5 sm:gap-1">
-                  {dayActs.length === 0 && myActs.length === 0 ? (
+                  {allItems.length === 0 && myActs.length === 0 ? (
                     <div className="truncate rounded border border-amber-700/50 bg-amber-900/40 px-1 py-0.5 text-[10px] font-medium text-amber-300 sm:px-2 sm:py-1 sm:text-xs">
                       {personalMode ? "Sin plan" : "Libre"}
                     </div>
                   ) : (
                     <>
-                      {visible.map((act) => (
-                        <div
-                          key={act.id}
-                          className={`truncate rounded border px-1 py-0.5 text-[10px] font-medium sm:px-2 sm:py-1 sm:text-xs ${getActivityPillClass(act.title)}`}
-                          title={act.title}
-                        >
-                          {act.title}
-                        </div>
-                      ))}
+                      {visible.map((item) =>
+                        item.type === "transport" ? (
+                          <div
+                            key={item.t.id}
+                            className="truncate rounded border border-blue-700/50 bg-blue-900/40 px-1 py-0.5 text-[10px] font-medium text-blue-300 sm:px-2 sm:py-1 sm:text-xs"
+                            title={`${item.t.origin} → ${item.t.destination}`}
+                          >
+                            {TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
+                          </div>
+                        ) : (
+                          <div
+                            key={item.a.id}
+                            className={`truncate rounded border px-1 py-0.5 text-[10px] font-medium sm:px-2 sm:py-1 sm:text-xs ${getActivityPillClass(item.a.title)}`}
+                            title={item.a.title}
+                          >
+                            {item.a.title}
+                          </div>
+                        )
+                      )}
                       {overflow > 0 && (
                         <div className="px-1 text-[10px] text-zinc-500 sm:px-2 sm:text-xs">
                           +{overflow} más
@@ -754,6 +842,7 @@ export function ItineraryCalendar({
         <DayDetailModal
           dateStr={selectedDay}
           activities={selectedActs}
+          transports={selectedTransports}
           hotelLabel={selectedHotelState?.label ?? null}
           onClose={() => setSelectedDay(null)}
           personalMode={personalMode}

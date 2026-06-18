@@ -61,6 +61,14 @@ enum SplitType {
   ITEMIZED // División por ítems individuales
 }
 
+enum TransportType {
+  FLIGHT
+  TRAIN
+  BUS
+  FERRY
+  CAR
+}
+
 enum NotificationType {
   TRIP_ADDED        // Te agregaron a un viaje
   EXPENSE_CREATED   // Te asociaron a un gasto
@@ -181,6 +189,8 @@ model Trip {
   payments           Payment[]
   invitations        Invitation[]
   personalActivities PersonalActivity[]
+  passes             Pass[]
+  transports         Transport[]
 
   @@index([createdById])
   @@index([startDate, endDate])
@@ -344,6 +354,53 @@ model Hotel {
 
   @@index([tripId])
   @@index([checkInDate, checkOutDate])
+}
+
+// ─── Transport & Passes ───────────────────────────────────────────────────────
+
+model Pass {
+  id        String    @id @default(cuid())
+  tripId    String
+  name      String
+  validFrom DateTime?
+  validTo   DateTime?
+  cost      Float?
+  currency  Currency  @default(CLP)
+  isPaid    Boolean   @default(false)
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  trip       Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  transports Transport[]
+
+  @@index([tripId])
+}
+
+model Transport {
+  id              String        @id @default(cuid())
+  tripId          String
+  origin          String
+  destination     String
+  type            TransportType
+  departureDate   DateTime?
+  departureTime   String?
+  arrivalDate     DateTime?
+  arrivalTime     String?
+  cost            Float?
+  currency        Currency      @default(CLP)
+  isPaid          Boolean       @default(false)
+  notes           String?
+  coveredByPassId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  trip          Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  coveredByPass Pass? @relation(fields: [coveredByPassId], references: [id], onDelete: SetNull)
+
+  @@index([tripId])
+  @@index([departureDate])
+  @@index([coveredByPassId])
 }
 
 // ─── Expenses & Payments (Splitwise-style) ────────────────────────────────────
