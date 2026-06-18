@@ -206,6 +206,9 @@ export function TransportPanelClient({
                     {pass.transportCount > 0 && (
                       <span className="text-xs text-zinc-600">{pass.transportCount} tramo{pass.transportCount !== 1 ? "s" : ""}</span>
                     )}
+                    {pass.notes && (
+                      <span className="text-xs text-zinc-500 italic">{pass.notes}</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
