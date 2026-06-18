@@ -40,21 +40,28 @@ export async function TransportPanel({
     }),
   ]);
 
-  // Compute pending total (transports with cost not covered by pass and not paid)
-  const pendingTotal = new Map<string, number>();
-  for (const t of transports) {
-    if (t.coveredByPassId || t.isPaid || !t.cost) continue;
-    pendingTotal.set(t.currency, (pendingTotal.get(t.currency) ?? 0) + t.cost);
+  // Compute pending total per currency, with a breakdown of which pass/leg contributes
+  const pendingByCurrency = new Map<string, { amount: number; items: { label: string; amount: number }[] }>();
+  function addPending(currency: string, amount: number, label: string) {
+    if (!pendingByCurrency.has(currency)) pendingByCurrency.set(currency, { amount: 0, items: [] });
+    const entry = pendingByCurrency.get(currency)!;
+    entry.amount += amount;
+    entry.items.push({ label, amount });
   }
-  // Passes pending (not paid, with cost)
   for (const p of passes) {
     if (p.isPaid || !p.cost) continue;
-    pendingTotal.set(p.currency, (pendingTotal.get(p.currency) ?? 0) + p.cost);
+    addPending(p.currency, p.cost, `📦 ${p.name}`);
+  }
+  for (const t of transports) {
+    if (t.coveredByPassId || t.isPaid || !t.cost) continue;
+    addPending(t.currency, t.cost, `${t.origin} → ${t.destination}`);
   }
 
-  const pendingLines = [...pendingTotal.entries()].map(
-    ([currency, amount]) => fmtAmount(amount, currency)
-  );
+  const pendingDetails = [...pendingByCurrency.entries()].map(([currency, { amount, items }]) => ({
+    currency,
+    amount,
+    items,
+  }));
 
   return (
     <TransportPanelClient
@@ -74,7 +81,7 @@ export async function TransportPanel({
         departureDate: t.departureDate?.toISOString() ?? null,
         arrivalDate: t.arrivalDate?.toISOString() ?? null,
       }))}
-      pendingLines={pendingLines}
+      pendingDetails={pendingDetails}
     />
   );
 }

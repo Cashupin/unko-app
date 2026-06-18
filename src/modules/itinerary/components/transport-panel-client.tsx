@@ -3,9 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { fmtAmount } from "@/lib/constants";
+import { fmtAmount, CURRENCY_SYMBOLS } from "@/lib/constants";
+import type { Currency } from "@/lib/constants";
+import { useCurrency } from "@/providers/currency-provider";
 import { PassForm } from "@/modules/itinerary/components/pass-form";
 import { TransportForm, TRANSPORT_ICONS, TRANSPORT_LABELS } from "@/modules/itinerary/components/transport-form";
+
+function sym(c: string): string {
+  return CURRENCY_SYMBOLS[c as Currency] ?? c;
+}
+
+type PendingDetail = {
+  currency: string;
+  amount: number;
+  items: { label: string; amount: number }[];
+};
 
 type Pass = {
   id: string;
@@ -74,7 +86,7 @@ export function TransportPanelClient({
   tripEndDate,
   passes,
   transports,
-  pendingLines,
+  pendingDetails,
 }: {
   tripId: string;
   canEdit: boolean;
@@ -83,16 +95,24 @@ export function TransportPanelClient({
   tripEndDate?: string;
   passes: Pass[];
   transports: Transport[];
-  pendingLines: string[];
+  pendingDetails: PendingDetail[];
 }) {
   const router = useRouter();
   const [showPassModal, setShowPassModal] = useState(false);
   const [showTransportModal, setShowTransportModal] = useState(false);
   const [editingPass, setEditingPass] = useState<Pass | null>(null);
   const [editingTransport, setEditingTransport] = useState<Transport | null>(null);
+  const [showPendingDetail, setShowPendingDetail] = useState(false);
+  const { convert, displayCurrency, exchangeRates } = useCurrency();
+  const ratesReady = exchangeRates.status === "ready";
 
   const passOptions = passes.map((p) => ({ id: p.id, name: p.name }));
   const grouped = groupTransportsByDate(transports);
+  const totalConverted = ratesReady
+    ? pendingDetails.reduce((sum, d) => sum + convert(d.amount, d.currency), 0)
+    : 0;
+  const unpaidPassCount = passes.filter((p) => !p.isPaid && p.cost).length;
+  const unpaidTransportCount = transports.filter((t) => !t.isPaid && !t.coveredByPassId && t.cost).length;
 
   async function deletePass(passId: string, name: string) {
     toast(`¿Eliminar pase "${name}"?`, {
@@ -169,23 +189,60 @@ export function TransportPanelClient({
       )}
 
       {/* Summary card */}
-      {pendingLines.length > 0 && (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Total pendiente de pago</p>
-            <p className="text-2xl font-extrabold text-zinc-100">{pendingLines[0]}</p>
-            {pendingLines.slice(1).map((line) => (
-              <p key={line} className="text-sm font-semibold text-zinc-400">{line}</p>
-            ))}
+      {pendingDetails.length > 0 && (
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 px-5 py-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Total pendiente de pago</p>
+              {ratesReady ? (
+                <p className="text-2xl font-extrabold text-zinc-100">
+                  {sym(displayCurrency)} {fmtAmount(totalConverted, displayCurrency)}
+                </p>
+              ) : (
+                <p className="text-2xl font-extrabold text-zinc-600">···</p>
+              )}
+              {pendingDetails.length > 1 && (
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  {pendingDetails.map((d) => `${sym(d.currency)} ${fmtAmount(d.amount, d.currency)}`).join(" + ")}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right text-xs text-zinc-600">
+                {unpaidPassCount > 0 && (
+                  <p>{unpaidPassCount} pase{unpaidPassCount !== 1 ? "s" : ""} sin pagar</p>
+                )}
+                {unpaidTransportCount > 0 && (
+                  <p>{unpaidTransportCount} tramo{unpaidTransportCount !== 1 ? "s" : ""} sin pagar</p>
+                )}
+              </div>
+              <button
+                onClick={() => setShowPendingDetail((v) => !v)}
+                className="rounded-lg border border-zinc-700 px-2.5 py-1 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 transition-colors"
+              >
+                {showPendingDetail ? "Ocultar" : "Ver detalle"}
+              </button>
+            </div>
           </div>
-          <div className="text-right text-xs text-zinc-600">
-            {passes.filter((p) => !p.isPaid && p.cost).length > 0 && (
-              <p>{passes.filter((p) => !p.isPaid && p.cost).length} pase{passes.filter((p) => !p.isPaid && p.cost).length !== 1 ? "s" : ""} sin pagar</p>
-            )}
-            {transports.filter((t) => !t.isPaid && !t.coveredByPassId && t.cost).length > 0 && (
-              <p>{transports.filter((t) => !t.isPaid && !t.coveredByPassId && t.cost).length} tramo{transports.filter((t) => !t.isPaid && !t.coveredByPassId && t.cost).length !== 1 ? "s" : ""} sin pagar</p>
-            )}
-          </div>
+          {showPendingDetail && (
+            <div className="mt-4 pt-4 border-t border-zinc-800 flex flex-col gap-3">
+              {pendingDetails.map((d) => (
+                <div key={d.currency}>
+                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-600">{d.currency}</p>
+                  <div className="flex flex-col gap-1">
+                    {d.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+                        <span className="text-zinc-400">{item.label}</span>
+                        <span className="shrink-0 font-semibold tabular-nums text-zinc-300">
+                          {sym(d.currency)} {fmtAmount(item.amount, d.currency)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -214,7 +271,7 @@ export function TransportPanelClient({
                 <div className="flex items-center gap-2 shrink-0">
                   {pass.cost ? (
                     <span className={`rounded-lg px-2.5 py-1 text-xs font-bold ${pass.isPaid ? "bg-emerald-500/10 text-emerald-400" : "bg-zinc-800 text-zinc-300"}`}>
-                      {pass.isPaid ? "✓ " : ""}{fmtAmount(pass.cost, pass.currency)}
+                      {pass.isPaid ? "✓ " : ""}{sym(pass.currency)} {fmtAmount(pass.cost, pass.currency)}
                     </span>
                   ) : pass.isPaid ? (
                     <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400">✓ Pagado</span>
@@ -363,7 +420,7 @@ function TransportRowItem({
           <span className="rounded-lg bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-zinc-500">Incluido</span>
         ) : t.cost ? (
           <span className={`rounded-lg px-2.5 py-1 text-xs font-bold ${t.isPaid ? "bg-emerald-500/10 text-emerald-400" : "bg-zinc-800 text-zinc-300"}`}>
-            {t.isPaid ? "✓ " : ""}{fmtAmount(t.cost, t.currency)}
+            {t.isPaid ? "✓ " : ""}{sym(t.currency)} {fmtAmount(t.cost, t.currency)}
           </span>
         ) : t.isPaid ? (
           <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400">✓ Pagado</span>
