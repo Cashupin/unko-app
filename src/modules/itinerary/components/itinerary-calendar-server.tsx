@@ -35,7 +35,8 @@ export async function ItineraryCalendarServer({
       where: { tripId, departureDate: { not: null } },
       select: {
         id: true, origin: true, destination: true, type: true,
-        departureDate: true, departureTime: true, arrivalTime: true,
+        departureDate: true, departureTime: true,
+        arrivalDate: true, arrivalTime: true,
         isPaid: true,
         coveredByPass: { select: { name: true } },
       },
@@ -70,6 +71,7 @@ export async function ItineraryCalendarServer({
         type: t.type,
         departureDate: t.departureDate!.toISOString().slice(0, 10),
         departureTime: t.departureTime,
+        arrivalDate: t.arrivalDate ? t.arrivalDate.toISOString().slice(0, 10) : null,
         arrivalTime: t.arrivalTime,
         isPaid: t.isPaid,
         coveredByPass: t.coveredByPass,

@@ -31,9 +31,11 @@ export type CalendarTransport = {
   type: string;
   departureDate: string;
   departureTime: string | null;
+  arrivalDate: string | null;
   arrivalTime: string | null;
   isPaid: boolean;
   coveredByPass: { name: string } | null;
+  isArrival?: boolean;
 };
 
 const TRANSPORT_ICONS: Record<string, string> = {
@@ -368,24 +370,38 @@ function DayDetailModal({
             </p>
             <div className="flex flex-col gap-2">
               {transports.map((t) => (
-                <div key={t.id} className="rounded-xl border border-blue-900/50 bg-[#0d1b2e] p-3">
+                <div
+                  key={t.isArrival ? `${t.id}-arr` : t.id}
+                  className={`rounded-xl border p-3 ${t.isArrival ? "border-blue-900/30 bg-[#080f18] opacity-75" : "border-blue-900/50 bg-[#0d1b2e]"}`}
+                >
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-base">{TRANSPORT_ICONS[t.type]}</span>
-                    <span className="font-semibold text-blue-100">
+                    <span className={`font-semibold ${t.isArrival ? "text-blue-300/70" : "text-blue-100"}`}>
                       {t.origin} → {t.destination}
                     </span>
-                    {t.coveredByPass && (
+                    {t.isArrival && (
+                      <span className="rounded border border-blue-800/40 bg-blue-900/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">
+                        Llegada
+                      </span>
+                    )}
+                    {!t.isArrival && t.coveredByPass && (
                       <span className="rounded border border-blue-700/40 bg-blue-900/30 px-1.5 py-0.5 text-[10px] font-semibold text-blue-300">
                         📦 {t.coveredByPass.name}
                       </span>
                     )}
                   </div>
-                  {(t.departureTime || t.arrivalTime) && (
-                    <p className="mt-1.5 text-xs text-blue-300/70">
-                      {t.departureTime && `Salida: ${t.departureTime}`}
-                      {t.departureTime && t.arrivalTime && " · "}
-                      {t.arrivalTime && `Llegada: ${t.arrivalTime}`}
-                    </p>
+                  {t.isArrival ? (
+                    t.arrivalTime && (
+                      <p className="mt-1.5 text-xs text-blue-300/50">Llegada: {t.arrivalTime}</p>
+                    )
+                  ) : (
+                    (t.departureTime || t.arrivalTime) && (
+                      <p className="mt-1.5 text-xs text-blue-300/70">
+                        {t.departureTime && `Salida: ${t.departureTime}`}
+                        {t.departureTime && t.arrivalTime && " · "}
+                        {t.arrivalTime && `Llegada: ${t.arrivalTime}`}
+                      </p>
+                    )
                   )}
                 </div>
               ))}
@@ -512,11 +528,16 @@ export function ItineraryCalendar({
     actsByDate.get(act.activityDate)!.push(act);
   }
 
-  // Group transports by departure date
+  // Group transports by departure date; also add arrival-day entry when date differs
   const transportsByDate = new Map<string, CalendarTransport[]>();
   for (const t of transports) {
     if (!transportsByDate.has(t.departureDate)) transportsByDate.set(t.departureDate, []);
     transportsByDate.get(t.departureDate)!.push(t);
+
+    if (t.arrivalDate && t.arrivalDate !== t.departureDate) {
+      if (!transportsByDate.has(t.arrivalDate)) transportsByDate.set(t.arrivalDate, []);
+      transportsByDate.get(t.arrivalDate)!.push({ ...t, isArrival: true });
+    }
   }
 
   // Calendar geometry for current month
@@ -635,9 +656,15 @@ export function ItineraryCalendar({
                               </div>
                               {exportItems.slice(0, 2).map((item) =>
                                 item.kind === "transport" ? (
-                                  <div key={item.t.id} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", border: "1px solid rgba(59,130,246,0.5)", background: "rgba(29,78,216,0.3)", color: "#93c5fd" }}>
-                                    {TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
-                                  </div>
+                                  item.t.isArrival ? (
+                                    <div key={`${item.t.id}-arr`} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", border: "1px solid rgba(59,130,246,0.2)", background: "rgba(29,78,216,0.12)", color: "#93c5fd60" }}>
+                                      {TRANSPORT_ICONS[item.t.type]} →{item.t.destination}
+                                    </div>
+                                  ) : (
+                                    <div key={item.t.id} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", border: "1px solid rgba(59,130,246,0.5)", background: "rgba(29,78,216,0.3)", color: "#93c5fd" }}>
+                                      {TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
+                                    </div>
+                                  )
                                 ) : (
                                   <div key={item.a.id} style={{ fontSize: 9, padding: "2px 4px", borderRadius: 3, marginBottom: 2, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", ...(getActivityPillClass(item.a.title).includes("blue-") ? { border: "1px solid rgba(99,102,241,0.5)", background: "rgba(79,70,229,0.3)", color: "#a5b4fc" } : { border: "1px solid rgba(52,211,153,0.5)", background: "rgba(16,185,129,0.3)", color: "#6ee7b7" }) }}>
                                     {item.a.title}
@@ -798,13 +825,23 @@ export function ItineraryCalendar({
                     <>
                       {visible.map((item) =>
                         item.type === "transport" ? (
-                          <div
-                            key={item.t.id}
-                            className="truncate rounded border border-blue-700/50 bg-blue-900/40 px-1 py-0.5 text-[10px] font-medium text-blue-300 sm:px-2 sm:py-1 sm:text-xs"
-                            title={`${item.t.origin} → ${item.t.destination}`}
-                          >
-                            {TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
-                          </div>
+                          item.t.isArrival ? (
+                            <div
+                              key={`${item.t.id}-arr`}
+                              className="truncate rounded border border-blue-900/30 bg-blue-900/20 px-1 py-0.5 text-[10px] font-medium text-blue-400/50 sm:px-2 sm:py-1 sm:text-xs"
+                              title={`Llegada: ${item.t.origin} → ${item.t.destination}`}
+                            >
+                              {TRANSPORT_ICONS[item.t.type]} →{item.t.destination}
+                            </div>
+                          ) : (
+                            <div
+                              key={item.t.id}
+                              className="truncate rounded border border-blue-700/50 bg-blue-900/40 px-1 py-0.5 text-[10px] font-medium text-blue-300 sm:px-2 sm:py-1 sm:text-xs"
+                              title={`${item.t.origin} → ${item.t.destination}`}
+                            >
+                              {TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
+                            </div>
+                          )
                         ) : (
                           <div
                             key={item.a.id}

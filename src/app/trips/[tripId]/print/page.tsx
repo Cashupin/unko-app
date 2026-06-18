@@ -73,6 +73,7 @@ type TransportRow = {
   arrivalDate: string | null; arrivalTime: string | null;
   cost: number | null; currency: string; isPaid: boolean; notes: string | null;
   coveredByPassId: string | null;
+  isArrival?: boolean;
 };
 
 type PassRow = {
@@ -119,6 +120,11 @@ function PrintCalendarMonth({
     if (!t.departureDate) continue;
     if (!transByDate.has(t.departureDate)) transByDate.set(t.departureDate, []);
     transByDate.get(t.departureDate)!.push(t);
+
+    if (t.arrivalDate && t.arrivalDate !== t.departureDate) {
+      if (!transByDate.has(t.arrivalDate)) transByDate.set(t.arrivalDate, []);
+      transByDate.get(t.arrivalDate)!.push({ ...t, isArrival: true });
+    }
   }
 
   function hotelCity(ds: string): string | null {
@@ -180,13 +186,23 @@ function PrintCalendarMonth({
                     </div>
                     {calItems.slice(0, 2).map((item) =>
                       item.k === "t" ? (
-                        <div
-                          key={item.t.id}
-                          className="mb-0.5 truncate rounded px-1 text-[9px]"
-                          style={{ background: "#dbeafe", color: "#1e40af" }}
-                        >
-                          {PRINT_TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
-                        </div>
+                        item.t.isArrival ? (
+                          <div
+                            key={`${item.t.id}-arr`}
+                            className="mb-0.5 truncate rounded px-1 text-[9px]"
+                            style={{ background: "#eff6ff", color: "#93c5fd", opacity: 0.7 }}
+                          >
+                            {PRINT_TRANSPORT_ICONS[item.t.type]} →{item.t.destination}
+                          </div>
+                        ) : (
+                          <div
+                            key={item.t.id}
+                            className="mb-0.5 truncate rounded px-1 text-[9px]"
+                            style={{ background: "#dbeafe", color: "#1e40af" }}
+                          >
+                            {PRINT_TRANSPORT_ICONS[item.t.type]} {item.t.origin}→{item.t.destination}
+                          </div>
+                        )
                       ) : (
                         <div
                           key={item.a.id}
@@ -322,12 +338,17 @@ export default async function PrintPage({
     actsByDate.get(a.activityDate)!.push(a);
   }
 
-  // Group transports by departure date
+  // Group transports by departure date; also add arrival-day entry when date differs
   const transportsByDate = new Map<string, TransportRow[]>();
   for (const t of transports) {
     if (!t.departureDate) continue;
     if (!transportsByDate.has(t.departureDate)) transportsByDate.set(t.departureDate, []);
     transportsByDate.get(t.departureDate)!.push(t);
+
+    if (t.arrivalDate && t.arrivalDate !== t.departureDate) {
+      if (!transportsByDate.has(t.arrivalDate)) transportsByDate.set(t.arrivalDate, []);
+      transportsByDate.get(t.arrivalDate)!.push({ ...t, isArrival: true });
+    }
   }
 
   // Generate days in trip range for day-by-day section
@@ -552,7 +573,7 @@ export default async function PrintPage({
                   | { kind: "transport"; t: TransportRow; time: string }
                   | { kind: "activity"; a: ActivityRow; time: string };
                 const merged: DayItem[] = [
-                  ...dayTrans.map((t) => ({ kind: "transport" as const, t, time: t.departureTime ?? "" })),
+                  ...dayTrans.map((t) => ({ kind: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
                   ...dayActs.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "" })),
                 ].sort((x, y) => x.time.localeCompare(y.time));
                 return (
@@ -572,6 +593,20 @@ export default async function PrintPage({
                       <div className="ml-11 flex flex-col gap-2">
                         {merged.map((item) =>
                           item.kind === "transport" ? (
+                            item.t.isArrival ? (
+                              <div key={`${item.t.id}-arr`} className="rounded-lg border border-blue-100 bg-blue-50/30 p-3 opacity-75">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {item.t.arrivalTime && (
+                                    <span className="shrink-0 rounded bg-blue-50 px-1.5 py-0.5 text-xs font-bold text-blue-400 tabular-nums">
+                                      {item.t.arrivalTime}
+                                    </span>
+                                  )}
+                                  <span className="text-base">{PRINT_TRANSPORT_ICONS[item.t.type]}</span>
+                                  <p className="font-semibold text-blue-500">{item.t.origin} → {item.t.destination}</p>
+                                  <span className="rounded border border-blue-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-400">Llegada</span>
+                                </div>
+                              </div>
+                            ) : (
                             <div key={item.t.id} className="rounded-lg border border-blue-200 bg-blue-50/60 p-3">
                               <div className="flex flex-wrap items-center gap-2">
                                 {item.t.departureTime && (
@@ -590,6 +625,7 @@ export default async function PrintPage({
                               )}
                               {item.t.notes && <p className="mt-1 text-xs italic text-zinc-400">{item.t.notes}</p>}
                             </div>
+                            )
                           ) : (
                             <div key={item.a.id} className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
                               <div className="flex items-center gap-2">
