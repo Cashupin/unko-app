@@ -88,8 +88,8 @@ export function TransportForm({
         departureTime: departureTime || undefined,
         arrivalDate: arrivalDate || undefined,
         arrivalTime: arrivalTime || undefined,
-        cost: !isCoveredByPass && cost ? parseFloat(cost) : undefined,
-        currency: !isCoveredByPass ? currency : undefined,
+        cost: cost ? parseFloat(cost) : undefined,
+        currency,
         isPaid: isCoveredByPass ? true : isPaid,
         notes: notes.trim() || undefined,
         coveredByPassId: isEdit ? (coveredByPassId || null) : (coveredByPassId || undefined),
@@ -234,36 +234,41 @@ export function TransportForm({
         </div>
       )}
 
-      {/* Cost (hidden when covered by pass) */}
-      {!isCoveredByPass && (
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-zinc-400">Costo</label>
-            <input
-              type="number"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-              min="0"
-              step="any"
-              placeholder="0"
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-zinc-400">Moneda</label>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3.5 py-2.5 text-sm text-zinc-100 focus:border-zinc-500 focus:outline-none"
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {CURRENCY_SYMBOLS[c]} {c}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Cost — always available; informational when covered by pass */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-zinc-400">
+            {isCoveredByPass ? "Valor del tramo (informativo)" : "Costo"}
+          </label>
+          <input
+            type="number"
+            value={cost}
+            onChange={(e) => setCost(e.target.value)}
+            min="0"
+            step="any"
+            placeholder="0"
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none"
+          />
         </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-zinc-400">Moneda</label>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3.5 py-2.5 text-sm text-zinc-100 focus:border-zinc-500 focus:outline-none"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {CURRENCY_SYMBOLS[c]} {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {isCoveredByPass && (
+        <p className="-mt-2 text-xs text-zinc-500">
+          Este tramo está incluido en el pase. El valor es solo para registro, no se suma al total pendiente.
+        </p>
       )}
 
       {/* isPaid (hidden when covered by pass) */}

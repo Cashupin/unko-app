@@ -108,6 +108,16 @@ export function TransportPanelClient({
 
   const passOptions = passes.map((p) => ({ id: p.id, name: p.name }));
   const grouped = groupTransportsByDate(transports);
+
+  function coveredValueLabel(passId: string): string | null {
+    const byCurrency = new Map<string, number>();
+    for (const t of transports) {
+      if (t.coveredByPassId !== passId || !t.cost) continue;
+      byCurrency.set(t.currency, (byCurrency.get(t.currency) ?? 0) + t.cost);
+    }
+    if (byCurrency.size === 0) return null;
+    return [...byCurrency.entries()].map(([c, amt]) => `${sym(c)} ${fmtAmount(amt, c)}`).join(" + ");
+  }
   const totalConverted = ratesReady
     ? pendingDetails.reduce((sum, d) => sum + convert(d.amount, d.currency), 0)
     : 0;
@@ -263,6 +273,9 @@ export function TransportPanelClient({
                     {pass.transportCount > 0 && (
                       <span className="text-xs text-zinc-600">{pass.transportCount} tramo{pass.transportCount !== 1 ? "s" : ""}</span>
                     )}
+                    {coveredValueLabel(pass.id) && (
+                      <span className="text-xs text-zinc-600">valor cubierto {coveredValueLabel(pass.id)}</span>
+                    )}
                     {pass.notes && (
                       <span className="text-xs text-zinc-500 italic">{pass.notes}</span>
                     )}
@@ -417,7 +430,12 @@ function TransportRowItem({
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {isCovered ? (
-          <span className="rounded-lg bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-zinc-500">Incluido</span>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="rounded-lg bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-zinc-500">Incluido</span>
+            {t.cost && (
+              <span className="text-[10px] text-zinc-600">valor {sym(t.currency)} {fmtAmount(t.cost, t.currency)}</span>
+            )}
+          </div>
         ) : t.cost ? (
           <span className={`rounded-lg px-2.5 py-1 text-xs font-bold ${t.isPaid ? "bg-emerald-500/10 text-emerald-400" : "bg-zinc-800 text-zinc-300"}`}>
             {t.isPaid ? "✓ " : ""}{sym(t.currency)} {fmtAmount(t.cost, t.currency)}
