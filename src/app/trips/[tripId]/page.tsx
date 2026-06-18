@@ -356,7 +356,7 @@ export default async function TripPage({
                 </div>
                 <div id="tutorial-activity-list">
                   {view === "calendar" ? (
-                    <div className="relative w-[100vw] sm:w-[95vw]  left-1/2 -translate-x-1/2">
+                    <div className="relative -mx-4 md:-mx-6">
                       <Suspense fallback={<div className="px-4 py-4 text-sm text-zinc-400 md:px-6">Cargando calendario...</div>}>
                         <ItineraryCalendarServer
                           tripId={tripId}
