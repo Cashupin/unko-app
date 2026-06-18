@@ -347,7 +347,7 @@ function TransportRowItem({
           <span className="text-xs text-zinc-600">{label}</span>
           {t.departureTime && (
             <span className="text-xs text-zinc-500">
-              {t.departureTime}{t.arrivalTime ? ` → ${t.arrivalTime}${t.arrivalDate && t.departureDate && t.arrivalDate !== t.departureDate ? " +1" : ""}` : ""}
+              {t.departureTime}{t.arrivalTime ? ` → ${t.arrivalTime}${t.arrivalDate && t.departureDate && t.arrivalDate !== t.departureDate ? " (día sig.)" : ""}` : ""}
             </span>
           )}
           {isCovered && t.coveredByPass && (

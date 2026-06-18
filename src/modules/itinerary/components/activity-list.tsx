@@ -113,15 +113,16 @@ type TransportForItinerary = {
   origin: string;
   destination: string;
   type: string;
+  departureDate: string | null;
   departureTime: string | null;
+  arrivalDate: string | null;
   arrivalTime: string | null;
-  arrivalDate: string | null; // ISO date string
   cost: number | null;
   currency: string;
   isPaid: boolean;
   coveredByPassId: string | null;
   coveredByPass: { id: string; name: string } | null;
-  isArrival?: boolean; // true when shown on arrival day (not departure day)
+  isArrival?: boolean;
 };
 
 const TRANSPORT_ICONS: Record<string, string> = {
@@ -218,6 +219,7 @@ export async function ActivityList({
     const arrKey = t.arrivalDate ? toDateStr(new Date(t.arrivalDate)) : null;
     const mapped: TransportForItinerary = {
       ...t,
+      departureDate: depKey,
       arrivalDate: arrKey,
     };
     if (!transportsByDate.has(depKey)) transportsByDate.set(depKey, []);
@@ -423,7 +425,7 @@ function DayCard({
           <div
             className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl ${
               isToday
-                ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white"
+                ? "bg-linear-to-br from-violet-600 to-indigo-600 text-white"
                 : isPast
                 ? "bg-[#27272a] text-zinc-500"
                 : "bg-zinc-100 text-zinc-900"
@@ -732,7 +734,8 @@ function TransportBlock({
         <div className="mt-0.5 flex items-center gap-2 flex-wrap">
           {t.arrivalTime && (
             <span className="text-xs text-blue-700">
-              llegada {t.arrivalTime}{t.arrivalDate ? " +1" : ""}
+              llegada {t.arrivalTime}
+              {t.arrivalDate && t.departureDate && t.arrivalDate !== t.departureDate ? " (día siguiente)" : ""}
             </span>
           )}
           {isCovered && t.coveredByPass && (
