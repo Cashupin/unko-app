@@ -32,7 +32,7 @@ export async function ItemList({
       ? proposerFilter
       : undefined;
 
-  const [rawItems, registeredParticipants, tripParticipants] = await Promise.all([
+  const [rawItems, registeredParticipants, tripParticipants, myCommentViews] = await Promise.all([
     prisma.item.findMany({
       where: {
         tripId,
@@ -63,7 +63,7 @@ export async function ItemList({
         tripId: true,
         createdAt: true,
         createdBy: { select: { id: true, name: true, image: true } },
-        _count: { select: { checks: true } },
+        _count: { select: { checks: true, comments: true } },
         votes: {
           select: {
             userId: true,
@@ -81,6 +81,16 @@ export async function ItemList({
           orderBy: { createdAt: "desc" },
           take: 20,
         },
+        comments: {
+          select: {
+            id: true,
+            text: true,
+            createdAt: true,
+            userId: true,
+            user: { select: { name: true, image: true } },
+          },
+          orderBy: { createdAt: "asc" },
+        },
         activities: { select: { id: true }, take: 1 },
       },
       orderBy: { createdAt: "desc" },
@@ -92,8 +102,13 @@ export async function ItemList({
       where: { tripId, type: "REGISTERED", user: { status: "ACTIVE" } },
       select: { userId: true, name: true },
     }),
+    prisma.itemCommentView.findMany({
+      where: { userId: currentUserId, item: { tripId } },
+      select: { itemId: true, lastSeenAt: true },
+    }),
   ]);
 
+  const lastSeenByItemId = new Map(myCommentViews.map((v) => [v.itemId, v.lastSeenAt]));
   const required = Math.floor(registeredParticipants / 2) + 1;
 
   if (rawItems.length === 0) {
@@ -115,6 +130,10 @@ export async function ItemList({
       (raw.votes.find((v) => v.userId === currentUserId)?.value as "APPROVE" | "REJECT" | undefined) ??
       null;
     const myRawCheck = raw.checks.find((c) => c.userId === currentUserId);
+    const lastSeenAt = lastSeenByItemId.get(raw.id) ?? null;
+    const unreadCommentsCount = raw.comments.filter(
+      (c) => c.userId !== currentUserId && (!lastSeenAt || c.createdAt > lastSeenAt),
+    ).length;
 
     const status: "APPROVED" | "PENDING" | "REJECTED" =
       approvals >= required ? "APPROVED" : rejections >= required ? "REJECTED" : "PENDING";
@@ -165,6 +184,8 @@ export async function ItemList({
       approvals,
       rejections,
       checksCount: raw._count.checks,
+      commentsCount: raw._count.comments,
+      unreadCommentsCount,
       status,
       myVote,
       myCheck: myRawCheck ? { id: myRawCheck.id, photoUrl: myRawCheck.photoUrl, userName: myRawCheck.user?.name ?? null } : null,
@@ -174,6 +195,14 @@ export async function ItemList({
         userImage: v.user?.image ?? null,
       })),
       checks: raw.checks.map(({ id, photoUrl, user }) => ({ id, photoUrl, userName: user?.name ?? null })),
+      comments: raw.comments.map((c) => ({
+        id: c.id,
+        text: c.text,
+        createdAt: c.createdAt.toISOString(),
+        userId: c.userId,
+        userName: c.user?.name ?? null,
+        userImage: c.user?.image ?? null,
+      })),
       canEdit: (isOwner && otherVoteCount === 0) || isAdmin,
       canDelete: isOwner || isAdmin,
       canClaim: !hasOwner && canMutate && !isAdmin,

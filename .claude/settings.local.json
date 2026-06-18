@@ -37,7 +37,9 @@
       "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/trips/[id]/passes\")",
       "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/trips/[id]/transports\")",
       "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/passes/[passId]\")",
-      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/transports/[transportId]\")"
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/transports/[transportId]\")",
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/items/[id]/comments\")",
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/comments/[commentId]\")"
     ],
     "additionalDirectories": [
       "d:\\Proyectos\\app-mierda\\src\\app\\trips",
@@ -45,7 +47,9 @@
       "d:\\Proyectos\\app-mierda\\src\\app\\api\\trips\\[id]\\activities",
       "C:\\Users\\ralej\\.claude\\projects\\d--Proyectos-app-mierda\\memory",
       "c:\\Projects\\unko-app\\src\\app\\trips\\[tripId]",
-      "c:\\Projects\\unko-app\\src\\app\\trips\\[tripId]\\expenses"
+      "c:\\Projects\\unko-app\\src\\app\\trips\\[tripId]\\expenses",
+      "c:\\Projects\\unko-app\\src\\app\\api\\items\\[id]",
+      "c:\\Projects\\unko-app\\src\\app\\api\\comments"
     ]
   }
 }

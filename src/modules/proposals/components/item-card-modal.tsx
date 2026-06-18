@@ -10,6 +10,7 @@ import { PhotoThumbnail } from "@/components/ui/photo-thumbnail";
 import { EditItemForm } from "@/modules/proposals/components/edit-item-form";
 import { DeleteItemButton } from "@/modules/proposals/components/delete-item-button";
 import { getItemIcon, getItemGradient } from "@/modules/proposals/lib/item-icons";
+import { ItemCommentsSection, type CommentEntry } from "@/modules/proposals/components/item-comments-section";
 import type { ItemSummary } from "@/modules/proposals/types/item";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -39,11 +40,14 @@ export type ItemCardData = {
   approvals: number;
   rejections: number;
   checksCount: number;
+  commentsCount: number;
+  unreadCommentsCount: number;
   status: "APPROVED" | "PENDING" | "REJECTED";
   myVote: "APPROVE" | "REJECT" | null;
   myCheck: { id: string; photoUrl: string | null; userName: string | null } | null;
   votes: VoteEntry[];
   checks: { id: string; photoUrl: string | null; userName: string | null }[];
+  comments: CommentEntry[];
   canEdit: boolean;
   canDelete: boolean;
   canClaim: boolean;
@@ -114,6 +118,7 @@ function Avatar({
 export function ItemCardWithModal({ item }: { item: ItemCardData }) {
   const [open, setOpen] = useState(false);
   const [votesOpen, setVotesOpen] = useState(false);
+  const [locallySeen, setLocallySeen] = useState(false);
 
   useEffect(() => {
     function handler(e: Event) {
@@ -122,6 +127,15 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
     document.addEventListener("item:open-modal", handler);
     return () => document.removeEventListener("item:open-modal", handler);
   }, [item.id]);
+
+  // Mark comments as seen once when the modal is opened (not on every render)
+  useEffect(() => {
+    if (!open || locallySeen || item.unreadCommentsCount === 0) return;
+    setLocallySeen(true);
+    fetch(`/api/items/${item.id}/comments/seen`, { method: "POST" }).catch(() => {});
+  }, [open, locallySeen, item.id, item.unreadCommentsCount]);
+
+  const unreadCommentsCount = locallySeen ? 0 : item.unreadCommentsCount;
 
   const gradient = getItemGradient(item.type, item.title);
   const icon = getItemIcon(item.type, item.title);
@@ -202,10 +216,20 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
             )}
           </div>
 
-          {/* Visits */}
-          <span className="text-[11px] text-violet-400">
-            ✓ {item.checksCount} visita{item.checksCount !== 1 ? "s" : ""}
-          </span>
+          {/* Visits + Comments */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-violet-400">
+              ✓ {item.checksCount} visita{item.checksCount !== 1 ? "s" : ""}
+            </span>
+            <span className="relative text-[11px] text-zinc-500">
+              💬 {item.commentsCount}
+              {unreadCommentsCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold leading-none text-white">
+                  {unreadCommentsCount > 9 ? "9+" : unreadCommentsCount}
+                </span>
+              )}
+            </span>
+          </div>
 
           {/* Avatar + date */}
           <div className="flex items-center gap-1.5">
@@ -364,6 +388,22 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* Comments section — always visible */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[.07em] text-zinc-500">Comentarios</p>
+                    <span className="rounded-full bg-[#27272a] px-1.5 py-0.5 text-[10px] font-bold text-zinc-400">
+                      {item.commentsCount}
+                    </span>
+                  </div>
+                  <ItemCommentsSection
+                    itemId={item.id}
+                    comments={item.comments}
+                    currentUserId={item.currentUserId}
+                    isAdmin={item.isAdmin}
+                  />
                 </div>
 
                 {/* Actions */}

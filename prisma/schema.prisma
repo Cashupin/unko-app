@@ -134,6 +134,8 @@ model User {
   createdItems        Item[]
   votes               Vote[]
   checks              Check[]
+  comments            Comment[]
+  itemCommentViews    ItemCommentView[]
   createdTrips        Trip[]             @relation("TripCreatedBy")
   participations      TripParticipant[]  @relation("UserParticipant")
   expenses            Expense[]          @relation("ExpenseCreatedBy")
@@ -242,9 +244,11 @@ model Item {
   tripId String
   trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
-  votes      Vote[]
-  checks     Check[]
-  activities Activity[] // Items aprobados pueden ser referenciados desde el itinerario
+  votes        Vote[]
+  checks       Check[]
+  comments     Comment[]
+  commentViews ItemCommentView[]
+  activities   Activity[] // Items aprobados pueden ser referenciados desde el itinerario
 
   @@index([tripId])
 }
@@ -270,6 +274,34 @@ model Check {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
+
+model ItemCommentView {
+  id         String   @id @default(cuid())
+  lastSeenAt DateTime @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
