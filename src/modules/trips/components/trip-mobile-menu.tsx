@@ -11,6 +11,7 @@ const TABS = [
   { id: "home", label: "Resumen del Viaje", icon: "🏠" },
   { id: "actividades", label: "Actividades", icon: "💡" },
   { id: "itinerario", label: "Itinerario", icon: "🗓️" },
+  { id: "checklist", label: "Checklist", icon: "✅" },
   { id: "gastos", label: "Gastos", icon: "💰" },
   { id: "galería", label: "Galería", icon: "📸" },
 ] as const;

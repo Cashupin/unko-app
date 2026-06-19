@@ -77,6 +77,17 @@ function roleLbl(role: string): string {
   return map[role] ?? role;
 }
 
+const TASK_CATEGORY_ICONS: Record<string, string> = {
+  RESERVA: "📅", DOCUMENTO: "📄", COMPRA: "🛍️", OTRO: "📌",
+};
+
+function isTaskOverdue(dueDate: Date | null): boolean {
+  if (!dueDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return dueDate < today;
+}
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 type Participant = { id: string; name: string };
@@ -102,7 +113,7 @@ export async function TripHome({
   const tripStatus = getTripStatus(tripStartDate, tripEndDate);
   const todayStr = toDateStr(new Date());
 
-  const [activities, hotels, items, standaloneActivities, activityCount, itemCount, rawExpenses, rawPayments] = await Promise.all([
+  const [activities, hotels, items, standaloneActivities, activityCount, itemCount, rawExpenses, rawPayments, myPendingTasks, myPendingTasksCount] = await Promise.all([
     activityDates.length > 0
       ? prisma.activity.findMany({
           where: {
@@ -157,6 +168,17 @@ export async function TripHome({
         fromParticipant: { select: { id: true } },
         toParticipant: { select: { id: true } },
       },
+    }),
+
+    prisma.task.findMany({
+      where: { tripId, isDone: false, assignees: { some: { participantId: myParticipantId } } },
+      select: { id: true, title: true, category: true, dueDate: true },
+      orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
+      take: 5,
+    }),
+
+    prisma.task.count({
+      where: { tripId, isDone: false, assignees: { some: { participantId: myParticipantId } } },
     }),
   ]);
 
@@ -585,6 +607,52 @@ export async function TripHome({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Mis pendientes ───────────────────────────────────────────────────── */}
+      {myPendingTasks.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              Mis pendientes
+            </span>
+            <Link
+              href={`/trips/${tripId}?tab=checklist`}
+              className="text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors"
+            >
+              Ver checklist →
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-100 dark:border-[#27272a] bg-white dark:bg-[#18191c] overflow-hidden">
+            <div className="flex flex-col divide-y divide-zinc-100 dark:divide-[#27272a]">
+              {myPendingTasks.map((task) => {
+                const overdue = isTaskOverdue(task.dueDate);
+                return (
+                  <div key={task.id} className="flex items-center gap-2.5 px-3.5 py-3">
+                    <span className="text-[15px] shrink-0">{TASK_CATEGORY_ICONS[task.category] ?? "📌"}</span>
+                    <p className="flex-1 min-w-0 text-[13px] font-semibold text-zinc-800 dark:text-zinc-300 truncate">
+                      {task.title}
+                    </p>
+                    {task.dueDate && (
+                      <span className={`text-[11px] shrink-0 ${overdue ? "font-semibold text-red-500 dark:text-red-400" : "text-zinc-400 dark:text-zinc-500"}`}>
+                        {overdue ? "⚠ " : ""}{fmtShort(task.dueDate)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {myPendingTasksCount > myPendingTasks.length && (
+              <Link
+                href={`/trips/${tripId}?tab=checklist`}
+                className="block px-3.5 py-2.5 text-center text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors border-t border-zinc-100 dark:border-[#27272a]"
+              >
+                +{myPendingTasksCount - myPendingTasks.length} más
+              </Link>
+            )}
           </div>
         </div>
       )}

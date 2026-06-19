@@ -32,15 +32,17 @@ import { ItemFilterChipsServer } from "@/modules/proposals/components/item-filte
 import { NearbyActivitiesServer } from "@/modules/proposals/components/nearby-activities-server";
 import { HashHighlight } from "@/modules/proposals/components/hash-highlight";
 import { KmlImport } from "@/modules/proposals/components/kml-import";
+import { ChecklistPanel } from "@/modules/checklist/components/checklist-panel";
 import type { ParticipantSummary } from "@/modules/trips/types/trip";
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
 
-type Tab = "home" | "actividades" | "itinerario" | "gastos" | "galería";
+type Tab = "home" | "actividades" | "itinerario" | "checklist" | "gastos" | "galería";
 const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Resumen del Viaje" },
   { id: "actividades", label: "Actividades" },
   { id: "itinerario", label: "Itinerario" },
+  { id: "checklist", label: "Checklist" },
   { id: "gastos", label: "Gastos" },
   { id: "galería", label: "Galería" },
 ];
@@ -426,6 +428,20 @@ export default async function TripPage({
           </div>
         )}
 
+        {/* ── Checklist ───────────────────────────────────────────────────── */}
+        {activeTab === "checklist" && (
+          <div>
+            <h2 className="mb-4 text-base font-bold text-zinc-900 dark:text-zinc-100">Checklist</h2>
+            <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando checklist...</div>}>
+              <ChecklistPanel
+                tripId={tripId}
+                canEdit={canEdit}
+                tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : null}
+                tripEndDate={trip.endDate ? trip.endDate.toISOString().slice(0, 10) : null}
+              />
+            </Suspense>
+          </div>
+        )}
 
         {/* ── Gastos ──────────────────────────────────────────────────────── */}
         {activeTab === "gastos" && (
