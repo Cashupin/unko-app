@@ -39,7 +39,8 @@
       "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/passes/[passId]\")",
       "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/transports/[transportId]\")",
       "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/items/[id]/comments\")",
-      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/comments/[commentId]\")"
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/comments/[commentId]\")",
+      "Bash(mkdir -p \"c:/Projects/unko-app/src/app/api/tasks/[taskId]/assignees/[participantId]\")"
     ],
     "additionalDirectories": [
       "d:\\Proyectos\\app-mierda\\src\\app\\trips",
@@ -49,7 +50,8 @@
       "c:\\Projects\\unko-app\\src\\app\\trips\\[tripId]",
       "c:\\Projects\\unko-app\\src\\app\\trips\\[tripId]\\expenses",
       "c:\\Projects\\unko-app\\src\\app\\api\\items\\[id]",
-      "c:\\Projects\\unko-app\\src\\app\\api\\comments"
+      "c:\\Projects\\unko-app\\src\\app\\api\\comments",
+      "c:\\Projects\\unko-app\\src\\app\\api\\tasks\\[taskId]\\assignees"
     ]
   }
 }

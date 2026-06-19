@@ -5,6 +5,7 @@ import { calculateSettlement } from "@/modules/expenses/lib/settlement";
 import { MySettlementBanner } from "@/modules/expenses/components/my-settlement-banner";
 import { getMapsUrl } from "@/lib/maps-url";
 import { NearbyActivities } from "@/modules/proposals/components/nearby-activities";
+import { MyPendingTasksWidget } from "@/modules/trips/components/my-pending-tasks-widget";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -77,16 +78,6 @@ function roleLbl(role: string): string {
   return map[role] ?? role;
 }
 
-const TASK_CATEGORY_ICONS: Record<string, string> = {
-  RESERVA: "📅", DOCUMENTO: "📄", COMPRA: "🛍️", OTRO: "📌",
-};
-
-function isTaskOverdue(dueDate: Date | null): boolean {
-  if (!dueDate) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return dueDate < today;
-}
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -113,7 +104,7 @@ export async function TripHome({
   const tripStatus = getTripStatus(tripStartDate, tripEndDate);
   const todayStr = toDateStr(new Date());
 
-  const [activities, hotels, items, standaloneActivities, activityCount, itemCount, rawExpenses, rawPayments, myPendingTasks, myPendingTasksCount] = await Promise.all([
+  const [activities, hotels, items, standaloneActivities, activityCount, itemCount, rawExpenses, rawPayments, myPendingTasksRaw] = await Promise.all([
     activityDates.length > 0
       ? prisma.activity.findMany({
           where: {
@@ -171,16 +162,20 @@ export async function TripHome({
     }),
 
     prisma.task.findMany({
-      where: { tripId, isDone: false, assignees: { some: { participantId: myParticipantId } } },
-      select: { id: true, title: true, category: true, dueDate: true },
+      where: { tripId, assignees: { some: { participantId: myParticipantId } } },
+      select: {
+        id: true, title: true, category: true, mode: true, dueDate: true, isDone: true,
+        assignees: { where: { participantId: myParticipantId }, select: { isDone: true } },
+      },
       orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
-      take: 5,
-    }),
-
-    prisma.task.count({
-      where: { tripId, isDone: false, assignees: { some: { participantId: myParticipantId } } },
     }),
   ]);
+
+  const myPendingTasksAll = myPendingTasksRaw.filter((t) =>
+    t.mode === "INDIVIDUAL" ? !t.assignees[0]?.isDone : !t.isDone,
+  );
+  const myPendingTasksCount = myPendingTasksAll.length;
+  const myPendingTasks = myPendingTasksAll.slice(0, 5);
 
   // Settlement
   const expensesForSettlement = rawExpenses.map((e) => ({
@@ -626,34 +621,18 @@ export async function TripHome({
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-zinc-100 dark:border-[#27272a] bg-white dark:bg-[#18191c] overflow-hidden">
-            <div className="flex flex-col divide-y divide-zinc-100 dark:divide-[#27272a]">
-              {myPendingTasks.map((task) => {
-                const overdue = isTaskOverdue(task.dueDate);
-                return (
-                  <div key={task.id} className="flex items-center gap-2.5 px-3.5 py-3">
-                    <span className="text-[15px] shrink-0">{TASK_CATEGORY_ICONS[task.category] ?? "📌"}</span>
-                    <p className="flex-1 min-w-0 text-[13px] font-semibold text-zinc-800 dark:text-zinc-300 truncate">
-                      {task.title}
-                    </p>
-                    {task.dueDate && (
-                      <span className={`text-[11px] shrink-0 ${overdue ? "font-semibold text-red-500 dark:text-red-400" : "text-zinc-400 dark:text-zinc-500"}`}>
-                        {overdue ? "⚠ " : ""}{fmtShort(task.dueDate)}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            {myPendingTasksCount > myPendingTasks.length && (
-              <Link
-                href={`/trips/${tripId}?tab=checklist`}
-                className="block px-3.5 py-2.5 text-center text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors border-t border-zinc-100 dark:border-[#27272a]"
-              >
-                +{myPendingTasksCount - myPendingTasks.length} más
-              </Link>
-            )}
-          </div>
+          <MyPendingTasksWidget
+            tripId={tripId}
+            myParticipantId={myParticipantId}
+            tasks={myPendingTasks.map((t) => ({
+              id: t.id,
+              title: t.title,
+              category: t.category,
+              mode: t.mode,
+              dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+            }))}
+            totalCount={myPendingTasksCount}
+          />
         </div>
       )}
 

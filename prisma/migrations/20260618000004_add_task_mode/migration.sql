@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Task" ADD COLUMN "mode" TEXT NOT NULL DEFAULT 'SHARED';
+
+-- AlterTable
+ALTER TABLE "TaskAssignee" ADD COLUMN "isDone" BOOLEAN NOT NULL DEFAULT false;

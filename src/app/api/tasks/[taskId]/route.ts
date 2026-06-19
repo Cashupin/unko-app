@@ -8,16 +8,17 @@ const updateTaskSchema = z.object({
   title: z.string().trim().min(1).max(300).optional(),
   description: z.string().trim().max(1000).nullable().optional(),
   category: z.string().trim().max(50).optional(),
+  mode: z.enum(["SHARED", "INDIVIDUAL"]).optional(),
   dueDate: z.string().nullable().optional(),
   isDone: z.boolean().optional(),
   assigneeIds: z.array(z.string()).optional(),
 });
 
 const TASK_SELECT = {
-  id: true, title: true, description: true, category: true,
+  id: true, title: true, description: true, category: true, mode: true,
   dueDate: true, isDone: true, createdAt: true,
   createdBy: { select: { id: true, name: true, image: true } },
-  assignees: { select: { participant: { select: { id: true, name: true } } } },
+  assignees: { select: { isDone: true, participant: { select: { id: true, name: true } } } },
 } as const;
 
 async function requireEditorOnTask(taskId: string, userId: string) {
@@ -61,7 +62,7 @@ export async function PATCH(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  const { title, description, category, dueDate, isDone, assigneeIds } = result.data;
+  const { title, description, category, mode, dueDate, isDone, assigneeIds } = result.data;
 
   let validAssigneeIds: string[] | undefined;
   if (assigneeIds !== undefined) {
@@ -79,6 +80,7 @@ export async function PATCH(
       title,
       description: description === undefined ? undefined : description,
       category,
+      mode,
       dueDate: dueDate === undefined ? undefined : (dueDate ? new Date(dueDate) : null),
       isDone,
       ...(validAssigneeIds !== undefined && {

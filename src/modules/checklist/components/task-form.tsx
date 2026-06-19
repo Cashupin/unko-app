@@ -19,6 +19,7 @@ type TaskInitial = {
   title: string;
   description: string | null;
   category: string;
+  mode: string;
   dueDate: string | null;
   assigneeIds: string[];
 };
@@ -44,6 +45,7 @@ export function TaskForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [category, setCategory] = useState(initial?.category ?? "OTRO");
+  const [mode, setMode] = useState(initial?.mode ?? "SHARED");
   const [dueDate, setDueDate] = useState(initial?.dueDate?.slice(0, 10) ?? "");
   const [assigneeIds, setAssigneeIds] = useState<string[]>(initial?.assigneeIds ?? []);
   const [loading, setLoading] = useState(false);
@@ -61,6 +63,7 @@ export function TaskForm({
         title: title.trim(),
         description: description.trim() ? description.trim() : isEdit ? null : undefined,
         category,
+        mode,
         dueDate: dueDate || (isEdit ? null : undefined),
         assigneeIds,
       };
@@ -153,6 +156,39 @@ export function TaskForm({
                 <span className="text-sm text-zinc-200">{p.name}</span>
               </label>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mode — only meaningful with 2+ assignees, but harmless otherwise */}
+      {assigneeIds.length >= 2 && (
+        <div>
+          <label className="mb-2 block text-xs font-semibold text-zinc-400">¿Quién debe completarla?</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMode("SHARED")}
+              className={`flex-1 rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition-colors ${
+                mode === "SHARED"
+                  ? "border-zinc-400 bg-zinc-700 text-zinc-100"
+                  : "border-zinc-700 bg-zinc-800 text-zinc-500 hover:border-zinc-600"
+              }`}
+            >
+              <span className="block">Compartida</span>
+              <span className="mt-0.5 block text-[10px] font-normal opacity-70">Cualquiera la completa para todos</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("INDIVIDUAL")}
+              className={`flex-1 rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition-colors ${
+                mode === "INDIVIDUAL"
+                  ? "border-zinc-400 bg-zinc-700 text-zinc-100"
+                  : "border-zinc-700 bg-zinc-800 text-zinc-500 hover:border-zinc-600"
+              }`}
+            >
+              <span className="block">Individual</span>
+              <span className="mt-0.5 block text-[10px] font-normal opacity-70">Cada uno tiene su propio check</span>
+            </button>
           </div>
         </div>
       )}

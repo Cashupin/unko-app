@@ -20,11 +20,12 @@ export async function ChecklistPanel({
         title: true,
         description: true,
         category: true,
+        mode: true,
         dueDate: true,
         isDone: true,
-        assignees: { select: { participant: { select: { id: true, name: true } } } },
+        assignees: { select: { isDone: true, participant: { select: { id: true, name: true } } } },
       },
-      orderBy: [{ isDone: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
     }),
     prisma.tripParticipant.findMany({
       where: { tripId },
@@ -33,6 +34,26 @@ export async function ChecklistPanel({
     }),
   ]);
 
+  const mapped = tasks.map((t) => ({
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    category: t.category,
+    mode: t.mode,
+    dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+    isDone: t.isDone,
+    assignees: t.assignees.map((a) => ({ ...a.participant, isDone: a.isDone })),
+  }));
+
+  function isEffectivelyDone(t: (typeof mapped)[number]): boolean {
+    return t.mode === "INDIVIDUAL"
+      ? t.assignees.length > 0 && t.assignees.every((a) => a.isDone)
+      : t.isDone;
+  }
+
+  // Pending tasks first, completed ones last (DB orderBy already sorted by date within each group)
+  const sorted = [...mapped].sort((a, b) => Number(isEffectivelyDone(a)) - Number(isEffectivelyDone(b)));
+
   return (
     <ChecklistPanelClient
       tripId={tripId}
@@ -40,15 +61,7 @@ export async function ChecklistPanel({
       tripStartDate={tripStartDate ?? undefined}
       tripEndDate={tripEndDate ?? undefined}
       participants={participants}
-      tasks={tasks.map((t) => ({
-        id: t.id,
-        title: t.title,
-        description: t.description,
-        category: t.category,
-        dueDate: t.dueDate ? t.dueDate.toISOString() : null,
-        isDone: t.isDone,
-        assignees: t.assignees.map((a) => a.participant),
-      }))}
+      tasks={sorted}
     />
   );
 }
