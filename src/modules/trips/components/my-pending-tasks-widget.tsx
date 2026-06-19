@@ -12,6 +12,7 @@ const TASK_CATEGORY_ICONS: Record<string, string> = {
 type PendingTask = {
   id: string;
   title: string;
+  description: string | null;
   category: string;
   mode: string;
   dueDate: string | null;
@@ -81,14 +82,14 @@ export function MyPendingTasksWidget({
           return (
             <div
               key={task.id}
-              className={`flex items-center gap-2.5 px-3.5 py-3 transition-opacity ${checked ? "opacity-40" : ""}`}
+              className={`flex items-start gap-2.5 px-3.5 py-3 transition-opacity ${checked ? "opacity-40" : ""}`}
             >
               <button
                 type="button"
                 onClick={() => !checked && handleCheck(task)}
                 disabled={checked || loadingId === task.id}
                 aria-label="Marcar como completada"
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-[11px] transition-colors ${
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-[11px] transition-colors ${
                   checked
                     ? "border-emerald-500 bg-emerald-500 text-white"
                     : "border-zinc-300 hover:border-zinc-400 dark:border-zinc-600 dark:hover:border-zinc-400"
@@ -96,23 +97,32 @@ export function MyPendingTasksWidget({
               >
                 {checked && "✓"}
               </button>
-              <span className="text-[15px] shrink-0">{TASK_CATEGORY_ICONS[task.category] ?? "📌"}</span>
-              <p
-                className={`flex-1 min-w-0 text-[13px] font-semibold truncate ${
-                  checked ? "text-zinc-400 line-through dark:text-zinc-600" : "text-zinc-800 dark:text-zinc-300"
-                }`}
-              >
-                {task.title}
-              </p>
-              {task.dueDate && !checked && (
-                <span
-                  className={`text-[11px] shrink-0 ${
-                    overdue ? "font-semibold text-red-500 dark:text-red-400" : "text-zinc-400 dark:text-zinc-500"
-                  }`}
-                >
-                  {overdue ? "⚠ " : ""}{fmtShort(task.dueDate)}
-                </span>
-              )}
+              <span className="mt-0.5 text-[15px] shrink-0">{TASK_CATEGORY_ICONS[task.category] ?? "📌"}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p
+                    className={`min-w-0 truncate text-[13px] font-semibold ${
+                      checked ? "text-zinc-400 line-through dark:text-zinc-600" : "text-zinc-800 dark:text-zinc-300"
+                    }`}
+                  >
+                    {task.title}
+                  </p>
+                  {task.dueDate && !checked && (
+                    <span
+                      className={`text-[11px] shrink-0 ${
+                        overdue ? "font-semibold text-red-500 dark:text-red-400" : "text-zinc-400 dark:text-zinc-500"
+                      }`}
+                    >
+                      {overdue ? "⚠ " : ""}{fmtShort(task.dueDate)}
+                    </span>
+                  )}
+                </div>
+                {task.description && !checked && (
+                  <p className="mt-0.5 text-[11px] italic text-zinc-400 dark:text-zinc-500 truncate">
+                    {task.description}
+                  </p>
+                )}
+              </div>
             </div>
           );
         })}

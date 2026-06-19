@@ -164,7 +164,7 @@ export async function TripHome({
     prisma.task.findMany({
       where: { tripId, assignees: { some: { participantId: myParticipantId } } },
       select: {
-        id: true, title: true, category: true, mode: true, dueDate: true, isDone: true,
+        id: true, title: true, description: true, category: true, mode: true, dueDate: true, isDone: true,
         assignees: { where: { participantId: myParticipantId }, select: { isDone: true } },
       },
       orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
@@ -627,6 +627,7 @@ export async function TripHome({
             tasks={myPendingTasks.map((t) => ({
               id: t.id,
               title: t.title,
+              description: t.description,
               category: t.category,
               mode: t.mode,
               dueDate: t.dueDate ? t.dueDate.toISOString() : null,
