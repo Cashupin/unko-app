@@ -27,14 +27,12 @@ type TaskInitial = {
 export function TaskForm({
   tripId,
   tripStartDate,
-  tripEndDate,
   participants,
   initial,
   onClose,
 }: {
   tripId: string;
   tripStartDate?: string;
-  tripEndDate?: string;
   participants: ParticipantOption[];
   initial?: TaskInitial;
   onClose: () => void;
@@ -124,14 +122,12 @@ export function TaskForm({
         </div>
       </div>
 
-      {/* Due date */}
+      {/* Due date — not limited to trip dates: tasks often need to be done before the trip starts */}
       <div>
         <label className="mb-1.5 block text-xs font-semibold text-zinc-400">Fecha límite (opcional)</label>
         <DatePicker
           value={dueDate}
           onChange={setDueDate}
-          min={tripStartDate}
-          max={tripEndDate}
           initialMonth={tripStartDate}
           placeholder="Sin fecha límite"
         />

@@ -236,7 +236,6 @@ export function ChecklistPanelClient({
           <TaskForm
             tripId={tripId}
             tripStartDate={tripStartDate}
-            tripEndDate={tripEndDate}
             participants={participants}
             initial={
               editingTask
