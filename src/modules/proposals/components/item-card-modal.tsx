@@ -24,7 +24,7 @@ export type VoteEntry = {
 export type ItemCardData = {
   id: string;
   title: string;
-  type: "PLACE" | "FOOD";
+  type: "PLACE" | "FOOD" | "ACTIVITY";
   description: string | null;
   location: string | null;
   locationLat: number | null;
@@ -64,7 +64,7 @@ export type ItemCardData = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TYPE_LABELS = { PLACE: "Lugar", FOOD: "Comida" } as const;
+const TYPE_LABELS = { PLACE: "Lugar", FOOD: "Comida", ACTIVITY: "Actividad" } as const;
 
 const STATUS_BADGE = {
   APPROVED: "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400",

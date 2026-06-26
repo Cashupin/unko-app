@@ -7,7 +7,7 @@ export type CheckSummary = {
 export type ItemSummary = {
   id: string;
   title: string;
-  type: "PLACE" | "FOOD";
+  type: "PLACE" | "FOOD" | "ACTIVITY";
   description: string | null;
   location: string | null;
   locationLat: number | null;

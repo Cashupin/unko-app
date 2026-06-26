@@ -10,7 +10,7 @@ import { geocodeCity } from "@/modules/proposals/lib/geocode";
 
 const patchSchema = z.object({
   title: z.string().trim().min(1).max(255),
-  type: z.enum(["PLACE", "FOOD"]),
+  type: z.enum(["PLACE", "FOOD", "ACTIVITY"]),
   description: z.string().trim().max(1000).nullable().optional(),
   location: z.string().trim().max(500).nullable().optional(),
   locationLat: z.number().nullable().optional(),

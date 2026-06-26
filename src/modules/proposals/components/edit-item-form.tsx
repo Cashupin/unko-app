@@ -13,7 +13,7 @@ type ItemData = {
   id: string;
   tripId: string;
   title: string;
-  type: "PLACE" | "FOOD";
+  type: "PLACE" | "FOOD" | "ACTIVITY";
   description: string | null;
   location: string | null;
   locationLat: number | null;
@@ -216,6 +216,7 @@ export function EditItemForm({
                 >
                   <option value="PLACE">Lugar</option>
                   <option value="FOOD">Comida</option>
+                  <option value="ACTIVITY">Actividad</option>
                 </select>
               </div>
 

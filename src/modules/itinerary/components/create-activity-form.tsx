@@ -24,7 +24,7 @@ export function CreateActivityForm({
   const [loading, setLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [createProposal, setCreateProposal] = useState(false);
-  const [proposalType, setProposalType] = useState<"PLACE" | "FOOD">("PLACE");
+  const [proposalType, setProposalType] = useState<"PLACE" | "FOOD" | "ACTIVITY">("PLACE");
 
   function openModal() {
     setPhotoUrl(null);
@@ -304,7 +304,7 @@ export function CreateActivityForm({
                 </label>
                 {createProposal && (
                   <div className="mt-2 flex gap-2 pl-6">
-                    {(["PLACE", "FOOD"] as const).map((t) => (
+                    {(["PLACE", "FOOD", "ACTIVITY"] as const).map((t) => (
                       <button
                         key={t}
                         type="button"
@@ -315,7 +315,7 @@ export function CreateActivityForm({
                             : "border border-zinc-200 text-zinc-500 hover:border-zinc-300 dark:border-zinc-600 dark:text-zinc-400"
                         }`}
                       >
-                        {t === "PLACE" ? "📍 Lugar" : "🍜 Comida"}
+                        {t === "PLACE" ? "📍 Lugar" : t === "FOOD" ? "🍜 Comida" : "🎯 Actividad"}
                       </button>
                     ))}
                   </div>

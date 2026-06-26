@@ -18,7 +18,7 @@ async function requireActiveSession() {
 
 const createItemSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(255),
-  type: z.enum(["PLACE", "FOOD"], { error: "Type must be PLACE or FOOD" }),
+  type: z.enum(["PLACE", "FOOD", "ACTIVITY"], { error: "Type must be PLACE, FOOD or ACTIVITY" }),
   tripId: z.string().cuid("tripId must be a valid CUID"),
   description: z.string().trim().max(1000).optional(),
   location: z.string().trim().max(500).optional(),
