@@ -26,6 +26,7 @@ enum InvitationStatus {
 enum ItemType {
   PLACE
   FOOD
+  ACTIVITY
 }
 
 enum VoteValue {

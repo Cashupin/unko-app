@@ -20,7 +20,7 @@ export function CreateItemFromActivityButton({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [type, setType] = useState<"PLACE" | "FOOD">("PLACE");
+  const [type, setType] = useState<"PLACE" | "FOOD" | "ACTIVITY">("PLACE");
   const [open, setOpen] = useState(false);
 
   async function handleCreate() {
@@ -94,6 +94,17 @@ export function CreateItemFromActivityButton({
             }`}
           >
             🍜 Comida
+          </button>
+          <button
+            type="button"
+            onClick={() => setType("ACTIVITY")}
+            className={`px-2.5 py-1 font-medium transition-colors border-l border-[#3f3f46] ${
+              type === "ACTIVITY"
+                ? "bg-zinc-100 text-zinc-900"
+                : "text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            🎯 Actividad
           </button>
         </div>
         <button

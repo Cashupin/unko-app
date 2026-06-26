@@ -35,6 +35,7 @@ const FIELDS: Field[] = [
     options: [
       { value: "PLACE", label: "Lugar" },
       { value: "FOOD", label: "Comida" },
+      { value: "ACTIVITY", label: "Actividad" },
     ],
   },
   {

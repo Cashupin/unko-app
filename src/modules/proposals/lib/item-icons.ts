@@ -32,16 +32,27 @@ const FOOD_ICONS: { icon: string; gradient: string; keywords: string[] }[] = [
   { icon: "🥟",  gradient: "from-orange-800 to-amber-950",    keywords: ["ramen","gyoza","dumpling","dim sum","noodle","fideos","ichiran","ippudo"] },
 ];
 
+const ACTIVITY_ICONS: { icon: string; gradient: string; keywords: string[] }[] = [
+  { icon: "💍",  gradient: "from-amber-700 to-yellow-900",    keywords: ["anillo","ring","joyería","jewelry"] },
+  { icon: "🧑‍🍳", gradient: "from-orange-800 to-red-950",     keywords: ["cooking class","clase de cocina","taller de cocina","ramen making","sushi making"] },
+  { icon: "🎨",  gradient: "from-purple-800 to-violet-950",   keywords: ["taller","workshop","clase","class","craft","artesanía","pottery","cerámica"] },
+  { icon: "👘",  gradient: "from-rose-800 to-pink-950",       keywords: ["kimono","yukata","disfraz","vestimenta"] },
+  { icon: "🥋",  gradient: "from-red-800 to-rose-950",        keywords: ["dojo","artes marciales","martial arts","sumo","judo","karate"] },
+  { icon: "🚣",  gradient: "from-cyan-800 to-blue-950",       keywords: ["tour","paseo en bote","crucero","cruise","kayak","rafting","excursion","excursión"] },
+  { icon: "🎮",  gradient: "from-indigo-800 to-blue-950",     keywords: ["arcade","videojuego","game center","karaoke"] },
+  { icon: "📸",  gradient: "from-zinc-700 to-zinc-900",       keywords: ["fotos","photoshoot","sesion de fotos","sesión de fotos"] },
+];
+
 export function getItemIcon(type: string, title: string): string {
   const lower = title.toLowerCase();
-  const list = type === "FOOD" ? FOOD_ICONS : PLACE_ICONS;
+  const list = type === "FOOD" ? FOOD_ICONS : type === "ACTIVITY" ? ACTIVITY_ICONS : PLACE_ICONS;
   return list.find((e) => e.keywords.some((k) => lower.includes(k)))?.icon
-    ?? (type === "FOOD" ? "🍜" : "📍");
+    ?? (type === "FOOD" ? "🍜" : type === "ACTIVITY" ? "🎯" : "📍");
 }
 
 export function getItemGradient(type: string, title: string): string {
   const lower = title.toLowerCase();
-  const list = type === "FOOD" ? FOOD_ICONS : PLACE_ICONS;
+  const list = type === "FOOD" ? FOOD_ICONS : type === "ACTIVITY" ? ACTIVITY_ICONS : PLACE_ICONS;
   return list.find((e) => e.keywords.some((k) => lower.includes(k)))?.gradient
-    ?? (type === "FOOD" ? "from-orange-700 to-amber-900" : "from-zinc-700 to-zinc-900");
+    ?? (type === "FOOD" ? "from-orange-700 to-amber-900" : type === "ACTIVITY" ? "from-emerald-700 to-teal-900" : "from-zinc-700 to-zinc-900");
 }

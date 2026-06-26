@@ -141,7 +141,7 @@ export async function ItemList({
     const itemSummary: ItemSummary = {
       id: raw.id,
       title: raw.title,
-      type: raw.type as "PLACE" | "FOOD",
+      type: raw.type as "PLACE" | "FOOD" | "ACTIVITY",
       description: raw.description,
       location: raw.location,
       locationLat: raw.locationLat,
@@ -168,7 +168,7 @@ export async function ItemList({
     return {
       id: raw.id,
       title: raw.title,
-      type: raw.type as "PLACE" | "FOOD",
+      type: raw.type as "PLACE" | "FOOD" | "ACTIVITY",
       description: raw.description,
       location: raw.location,
       locationLat: raw.locationLat,

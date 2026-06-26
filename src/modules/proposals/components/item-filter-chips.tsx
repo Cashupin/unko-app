@@ -7,6 +7,7 @@ const TYPE_CHIPS = [
   { value: "", label: "Todos" },
   { value: "FOOD", label: "🍜 Comida" },
   { value: "PLACE", label: "📍 Lugares" },
+  { value: "ACTIVITY", label: "🎯 Actividades" },
 ] as const;
 
 export function ItemFilterChips({
@@ -54,7 +55,7 @@ export function ItemFilterChips({
   return (
     <div className="flex flex-col gap-2">
       {/* Row 1: Search + Type chips */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="relative flex-1">
           <svg
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
@@ -85,7 +86,7 @@ export function ItemFilterChips({
           )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide sm:shrink-0 sm:overflow-visible sm:pb-0">
           {TYPE_CHIPS.map((chip) => (
             <button
               key={chip.value}
