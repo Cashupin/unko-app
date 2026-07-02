@@ -16,6 +16,7 @@ export function AddToItineraryButton({
   tripId,
   itemId,
   title,
+  description,
   tripStartDate,
   tripEndDate,
   inItinerary = false,
@@ -24,6 +25,7 @@ export function AddToItineraryButton({
   tripId: string;
   itemId: string;
   title: string;
+  description?: string | null;
   tripStartDate?: Date | null;
   tripEndDate?: Date | null;
   inItinerary?: boolean;
@@ -33,6 +35,7 @@ export function AddToItineraryButton({
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [includeDescription, setIncludeDescription] = useState(true);
   const [isDraft, setIsDraft] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(inItinerary);
@@ -50,6 +53,7 @@ export function AddToItineraryButton({
       const body: Record<string, string | boolean> = { title, itemId };
       if (date) body.activityDate = new Date(date).toISOString();
       if (time) body.activityTime = time;
+      if (includeDescription && description) body.description = description;
       if (isDraft) body.isDraft = true;
 
       const res = await fetch(`/api/trips/${tripId}/activities`, {
@@ -143,6 +147,25 @@ export function AddToItineraryButton({
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
                 />
               </div>
+
+              {description && (
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-zinc-100 px-3 py-2.5 dark:border-zinc-700">
+                  <input
+                    type="checkbox"
+                    checked={includeDescription}
+                    onChange={(e) => setIncludeDescription(e.target.checked)}
+                    className="rounded accent-zinc-700 dark:accent-zinc-300"
+                  />
+                  <div>
+                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      Incluir descripción
+                    </span>
+                    <p className="mt-0.5 line-clamp-1 text-[10px] text-zinc-400 dark:text-zinc-500">
+                      {description}
+                    </p>
+                  </div>
+                </label>
+              )}
 
               {isAdmin && (
                 <div className="rounded-xl border border-dashed border-indigo-500/30 bg-indigo-950/10 px-3 py-2.5">

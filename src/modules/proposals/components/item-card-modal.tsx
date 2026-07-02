@@ -443,6 +443,7 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
                       tripId={item.tripId}
                       itemId={item.id}
                       title={item.title}
+                      description={item.description}
                       tripStartDate={item.tripStartDate ? new Date(item.tripStartDate) : null}
                       tripEndDate={item.tripEndDate ? new Date(item.tripEndDate) : null}
                       inItinerary={item.inItinerary}
