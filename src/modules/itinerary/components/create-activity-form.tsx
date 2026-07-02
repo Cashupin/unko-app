@@ -14,12 +14,14 @@ export function CreateActivityForm({
   tripStartDate,
   isAdmin = false,
   compact = false,
+  overlayZIndex = "z-50",
 }: {
   tripId: string;
   defaultDate?: string;
   tripStartDate?: string;
   isAdmin?: boolean;
   compact?: boolean;
+  overlayZIndex?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -143,7 +145,7 @@ export function CreateActivityForm({
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className={`fixed inset-0 ${overlayZIndex} flex items-center justify-center bg-black/50 p-4`}
           onClick={(e) => {
             if (e.target === e.currentTarget) closeModal();
           }}

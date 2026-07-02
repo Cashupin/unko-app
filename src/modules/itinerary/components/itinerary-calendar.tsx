@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { ExportButtons } from "@/modules/itinerary/components/export-buttons";
 import { DraftActivityActions } from "@/modules/itinerary/components/draft-activity-actions";
+import { CreateActivityForm } from "@/modules/itinerary/components/create-activity-form";
+import { EditActivityForm } from "@/modules/itinerary/components/edit-activity-form";
 
 export type CalendarActivity = {
   id: string;
@@ -13,6 +14,8 @@ export type CalendarActivity = {
   activityTime: string | null;
   description: string | null;
   location: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
   notes: string | null;
   photoUrl: string | null;
   isDraft: boolean;
@@ -163,7 +166,6 @@ function DayDetailModal({
   isAdmin,
   canEdit,
   onPersonalChange,
-  onGroupChange,
 }: {
   dateStr: string;
   activities: CalendarActivity[];
@@ -176,7 +178,6 @@ function DayDetailModal({
   isAdmin: boolean;
   canEdit: boolean;
   onPersonalChange: () => void;
-  onGroupChange: () => void;
 }) {
   const [y, m, d] = dateStr.split("-").map(Number);
   const date = new Date(y, m - 1, d);
@@ -188,65 +189,6 @@ function DayDetailModal({
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const [addingActivity, setAddingActivity] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newTime, setNewTime] = useState("");
-  const [savingActivity, setSavingActivity] = useState(false);
-
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editTime, setEditTime] = useState("");
-  const [savingEdit, setSavingEdit] = useState(false);
-
-  async function handleAddActivity() {
-    if (!newTitle.trim()) return;
-    setSavingActivity(true);
-    try {
-      const res = await fetch(`/api/trips/${tripId}/activities`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newTitle.trim(),
-          activityDate: dateStr,
-          ...(newTime && { activityTime: newTime }),
-        }),
-      });
-      if (res.ok) {
-        setNewTitle("");
-        setNewTime("");
-        setAddingActivity(false);
-        onGroupChange();
-      }
-    } finally {
-      setSavingActivity(false);
-    }
-  }
-
-  function startEdit(a: CalendarActivity) {
-    setEditingId(a.id);
-    setEditTitle(a.title);
-    setEditTime(a.activityTime ?? "");
-  }
-
-  async function handleSaveEdit(id: string) {
-    if (!editTitle.trim()) return;
-    setSavingEdit(true);
-    try {
-      const body: Record<string, string> = { title: editTitle.trim() };
-      if (editTime) body.activityTime = editTime;
-      const res = await fetch(`/api/trips/${tripId}/activities/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) {
-        setEditingId(null);
-        onGroupChange();
-      }
-    } finally {
-      setSavingEdit(false);
-    }
-  }
 
   async function handleAddPersonal() {
     if (!personalTitle.trim()) return;
@@ -492,106 +434,74 @@ function DayDetailModal({
                       : "border-[#27272a] bg-[#18191c]/60 hover:bg-[#18191c]"
                   }`}
                 >
-                  {editingId === item.a.id ? (
-                    <div className="flex flex-col gap-2">
-                      <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Editando</p>
-                      <input
-                        autoFocus
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSaveEdit(item.a.id)}
-                        placeholder="Título"
-                        className="w-full rounded-lg border border-[#27272a] bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-zinc-500"
-                      />
-                      <input
-                        type="time"
-                        value={editTime}
-                        onChange={(e) => setEditTime(e.target.value)}
-                        className="w-32 rounded-lg border border-[#27272a] bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleSaveEdit(item.a.id)}
-                          disabled={savingEdit || !editTitle.trim()}
-                          className="rounded-lg bg-zinc-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-zinc-600 disabled:opacity-50"
-                        >
-                          {savingEdit ? "Guardando…" : "Guardar"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingId(null)}
-                          className="rounded-lg px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:bg-[#27272a] hover:text-zinc-300"
-                        >
-                          Cancelar
-                        </button>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        {item.a.activityTime && (
+                          <span className="shrink-0 rounded-md bg-[#27272a] px-2 py-0.5 text-xs font-bold tabular-nums text-zinc-300">
+                            {item.a.activityTime}
+                          </span>
+                        )}
+                        {item.a.isDraft ? (
+                          <span className="rounded-md border border-dashed border-indigo-500/50 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-400">
+                            Borrador
+                          </span>
+                        ) : (
+                          <span className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getActivityPillClass(item.a.title)}`}>
+                            {item.a.title.toLowerCase().includes("vuelo") || item.a.title.includes("->") ? "Vuelo" : "Actividad"}
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                          {item.a.activityTime && (
-                            <span className="shrink-0 rounded-md bg-[#27272a] px-2 py-0.5 text-xs font-bold tabular-nums text-zinc-300">
-                              {item.a.activityTime}
-                            </span>
-                          )}
-                          {item.a.isDraft ? (
-                            <span className="rounded-md border border-dashed border-indigo-500/50 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-400">
-                              Borrador
-                            </span>
-                          ) : (
-                            <span className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getActivityPillClass(item.a.title)}`}>
-                              {item.a.title.toLowerCase().includes("vuelo") || item.a.title.includes("->") ? "Vuelo" : "Actividad"}
-                            </span>
-                          )}
+                      <h3 className="font-semibold text-zinc-100">{item.a.title}</h3>
+                      {item.a.description && (
+                        <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{item.a.description}</p>
+                      )}
+                      {item.a.location && (
+                        <p className="mt-2 flex items-center gap-1.5 text-sm text-zinc-500">
+                          <span className="text-red-400">📍</span> {item.a.location}
+                        </p>
+                      )}
+                      {item.a.notes && (
+                        <p className="mt-1.5 text-xs italic text-zinc-600">{item.a.notes}</p>
+                      )}
+                      {item.a.isDraft && isAdmin && (
+                        <div className="mt-3">
+                          <DraftActivityActions tripId={tripId} activityId={item.a.id} />
                         </div>
-                        <h3 className="font-semibold text-zinc-100">{item.a.title}</h3>
-                        {item.a.description && (
-                          <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{item.a.description}</p>
-                        )}
-                        {item.a.location && (
-                          <p className="mt-2 flex items-center gap-1.5 text-sm text-zinc-500">
-                            <span className="text-red-400">📍</span> {item.a.location}
-                          </p>
-                        )}
-                        {item.a.notes && (
-                          <p className="mt-1.5 text-xs italic text-zinc-600">{item.a.notes}</p>
-                        )}
-                        {item.a.isDraft && isAdmin && (
-                          <div className="mt-3">
-                            <DraftActivityActions tripId={tripId} activityId={item.a.id} />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex shrink-0 flex-col items-end gap-2">
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => startEdit(item.a)}
-                            className="rounded p-1 text-zinc-600 transition-colors hover:bg-[#27272a] hover:text-zinc-300"
-                            title="Editar"
-                          >
-                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                        )}
-                        {(item.a.photoUrl ?? item.a.itemImageUrl) && (
-                          <div className="h-16 w-16 overflow-hidden rounded-xl border border-[#27272a]">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={item.a.photoUrl ?? item.a.itemImageUrl!}
-                              alt={item.a.title}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  )}
+
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      {canEdit && (
+                        <EditActivityForm
+                          tripId={tripId}
+                          activity={{
+                            id: item.a.id,
+                            title: item.a.title,
+                            description: item.a.description,
+                            location: item.a.location,
+                            locationLat: item.a.locationLat,
+                            locationLng: item.a.locationLng,
+                            activityDate: item.a.activityDate,
+                            activityTime: item.a.activityTime,
+                            notes: item.a.notes,
+                            photoUrl: item.a.photoUrl,
+                          }}
+                          overlayZIndex="z-[100]"
+                        />
+                      )}
+                      {(item.a.photoUrl ?? item.a.itemImageUrl) && (
+                        <div className="h-16 w-16 overflow-hidden rounded-xl border border-[#27272a]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.a.photoUrl ?? item.a.itemImageUrl!}
+                            alt={item.a.title}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )
             )
@@ -601,52 +511,13 @@ function DayDetailModal({
         {/* Add group activity */}
         {canEdit && (
           <div className="border-t border-[#27272a] px-5 py-4">
-            {addingActivity ? (
-              <div className="flex flex-col gap-2 rounded-xl border border-[#27272a] bg-[#18191c]/60 p-3">
-                <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Nueva actividad</p>
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Título de la actividad"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAddActivity()}
-                  className="w-full rounded-lg border border-[#27272a] bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-zinc-500"
-                />
-                <input
-                  type="time"
-                  value={newTime}
-                  onChange={(e) => setNewTime(e.target.value)}
-                  className="w-32 rounded-lg border border-[#27272a] bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                />
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleAddActivity}
-                    disabled={savingActivity || !newTitle.trim()}
-                    className="rounded-lg bg-zinc-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-zinc-600 disabled:opacity-50"
-                  >
-                    {savingActivity ? "Guardando…" : "Guardar"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setAddingActivity(false); setNewTitle(""); setNewTime(""); }}
-                    className="rounded-lg px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:bg-[#27272a] hover:text-zinc-300"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAddingActivity(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-700 bg-transparent px-3 py-1.5 text-xs font-medium text-zinc-500 transition-colors hover:border-zinc-500 hover:text-zinc-300"
-              >
-                <span className="text-sm font-light leading-none">+</span>
-                Agregar actividad
-              </button>
-            )}
+            <CreateActivityForm
+              tripId={tripId}
+              defaultDate={dateStr}
+              isAdmin={isAdmin}
+              compact
+              overlayZIndex="z-[100]"
+            />
           </div>
         )}
       </div>
@@ -678,7 +549,6 @@ export function ItineraryCalendar({
   isAdmin: boolean;
   canEdit: boolean;
 }) {
-  const router = useRouter();
   const exportRef = useRef<HTMLDivElement>(null);
   const initialStr = startDate ?? todayStr();
   const [year, setYear] = useState(parseInt(initialStr.slice(0, 4)));
@@ -1085,7 +955,6 @@ export function ItineraryCalendar({
           isAdmin={isAdmin}
           canEdit={canEdit}
           onPersonalChange={fetchPersonalActs}
-          onGroupChange={() => router.refresh()}
         />
       )}
     </>
