@@ -350,11 +350,37 @@ export default async function TripPage({
               <div className="mt-5">
                 <div className="mb-5 flex items-center justify-between gap-3">
                   <ItineraryViewToggle tripId={tripId} view={view} />
-                  {canEdit && view !== "calendar" && (
-                    <div className="hidden md:block">
-                      <CreateActivityForm tripId={tripId} tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined} />
+                  <div className="flex items-center gap-2">
+                    <div className="hidden md:flex items-center gap-1.5">
+                      {isAdmin && (
+                        <Link
+                          href={`/trips/${tripId}/print?drafts=1`}
+                          target="_blank"
+                          className="flex items-center gap-1.5 rounded-lg border border-indigo-200 px-3 py-1.5 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-50 dark:border-indigo-900/60 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          PDF + borradores
+                        </Link>
+                      )}
+                      <Link
+                        href={`/trips/${tripId}/print`}
+                        target="_blank"
+                        className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        PDF
+                      </Link>
                     </div>
-                  )}
+                    {canEdit && view !== "calendar" && (
+                      <div className="hidden md:block">
+                        <CreateActivityForm tripId={tripId} isAdmin={isAdmin} tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined} />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div id="tutorial-activity-list">
                   {view === "calendar" ? (

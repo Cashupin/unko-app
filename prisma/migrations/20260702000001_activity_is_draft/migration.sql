@@ -1,0 +1,1 @@
+ALTER TABLE "Activity" ADD COLUMN "isDraft" BOOLEAN NOT NULL DEFAULT false;

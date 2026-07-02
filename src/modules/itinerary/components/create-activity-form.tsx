@@ -12,23 +12,27 @@ export function CreateActivityForm({
   tripId,
   defaultDate,
   tripStartDate,
+  isAdmin = false,
   compact = false,
 }: {
   tripId: string;
   defaultDate?: string;
   tripStartDate?: string;
+  isAdmin?: boolean;
   compact?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [isDraft, setIsDraft] = useState(false);
   const [createProposal, setCreateProposal] = useState(false);
   const [proposalType, setProposalType] = useState<"PLACE" | "FOOD" | "ACTIVITY">("PLACE");
 
   function openModal() {
     setPhotoUrl(null);
     setCreateProposal(false);
+    setIsDraft(false);
     setOpen(true);
   }
 
@@ -43,7 +47,7 @@ export function CreateActivityForm({
 
     const fd = new FormData(e.currentTarget);
 
-    const body: Record<string, string | number | null | undefined> = {
+    const body: Record<string, string | number | boolean | null | undefined> = {
       title: (fd.get("title") as string).trim(),
     };
 
@@ -65,6 +69,7 @@ export function CreateActivityForm({
     if (activityTime) body.activityTime = activityTime;
     if (notes) body.notes = notes;
     if (photoUrl) body.photoUrl = photoUrl;
+    if (isDraft) body.isDraft = true;
 
     try {
       const res = await fetch(`/api/trips/${tripId}/activities`, {
@@ -289,8 +294,33 @@ export function CreateActivityForm({
                 )}
               </div>
 
-              {/* Crear también como propuesta */}
-              <div className="rounded-xl border border-zinc-100 px-3 py-2.5 dark:border-zinc-700">
+              {/* Agregar como borrador — solo ADMIN */}
+              {isAdmin && (
+                <div className="rounded-xl border border-dashed border-indigo-500/30 bg-indigo-950/10 px-3 py-2.5">
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isDraft}
+                      onChange={(e) => {
+                        setIsDraft(e.target.checked);
+                        if (e.target.checked) setCreateProposal(false);
+                      }}
+                      className="rounded accent-indigo-500"
+                    />
+                    <div>
+                      <span className="text-xs font-medium text-indigo-300">
+                        Agregar como borrador
+                      </span>
+                      <p className="text-[10px] text-indigo-400/60 mt-0.5">
+                        Solo tú la verás hasta que la confirmes
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {/* Crear también como propuesta — incompatible con borrador */}
+              {!isDraft && <div className="rounded-xl border border-zinc-100 px-3 py-2.5 dark:border-zinc-700">
                 <label className="flex items-center gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
@@ -320,7 +350,7 @@ export function CreateActivityForm({
                     ))}
                   </div>
                 )}
-              </div>
+              </div>}
 
               <div className="flex justify-end gap-2 pt-1">
                 <button

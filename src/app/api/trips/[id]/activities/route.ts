@@ -22,6 +22,7 @@ const createActivitySchema = z.object({
   notes: z.string().trim().max(1000).optional(),
   photoUrl: z.string().url().optional().or(z.literal("")).or(z.null()),
   itemId: z.string().cuid().optional(),
+  isDraft: z.boolean().optional(),
 });
 
 // ─── GET /api/trips/[id]/activities ───────────────────────────────────────────
@@ -78,7 +79,9 @@ export async function POST(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  let { title, description, location, locationLat, locationLng, activityDate, activityTime, notes, photoUrl, itemId } = result.data;
+  let { title, description, location, locationLat, locationLng, activityDate, activityTime, notes, photoUrl, itemId, isDraft } = result.data;
+  // Only ADMIN can create drafts
+  if (isDraft && membership.role !== "ADMIN") isDraft = false;
 
   // If created from an Item, inherit its data as defaults
   if (itemId) {
@@ -108,6 +111,7 @@ export async function POST(
       notes: notes ?? null,
       photoUrl: photoUrl || null,
       itemId: itemId ?? null,
+      isDraft: isDraft ?? false,
     },
     select: {
       id: true, title: true, description: true, location: true, locationLat: true, locationLng: true,

@@ -330,6 +330,7 @@ model Activity {
   activityTime String?
   notes        String?
   photoUrl     String?
+  isDraft      Boolean   @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

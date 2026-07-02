@@ -65,6 +65,7 @@ type ActivityRow = {
   id: string; title: string; activityDate: string | null;
   activityTime: string | null; location: string | null;
   description: string | null; notes: string | null;
+  isDraft: boolean;
 };
 
 type TransportRow = {
@@ -210,11 +211,13 @@ function PrintCalendarMonth({
                         <div
                           key={item.a.id}
                           className="mb-0.5 truncate rounded px-1 text-[9px]"
-                          style={isFlightActivity(item.a.title)
+                          style={item.a.isDraft
+                            ? { background: "#eef2ff", color: "#4338ca", border: "1px dashed #a5b4fc" }
+                            : isFlightActivity(item.a.title)
                             ? { background: "#e0e7ff", color: "#4338ca" }
                             : { background: "#dcfce7", color: "#15803d" }}
                         >
-                          {item.a.title}
+                          {item.a.isDraft ? `~ ${item.a.title}` : item.a.title}
                         </div>
                       )
                     )}
@@ -239,13 +242,16 @@ function PrintCalendarMonth({
 
 export default async function PrintPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ tripId: string }>;
+  searchParams: Promise<{ drafts?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
   const { tripId } = await params;
+  const { drafts } = await searchParams;
 
   const [trip, myParticipant] = await Promise.all([
     prisma.trip.findUnique({
@@ -254,12 +260,15 @@ export default async function PrintPage({
     }),
     prisma.tripParticipant.findFirst({
       where: { tripId, userId: session.user.id },
-      select: { id: true },
+      select: { id: true, role: true },
     }),
   ]);
 
   if (!trip) notFound();
   if (!myParticipant) redirect("/");
+
+  const isAdmin = myParticipant.role === "ADMIN";
+  const includeDrafts = drafts === "1" && isAdmin;
 
   const [rawHotels, rawActivities, rawTransports, rawPasses] = await Promise.all([
     prisma.hotel.findMany({
@@ -273,10 +282,11 @@ export default async function PrintPage({
       orderBy: { checkInDate: "asc" },
     }),
     prisma.activity.findMany({
-      where: { tripId },
+      where: { tripId, ...(!includeDrafts && { isDraft: false }) },
       select: {
         id: true, title: true, activityDate: true,
         activityTime: true, location: true, description: true, notes: true,
+        isDraft: true,
       },
       orderBy: [{ activityDate: "asc" }, { activityTime: "asc" }],
     }),
@@ -311,6 +321,7 @@ export default async function PrintPage({
   const activities: ActivityRow[] = rawActivities.map((a) => ({
     ...a,
     activityDate: a.activityDate ? toStr(a.activityDate) : null,
+    isDraft: a.isDraft,
   }));
 
   const transports: TransportRow[] = rawTransports.map((t) => ({
@@ -378,6 +389,13 @@ export default async function PrintPage({
       <PrintButton />
 
       <div className="mx-auto max-w-4xl bg-white px-8 py-10 text-zinc-900 print:p-0">
+
+        {/* Draft banner */}
+        {includeDrafts && (
+          <div className="mb-6 rounded-xl border border-dashed border-indigo-300 bg-indigo-50 px-4 py-3 text-sm text-indigo-700 print:border-indigo-200">
+            Este PDF incluye actividades en borrador (solo visible para administradores).
+          </div>
+        )}
 
         {/* Header */}
         <div className="mb-8 border-b border-zinc-200 pb-6">
@@ -644,11 +662,16 @@ export default async function PrintPage({
                             </div>
                             )
                           ) : (
-                            <div key={item.a.id} className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+                            <div key={item.a.id} className={`rounded-lg border p-3 ${item.a.isDraft ? "border-dashed border-indigo-200 bg-indigo-50/50" : "border-zinc-100 bg-zinc-50"}`}>
                               <div className="flex items-center gap-2">
                                 {item.a.activityTime && (
                                   <span className="shrink-0 rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-bold text-zinc-600 tabular-nums">
                                     {item.a.activityTime}
+                                  </span>
+                                )}
+                                {item.a.isDraft && (
+                                  <span className="rounded border border-dashed border-indigo-300 bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-600">
+                                    Borrador
                                   </span>
                                 )}
                                 <p className="font-semibold text-zinc-800">{item.a.title}</p>

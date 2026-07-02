@@ -8,6 +8,7 @@ import { PhotoThumbnail } from "@/components/ui/photo-thumbnail";
 import { getMapsUrl } from "@/lib/maps-url";
 import { PastDaysCollapsible } from "@/modules/itinerary/components/past-days-collapsible";
 import { CreateItemFromActivityButton } from "@/modules/proposals/components/create-item-from-activity-button";
+import { DraftActivityActions } from "@/modules/itinerary/components/draft-activity-actions";
 import {
   PersonalModeProvider,
   PersonalModeToggle,
@@ -79,6 +80,7 @@ type Activity = {
   activityTime: string | null;
   notes: string | null;
   photoUrl: string | null;
+  isDraft: boolean;
   createdAt: Date;
   item: {
     id: string;
@@ -146,9 +148,17 @@ export async function ActivityList({
   const today = todayDateStr();
   const tripStartYMD = startDate ? toDateStr(new Date(startDate)) : undefined;
 
+  const membership = userId
+    ? await prisma.tripParticipant.findFirst({
+        where: { tripId, userId },
+        select: { role: true },
+      })
+    : null;
+  const isAdmin = membership?.role === "ADMIN";
+
   const [activities, hotels, participants, personalActivities, transports] = await Promise.all([
     prisma.activity.findMany({
-      where: { tripId },
+      where: { tripId, ...(!isAdmin && { isDraft: false }) },
       select: {
         id: true,
         title: true,
@@ -160,6 +170,7 @@ export async function ActivityList({
         activityTime: true,
         notes: true,
         photoUrl: true,
+        isDraft: true,
         createdAt: true,
         item: {
           select: {
@@ -299,6 +310,7 @@ export async function ActivityList({
             transports={transportsByDate.get(dateStr) ?? []}
             tripId={tripId}
             canEdit={canEdit}
+            isAdmin={isAdmin}
             isToday={false}
             isPast={true}
             participants={participants}
@@ -318,6 +330,7 @@ export async function ActivityList({
             transports={transportsByDate.get(dateStr) ?? []}
             tripId={tripId}
             canEdit={canEdit}
+            isAdmin={isAdmin}
             isToday={dateStr === today}
             isPast={false}
             participants={participants}
@@ -345,6 +358,7 @@ export async function ActivityList({
                 act={act}
                 tripId={tripId}
                 canEdit={canEdit}
+                isAdmin={isAdmin}
                 participants={participants}
                 tripStartDate={tripStartYMD}
               />
@@ -366,6 +380,7 @@ function DayCard({
   transports,
   tripId,
   canEdit,
+  isAdmin,
   isToday,
   isPast,
   participants,
@@ -378,6 +393,7 @@ function DayCard({
   transports: TransportForItinerary[];
   tripId: string;
   canEdit: boolean;
+  isAdmin: boolean;
   isToday: boolean;
   isPast: boolean;
   participants: Participant[];
@@ -486,7 +502,7 @@ function DayCard({
             </div>
           )}
           {canEdit && (
-            <CreateActivityForm tripId={tripId} defaultDate={dateStr} tripStartDate={tripStartDate} compact />
+            <CreateActivityForm tripId={tripId} defaultDate={dateStr} tripStartDate={tripStartDate} isAdmin={isAdmin} compact />
           )}
         </div>
       </div>
@@ -508,6 +524,7 @@ function DayCard({
                 act={entry.item}
                 tripId={tripId}
                 canEdit={canEdit}
+                isAdmin={isAdmin}
                 participants={participants}
                 tripStartDate={tripStartDate}
               />
@@ -528,12 +545,14 @@ function ActivityRow({
   act,
   tripId,
   canEdit,
+  isAdmin,
   participants,
   tripStartDate,
 }: {
   act: Activity;
   tripId: string;
   canEdit: boolean;
+  isAdmin: boolean;
   participants: Participant[];
   tripStartDate?: string;
 }) {
@@ -554,7 +573,11 @@ function ActivityRow({
   const showCheckins = !!act.item && participants.length > 0;
 
   return (
-    <div className="group flex items-start gap-3 bg-[#1f2023] rounded-xl px-4 py-3.5 border border-transparent hover:border-[#3f3f46] transition-colors">
+    <div className={`group flex items-start gap-3 rounded-xl px-4 py-3.5 border border-dashed transition-colors ${
+      act.isDraft
+        ? "bg-indigo-950/20 border-indigo-500/25 hover:border-indigo-500/45"
+        : "bg-[#1f2023] border-transparent hover:border-[#3f3f46]"
+    }`}>
       {/* Time badge */}
       <div className="w-12 shrink-0 pt-0.5">
         {act.activityTime && (
@@ -568,9 +591,16 @@ function ActivityRow({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-zinc-100 text-sm leading-snug">
-          {act.title}
-        </p>
+        <div className="flex flex-wrap items-center gap-2 mb-0.5">
+          <p className="font-semibold text-zinc-100 text-sm leading-snug">
+            {act.title}
+          </p>
+          {act.isDraft && (
+            <span className="inline-flex items-center rounded-full border border-dashed border-indigo-500/50 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-400">
+              Borrador
+            </span>
+          )}
+        </div>
 
         {act.item ? (
           <a
@@ -638,19 +668,26 @@ function ActivityRow({
           )}
         </div>
 
+        {/* Draft approve/discard actions — only visible to ADMIN */}
+        {act.isDraft && isAdmin && (
+          <div className="mt-2">
+            <DraftActivityActions tripId={tripId} activityId={act.id} />
+          </div>
+        )}
+
         {/* Check-in row — only for activities linked to a proposal */}
-        {showCheckins && (
+        {!act.isDraft && showCheckins && (
           <CheckinRow participants={participants} checkedUserIds={checkedUserIds} />
         )}
       </div>
 
-      {/* Right: photo + actions */}
+      {/* Right: photo + actions (DeleteButton hidden for drafts — Descartar covers it) */}
       {act.photoUrl ? (
         <div className="flex shrink-0 flex-col items-center gap-1.5 self-start pt-0.5">
           {canEdit && (
             <div className="flex items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <EditActivityForm tripId={tripId} activity={activityForEdit} tripStartDate={tripStartDate} />
-              <DeleteActivityButton tripId={tripId} activityId={act.id} />
+              {!act.isDraft && <DeleteActivityButton tripId={tripId} activityId={act.id} />}
             </div>
           )}
           <PhotoThumbnail url={act.photoUrl} alt={act.title} />
@@ -660,7 +697,7 @@ function ActivityRow({
           {canEdit && (
             <div className="flex items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <EditActivityForm tripId={tripId} activity={activityForEdit} tripStartDate={tripStartDate} />
-              <DeleteActivityButton tripId={tripId} activityId={act.id} />
+              {!act.isDraft && <DeleteActivityButton tripId={tripId} activityId={act.id} />}
             </div>
           )}
           <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-[#27272a]">
@@ -670,7 +707,7 @@ function ActivityRow({
       ) : canEdit ? (
         <div className="flex shrink-0 items-center gap-1 self-start pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <EditActivityForm tripId={tripId} activity={activityForEdit} />
-          <DeleteActivityButton tripId={tripId} activityId={act.id} />
+          {!act.isDraft && <DeleteActivityButton tripId={tripId} activityId={act.id} />}
         </div>
       ) : null}
     </div>

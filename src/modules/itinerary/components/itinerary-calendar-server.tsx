@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ItineraryCalendar } from "@/modules/itinerary/components/itinerary-calendar";
 
@@ -10,9 +11,20 @@ export async function ItineraryCalendarServer({
   startDate: Date | null;
   endDate: Date | null;
 }) {
+  const session = await auth();
+  const userId = session?.user?.id ?? null;
+  const membership = userId
+    ? await prisma.tripParticipant.findFirst({
+        where: { tripId, userId },
+        select: { role: true },
+      })
+    : null;
+  const isAdmin = membership?.role === "ADMIN";
+  const canEdit = membership?.role === "ADMIN" || membership?.role === "EDITOR";
+
   const [activities, hotels, transports] = await Promise.all([
     prisma.activity.findMany({
-      where: { tripId, activityDate: { not: null } },
+      where: { tripId, activityDate: { not: null }, ...(!isAdmin && { isDraft: false }) },
       select: {
         id: true,
         title: true,
@@ -22,6 +34,7 @@ export async function ItineraryCalendarServer({
         location: true,
         notes: true,
         photoUrl: true,
+        isDraft: true,
         item: { select: { imageUrl: true } },
       },
       orderBy: [{ activityDate: "asc" }, { activityTime: "asc" }],
@@ -46,6 +59,8 @@ export async function ItineraryCalendarServer({
 
   return (
     <ItineraryCalendar
+      isAdmin={isAdmin}
+      canEdit={canEdit}
       activities={activities.map((a) => ({
         id: a.id,
         title: a.title,
@@ -55,6 +70,7 @@ export async function ItineraryCalendarServer({
         location: a.location,
         notes: a.notes,
         photoUrl: a.photoUrl,
+        isDraft: a.isDraft,
         itemImageUrl: a.item?.imageUrl ?? null,
       }))}
       hotels={hotels.map((h) => ({

@@ -47,10 +47,15 @@ export async function PATCH(
     notes?: string;
     photoUrl?: string | null;
     itemId?: string | null;
+    isDraft?: boolean;
   };
 
   if (body.title !== undefined && !body.title.trim()) {
     return NextResponse.json({ error: "El título es requerido" }, { status: 400 });
+  }
+
+  if (body.isDraft !== undefined && membership.role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo el administrador puede cambiar el estado borrador" }, { status: 403 });
   }
 
   // Delete old photo from Cloudinary if being replaced
@@ -81,6 +86,7 @@ export async function PATCH(
       }),
       ...(body.photoUrl !== undefined && { photoUrl: body.photoUrl ?? null }),
       ...(body.itemId !== undefined && { itemId: body.itemId ?? null }),
+      ...(body.isDraft !== undefined && { isDraft: body.isDraft }),
     },
   });
 
