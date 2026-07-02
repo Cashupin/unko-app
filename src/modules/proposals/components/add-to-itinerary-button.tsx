@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ export function AddToItineraryButton({
   tripStartDate,
   tripEndDate,
   inItinerary = false,
+  isAdmin = false,
 }: {
   tripId: string;
   itemId: string;
@@ -26,13 +27,19 @@ export function AddToItineraryButton({
   tripStartDate?: Date | null;
   tripEndDate?: Date | null;
   inItinerary?: boolean;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [isDraft, setIsDraft] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(inItinerary);
+
+  useEffect(() => {
+    setDone(inItinerary);
+  }, [inItinerary]);
 
   const minDate = toDateInput(tripStartDate);
   const maxDate = toDateInput(tripEndDate);
@@ -40,9 +47,10 @@ export function AddToItineraryButton({
   async function handleSubmit() {
     setLoading(true);
     try {
-      const body: Record<string, string> = { title, itemId };
+      const body: Record<string, string | boolean> = { title, itemId };
       if (date) body.activityDate = new Date(date).toISOString();
       if (time) body.activityTime = time;
+      if (isDraft) body.isDraft = true;
 
       const res = await fetch(`/api/trips/${tripId}/activities`, {
         method: "POST",
@@ -135,6 +143,27 @@ export function AddToItineraryButton({
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
                 />
               </div>
+
+              {isAdmin && (
+                <div className="rounded-xl border border-dashed border-indigo-500/30 bg-indigo-950/10 px-3 py-2.5">
+                  <label className="flex cursor-pointer items-center gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={isDraft}
+                      onChange={(e) => setIsDraft(e.target.checked)}
+                      className="rounded accent-indigo-500"
+                    />
+                    <div>
+                      <span className="text-xs font-medium text-indigo-300">
+                        Agregar como borrador
+                      </span>
+                      <p className="mt-0.5 text-[10px] text-indigo-400/60">
+                        Solo tú la verás hasta que la confirmes
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-1">
                 <button

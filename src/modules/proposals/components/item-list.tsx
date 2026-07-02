@@ -91,7 +91,7 @@ export async function ItemList({
           },
           orderBy: { createdAt: "asc" },
         },
-        activities: { select: { id: true }, take: 1 },
+        activities: { select: { id: true, isDraft: true }, take: 10 },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -162,7 +162,9 @@ export async function ItemList({
         ? { id: myRawCheck.id, photoUrl: myRawCheck.photoUrl, userName: myRawCheck.user?.name ?? null }
         : null,
       checks: raw.checks.map(({ id, photoUrl, user }) => ({ id, photoUrl, userName: user?.name ?? null })),
-      inItinerary: raw.activities.length > 0,
+      inItinerary: isAdmin
+        ? raw.activities.length > 0
+        : raw.activities.some((a) => !a.isDraft),
     };
 
     return {
@@ -209,7 +211,9 @@ export async function ItemList({
       isAdmin,
       currentUserId,
       participants: tripParticipants.map((p) => ({ id: p.userId!, name: p.name })),
-      inItinerary: raw.activities.length > 0,
+      inItinerary: isAdmin
+        ? raw.activities.length > 0
+        : raw.activities.some((a) => !a.isDraft),
       canAddToItinerary: isAdmin || hasMajority,
       tripStartDate: tripStartDate ? tripStartDate.toISOString() : null,
       tripEndDate: tripEndDate ? tripEndDate.toISOString() : null,

@@ -446,6 +446,7 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
                       tripStartDate={item.tripStartDate ? new Date(item.tripStartDate) : null}
                       tripEndDate={item.tripEndDate ? new Date(item.tripEndDate) : null}
                       inItinerary={item.inItinerary}
+                      isAdmin={item.isAdmin}
                     />
                   )}
                 </div>
