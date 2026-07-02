@@ -50,10 +50,10 @@ export function AddToItineraryButton({
   async function handleSubmit() {
     setLoading(true);
     try {
-      const body: Record<string, string | boolean> = { title, itemId };
+      const body: Record<string, string | boolean | null> = { title, itemId };
       if (date) body.activityDate = new Date(date).toISOString();
       if (time) body.activityTime = time;
-      if (includeDescription && description) body.description = description;
+      if (description) body.description = includeDescription ? description : null;
       if (isDraft) body.isDraft = true;
 
       const res = await fetch(`/api/trips/${tripId}/activities`, {

@@ -13,7 +13,7 @@ async function requireMember(tripId: string, userId: string) {
 
 const createActivitySchema = z.object({
   title: z.string().trim().min(1).max(200),
-  description: z.string().trim().max(1000).optional(),
+  description: z.string().trim().max(1000).optional().nullable(),
   location: z.string().trim().max(500).optional(),
   locationLat: z.number().min(-90).max(90).optional().nullable(),
   locationLng: z.number().min(-180).max(180).optional().nullable(),
@@ -79,7 +79,11 @@ export async function POST(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  let { title, description, location, locationLat, locationLng, activityDate, activityTime, notes, photoUrl, itemId, isDraft } = result.data;
+  let { title, location, locationLat, locationLng, activityDate, activityTime, notes, photoUrl, itemId, isDraft } = result.data;
+  // undefined = not sent (inherit from item), null = explicitly excluded, string = provided
+  const descriptionFromBody = result.data.description;
+  let description: string | undefined = typeof descriptionFromBody === "string" ? descriptionFromBody : undefined;
+
   // Only ADMIN can create drafts
   if (isDraft && membership.role !== "ADMIN") isDraft = false;
 
@@ -93,7 +97,7 @@ export async function POST(
       return NextResponse.json({ error: "Item no encontrado" }, { status: 404 });
     }
     if (!title || title === item.title) title = item.title;
-    if (!description) description = item.description ?? undefined;
+    if (descriptionFromBody === undefined && !description) description = item.description ?? undefined;
     if (!location) { location = item.location ?? undefined; locationLat = item.locationLat ?? undefined; locationLng = item.locationLng ?? undefined; }
     if (!photoUrl) photoUrl = item.imageUrl ?? undefined;
   }
