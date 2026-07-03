@@ -224,13 +224,15 @@ function DayDetailModal({
     }
   }
 
-  // Merge transports + activities sorted by time for chronological rendering
+  // Merge transports + activities + personal activities sorted by time
   type ModalItem =
     | { kind: "transport"; t: CalendarTransport; time: string }
-    | { kind: "activity"; a: CalendarActivity; time: string };
+    | { kind: "activity"; a: CalendarActivity; time: string }
+    | { kind: "personal"; pa: PersonalActivity; time: string };
   const mergedItems: ModalItem[] = [
     ...transports.map((t) => ({ kind: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
     ...activities.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "" })),
+    ...(personalMode ? personalActivities.map((pa) => ({ kind: "personal" as const, pa, time: pa.time ?? "" })) : []),
   ].sort((x, y) => x.time.localeCompare(y.time));
 
   const content = (
@@ -286,13 +288,11 @@ function DayDetailModal({
           </div>
         </div>
 
-        {/* Mi plan personal */}
+        {/* Mi plan — solo botón + añadir (items van en el list cronológico) */}
         {personalMode && (
-          <div className="border-t border-[#27272a] px-5 py-4">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-widest text-violet-400">
-                🔒 Mi plan
-              </p>
+          <div className="border-t border-[#27272a] px-5 py-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-widest text-violet-400">🔒 Mi plan</p>
               {!addingPersonal && (
                 <button
                   type="button"
@@ -303,48 +303,11 @@ function DayDetailModal({
                 </button>
               )}
             </div>
-
-            {/* Personal activities list */}
-            {personalActivities.length > 0 && (
-              <div className="mb-3 flex flex-col gap-2">
-                {personalActivities.map((pa) => (
-                  <div key={pa.id} className="flex items-center justify-between rounded-xl border border-violet-700/30 bg-violet-900/20 px-3 py-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        {pa.time && (
-                          <span className="shrink-0 rounded bg-violet-900/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-violet-300">
-                            {pa.time}
-                          </span>
-                        )}
-                        <span className="truncate text-sm font-medium text-violet-100">{pa.title}</span>
-                      </div>
-                      {pa.location && (
-                        <p className="mt-0.5 text-xs text-violet-400/70">📍 {pa.location}</p>
-                      )}
-                      {pa.notes && (
-                        <p className="mt-0.5 text-xs italic text-violet-400/60">{pa.notes}</p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeletePersonal(pa.id)}
-                      disabled={deletingId === pa.id}
-                      className="ml-2 shrink-0 rounded p-1 text-violet-500 transition-colors hover:bg-violet-900/40 hover:text-violet-300 disabled:opacity-40"
-                    >
-                      {deletingId === pa.id ? "…" : "✕"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {personalActivities.length === 0 && !addingPersonal && (
-              <p className="text-xs text-violet-400/60">Sin plan personal para este día.</p>
+              <p className="mt-1.5 text-xs text-violet-400/60">Sin plan personal para este día.</p>
             )}
-
-            {/* Add form */}
             {addingPersonal && (
-              <div className="flex flex-col gap-2 rounded-xl border border-violet-700/40 bg-violet-900/20 p-3">
+              <div className="mt-3 flex flex-col gap-2 rounded-xl border border-violet-700/40 bg-violet-900/20 p-3">
                 <input
                   autoFocus
                   type="text"
@@ -390,7 +353,42 @@ function DayDetailModal({
             </div>
           ) : (
             mergedItems.map((item) =>
-              item.kind === "transport" ? (
+              item.kind === "personal" ? (
+                <div
+                  key={item.pa.id}
+                  className="flex items-start justify-between gap-3 rounded-xl border border-dashed border-violet-700/30 bg-violet-950/30 p-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      {item.pa.time && (
+                        <span className="shrink-0 rounded-md bg-violet-900/50 px-2 py-0.5 text-xs font-bold tabular-nums text-violet-300">
+                          {item.pa.time}
+                        </span>
+                      )}
+                      <span className="rounded-md border border-violet-700/40 bg-violet-900/30 px-2 py-0.5 text-[10px] font-semibold text-violet-400">
+                        🔒 Solo yo
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-violet-100">{item.pa.title}</h3>
+                    {item.pa.location && (
+                      <p className="mt-2 flex items-center gap-1.5 text-sm text-violet-400/70">
+                        <span>📍</span> {item.pa.location}
+                      </p>
+                    )}
+                    {item.pa.notes && (
+                      <p className="mt-1.5 text-xs italic text-violet-400/50">{item.pa.notes}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeletePersonal(item.pa.id)}
+                    disabled={deletingId === item.pa.id}
+                    className="mt-0.5 shrink-0 rounded-lg p-1.5 text-violet-600 transition-colors hover:bg-violet-900/40 hover:text-violet-400 disabled:opacity-40"
+                  >
+                    {deletingId === item.pa.id ? "…" : "✕"}
+                  </button>
+                </div>
+              ) : item.kind === "transport" ? (
                 <div
                   key={item.t.isArrival ? `${item.t.id}-arr` : item.t.id}
                   className={`rounded-xl border p-3 ${item.t.isArrival ? "border-blue-900/30 bg-[#080f18] opacity-75" : "border-blue-900/50 bg-[#0d1b2e]"}`}
@@ -554,10 +552,7 @@ export function ItineraryCalendar({
   const [year, setYear] = useState(parseInt(initialStr.slice(0, 4)));
   const [month, setMonth] = useState(parseInt(initialStr.slice(5, 7)) - 1); // 0-indexed
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [personalMode, setPersonalMode] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("itinerary-personal-mode") === "true";
-  });
+  const [personalMode, setPersonalMode] = useState(false);
   const [personalActs, setPersonalActs] = useState<PersonalActivity[]>([]);
   const [loadingPersonal, setLoadingPersonal] = useState(false);
 
