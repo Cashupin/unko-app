@@ -13,6 +13,7 @@ import {
   PersonalModeProvider,
   PersonalModeToggle,
   PersonalActivitySection,
+  PersonalRowConditional,
 } from "@/modules/itinerary/components/personal-mode-provider";
 
 function toDateStr(d: Date): string {
@@ -404,21 +405,26 @@ function DayCard({
   const departureTransports = transports.filter((t) => !t.isArrival);
   const isEmpty = acts.length === 0 && transports.length === 0;
 
-  // Merge activities + transports sorted by time for rendering
-  // Arrival entries sort by arrivalTime; departure entries by departureTime
+  // Merge activities + transports + personal activities sorted by time
   type MergedItem =
     | { kind: "activity"; item: Activity }
-    | { kind: "transport"; item: TransportForItinerary };
+    | { kind: "transport"; item: TransportForItinerary }
+    | { kind: "personal"; item: PersonalActivityItem };
   const merged: MergedItem[] = [
     ...acts.map((a) => ({ kind: "activity" as const, item: a })),
     ...transports.map((t) => ({ kind: "transport" as const, item: t })),
+    ...personalActs.map((p) => ({ kind: "personal" as const, item: p })),
   ].sort((a, b) => {
     const timeA = a.kind === "activity"
       ? (a.item.activityTime ?? "")
-      : (a.item.isArrival ? (a.item.arrivalTime ?? "") : (a.item.departureTime ?? ""));
+      : a.kind === "transport"
+      ? (a.item.isArrival ? (a.item.arrivalTime ?? "") : (a.item.departureTime ?? ""))
+      : (a.item.time ?? "");
     const timeB = b.kind === "activity"
       ? (b.item.activityTime ?? "")
-      : (b.item.isArrival ? (b.item.arrivalTime ?? "") : (b.item.departureTime ?? ""));
+      : b.kind === "transport"
+      ? (b.item.isArrival ? (b.item.arrivalTime ?? "") : (b.item.departureTime ?? ""))
+      : (b.item.time ?? "");
     return timeA.localeCompare(timeB);
   });
 
@@ -528,11 +534,14 @@ function DayCard({
                 participants={participants}
                 tripStartDate={tripStartDate}
               />
-            ) : (
+            ) : entry.kind === "transport" ? (
               <TransportBlock key={entry.item.id} transport={entry.item} tripId={tripId} />
+            ) : (
+              <PersonalRowConditional key={entry.item.id} activity={entry.item} tripId={tripId} />
             )
           )}
-          <PersonalActivitySection activities={personalActs} tripId={tripId} date={dateStr} />
+          {/* Solo el formulario de agregar — los items ya están en la lista mezclada */}
+          <PersonalActivitySection activities={[]} tripId={tripId} date={dateStr} />
         </div>
       )}
     </div>

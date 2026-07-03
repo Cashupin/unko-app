@@ -163,6 +163,18 @@ function PersonalRow({
   );
 }
 
+export function PersonalRowConditional({
+  activity,
+  tripId,
+}: {
+  activity: PersonalActivityItem;
+  tripId: string;
+}) {
+  const { show } = useContext(PersonalModeContext);
+  if (!show) return null;
+  return <PersonalRow activity={activity} tripId={tripId} />;
+}
+
 export function PersonalActivitySection({
   activities,
   tripId,
