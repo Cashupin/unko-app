@@ -77,6 +77,11 @@ type TransportRow = {
   isArrival?: boolean;
 };
 
+type PersonalActivityRow = {
+  id: string; date: string; title: string;
+  time: string | null; location: string | null; notes: string | null;
+};
+
 type PassRow = {
   id: string; name: string;
   validFrom: string | null; validTo: string | null;
@@ -270,7 +275,7 @@ export default async function PrintPage({
   const isAdmin = myParticipant.role === "ADMIN";
   const includeDrafts = drafts === "1" && isAdmin;
 
-  const [rawHotels, rawActivities, rawTransports, rawPasses] = await Promise.all([
+  const [rawHotels, rawActivities, rawTransports, rawPasses, rawPersonal] = await Promise.all([
     prisma.hotel.findMany({
       where: { tripId },
       select: {
@@ -309,6 +314,11 @@ export default async function PrintPage({
       },
       orderBy: { validFrom: "asc" },
     }),
+    prisma.personalActivity.findMany({
+      where: { tripId, userId: session.user.id },
+      select: { id: true, date: true, title: true, time: true, location: true, notes: true },
+      orderBy: [{ date: "asc" }, { time: "asc" }],
+    }),
   ]);
 
   const hotels: HotelRow[] = rawHotels.map((h) => ({
@@ -330,6 +340,17 @@ export default async function PrintPage({
     arrivalDate: t.arrivalDate ? toStr(t.arrivalDate) : null,
     currency: t.currency as string,
   }));
+
+  const personalActivities: PersonalActivityRow[] = rawPersonal.map((p) => ({
+    ...p,
+    date: toStr(new Date(p.date)),
+  }));
+
+  const personalByDate = new Map<string, PersonalActivityRow[]>();
+  for (const p of personalActivities) {
+    if (!personalByDate.has(p.date)) personalByDate.set(p.date, []);
+    personalByDate.get(p.date)!.push(p);
+  }
 
   const passes: PassRow[] = rawPasses.map((p) => ({
     ...p,
@@ -603,13 +624,16 @@ export default async function PrintPage({
               {tripDays.map((ds, idx) => {
                 const dayActs = actsByDate.get(ds) ?? [];
                 const dayTrans = transportsByDate.get(ds) ?? [];
+                const dayPersonal = personalByDate.get(ds) ?? [];
                 const hotel = hotels.find((h) => h.checkInDate <= ds && ds <= h.checkOutDate);
                 type DayItem =
                   | { kind: "transport"; t: TransportRow; time: string }
-                  | { kind: "activity"; a: ActivityRow; time: string };
+                  | { kind: "activity"; a: ActivityRow; time: string }
+                  | { kind: "personal"; p: PersonalActivityRow; time: string };
                 const merged: DayItem[] = [
                   ...dayTrans.map((t) => ({ kind: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
                   ...dayActs.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "" })),
+                  ...dayPersonal.map((p) => ({ kind: "personal" as const, p, time: p.time ?? "" })),
                 ].sort((x, y) => x.time.localeCompare(y.time));
                 return (
                   <div key={ds} className="break-inside-avoid">
@@ -661,7 +685,7 @@ export default async function PrintPage({
                               {item.t.notes && <p className="mt-1 text-xs italic text-zinc-400">{item.t.notes}</p>}
                             </div>
                             )
-                          ) : (
+                          ) : item.kind === "activity" ? (
                             <div key={item.a.id} className={`rounded-lg border p-3 ${item.a.isDraft ? "border-dashed border-indigo-200 bg-indigo-50/50" : "border-zinc-100 bg-zinc-50"}`}>
                               <div className="flex items-center gap-2">
                                 {item.a.activityTime && (
@@ -679,6 +703,20 @@ export default async function PrintPage({
                               {item.a.location && <p className="mt-1 text-xs text-zinc-500">📍 {item.a.location}</p>}
                               {item.a.description && <p className="mt-1 text-sm text-zinc-600">{item.a.description}</p>}
                               {item.a.notes && <p className="mt-1 text-xs italic text-zinc-400">{item.a.notes}</p>}
+                            </div>
+                          ) : (
+                            <div key={item.p.id} className="rounded-lg border border-violet-200 bg-violet-50/60 p-3">
+                              <div className="flex items-center gap-2">
+                                {item.p.time && (
+                                  <span className="shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-xs font-bold text-violet-600 tabular-nums">
+                                    {item.p.time}
+                                  </span>
+                                )}
+                                <span className="rounded border border-violet-200 px-1.5 py-0.5 text-[10px] font-semibold text-violet-500">🔒 Solo yo</span>
+                                <p className="font-semibold text-violet-800">{item.p.title}</p>
+                              </div>
+                              {item.p.location && <p className="mt-1 text-xs text-violet-500">📍 {item.p.location}</p>}
+                              {item.p.notes && <p className="mt-1 text-xs italic text-violet-400">{item.p.notes}</p>}
                             </div>
                           )
                         )}

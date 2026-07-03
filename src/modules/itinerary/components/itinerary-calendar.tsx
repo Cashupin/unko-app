@@ -554,7 +554,10 @@ export function ItineraryCalendar({
   const [year, setYear] = useState(parseInt(initialStr.slice(0, 4)));
   const [month, setMonth] = useState(parseInt(initialStr.slice(5, 7)) - 1); // 0-indexed
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [personalMode, setPersonalMode] = useState(false);
+  const [personalMode, setPersonalMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("itinerary-personal-mode") === "true";
+  });
   const [personalActs, setPersonalActs] = useState<PersonalActivity[]>([]);
   const [loadingPersonal, setLoadingPersonal] = useState(false);
 
