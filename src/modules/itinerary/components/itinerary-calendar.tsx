@@ -233,9 +233,9 @@ function DayDetailModal({
     | { kind: "activity"; a: CalendarActivity; time: string }
     | { kind: "personal"; pa: PersonalActivity; time: string };
   const mergedItems: ModalItem[] = [
-    ...transports.map((t) => ({ kind: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
-    ...activities.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "" })),
-    ...(personalMode ? personalActivities.map((pa) => ({ kind: "personal" as const, pa, time: pa.time ?? "" })) : []),
+    ...transports.map((t) => ({ kind: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "99:99") : (t.departureTime ?? "99:99") })),
+    ...activities.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "99:99" })),
+    ...(personalMode ? personalActivities.map((pa) => ({ kind: "personal" as const, pa, time: pa.time ?? "99:99" })) : []),
   ].sort((x, y) => x.time.localeCompare(y.time));
 
   const content = (
@@ -850,8 +850,8 @@ export function ItineraryCalendar({
             const hasActs      = dayActs.length > 0 || myActs.length > 0 || dayTransports.length > 0;
             // Chronological order, capped to MAX_PILLS total
             const allItems: Array<{ type: "transport"; t: CalendarTransport; time: string } | { type: "activity"; a: CalendarActivity; time: string }> = [
-              ...dayTransports.map((t) => ({ type: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
-              ...dayActs.map((a) => ({ type: "activity" as const, a, time: a.activityTime ?? "" })),
+              ...dayTransports.map((t) => ({ type: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "99:99") : (t.departureTime ?? "99:99") })),
+              ...dayActs.map((a) => ({ type: "activity" as const, a, time: a.activityTime ?? "99:99" })),
             ].sort((x, y) => x.time.localeCompare(y.time));
             const visible  = allItems.slice(0, MAX_PILLS);
             const overflow = allItems.length - MAX_PILLS;

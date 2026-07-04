@@ -428,15 +428,15 @@ function DayCard({
     ...personalActs.map((p) => ({ kind: "personal" as const, item: p })),
   ].sort((a, b) => {
     const timeA = a.kind === "activity"
-      ? (a.item.activityTime ?? "")
+      ? (a.item.activityTime ?? "99:99")
       : a.kind === "transport"
-      ? (a.item.isArrival ? (a.item.arrivalTime ?? "") : (a.item.departureTime ?? ""))
-      : (a.item.time ?? "");
+      ? (a.item.isArrival ? (a.item.arrivalTime ?? "99:99") : (a.item.departureTime ?? "99:99"))
+      : (a.item.time ?? "99:99");
     const timeB = b.kind === "activity"
-      ? (b.item.activityTime ?? "")
+      ? (b.item.activityTime ?? "99:99")
       : b.kind === "transport"
-      ? (b.item.isArrival ? (b.item.arrivalTime ?? "") : (b.item.departureTime ?? ""))
-      : (b.item.time ?? "");
+      ? (b.item.isArrival ? (b.item.arrivalTime ?? "99:99") : (b.item.departureTime ?? "99:99"))
+      : (b.item.time ?? "99:99");
     return timeA.localeCompare(timeB);
   });
 

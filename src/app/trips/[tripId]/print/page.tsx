@@ -178,8 +178,8 @@ function PrintCalendarMonth({
                 const city = inTrip ? hotelCity(ds) : null;
                 const cellNote = inTrip ? (noteByDate.get(ds) ?? "") : "";
                 const calItems = [
-                  ...dayTrans.map((t) => ({ k: "t" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
-                  ...dayActs.map((a) => ({ k: "a" as const, a, time: a.activityTime ?? "" })),
+                  ...dayTrans.map((t) => ({ k: "t" as const, t, time: t.isArrival ? (t.arrivalTime ?? "99:99") : (t.departureTime ?? "99:99") })),
+                  ...dayActs.map((a) => ({ k: "a" as const, a, time: a.activityTime ?? "99:99" })),
                 ].sort((x, y) => x.time.localeCompare(y.time));
                 return (
                   <td
@@ -647,8 +647,8 @@ export default async function PrintPage({
                   | { kind: "activity"; a: ActivityRow; time: string }
                   | { kind: "personal"; p: PersonalActivityRow; time: string };
                 const merged: DayItem[] = [
-                  ...dayTrans.map((t) => ({ kind: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
-                  ...dayActs.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "" })),
+                  ...dayTrans.map((t) => ({ kind: "transport" as const, t, time: t.isArrival ? (t.arrivalTime ?? "99:99") : (t.departureTime ?? "99:99") })),
+                  ...dayActs.map((a) => ({ kind: "activity" as const, a, time: a.activityTime ?? "99:99" })),
                   ...dayPersonal.map((p) => ({ kind: "personal" as const, p, time: p.time ?? "" })),
                 ].sort((x, y) => x.time.localeCompare(y.time));
                 return (
