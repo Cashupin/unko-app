@@ -196,6 +196,7 @@ model Trip {
   passes             Pass[]
   transports         Transport[]
   tasks              Task[]
+  dayNotes           DayNote[]
 
   @@index([createdById])
   @@index([startDate, endDate])
@@ -314,6 +315,20 @@ model ItemCommentView {
   item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
+}
+
+// ─── Day Notes ────────────────────────────────────────────────────────────────
+
+model DayNote {
+  id     String @id @default(cuid())
+  tripId String
+  date   String // "YYYY-MM-DD"
+  label  String @db.VarChar(120)
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, date])
+  @@index([tripId])
 }
 
 // ─── Itinerary (Activities) ───────────────────────────────────────────────────

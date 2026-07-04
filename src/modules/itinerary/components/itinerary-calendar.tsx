@@ -6,6 +6,7 @@ import { ExportButtons } from "@/modules/itinerary/components/export-buttons";
 import { DraftActivityActions } from "@/modules/itinerary/components/draft-activity-actions";
 import { CreateActivityForm } from "@/modules/itinerary/components/create-activity-form";
 import { EditActivityForm } from "@/modules/itinerary/components/edit-activity-form";
+import { DayNoteEditor } from "@/modules/itinerary/components/day-note-editor";
 
 export type CalendarActivity = {
   id: string;
@@ -166,6 +167,7 @@ function DayDetailModal({
   isAdmin,
   canEdit,
   onPersonalChange,
+  dayNote,
 }: {
   dateStr: string;
   activities: CalendarActivity[];
@@ -178,6 +180,7 @@ function DayDetailModal({
   isAdmin: boolean;
   canEdit: boolean;
   onPersonalChange: () => void;
+  dayNote: string;
 }) {
   const [y, m, d] = dateStr.split("-").map(Number);
   const date = new Date(y, m - 1, d);
@@ -262,7 +265,13 @@ function DayDetailModal({
                 <p className="text-lg font-semibold text-zinc-100">
                   {d} de {MONTHS_ES_LONG[m - 1]}
                 </p>
-                <p className="text-sm text-zinc-500">
+                <DayNoteEditor
+                  tripId={tripId}
+                  date={dateStr}
+                  initialLabel={dayNote}
+                  canEdit={canEdit}
+                />
+                <p className="mt-0.5 text-sm text-zinc-500">
                   {activities.length === 0 && transports.length === 0
                     ? "Día libre"
                     : [
@@ -537,6 +546,7 @@ export function ItineraryCalendar({
   tripId,
   isAdmin,
   canEdit,
+  dayNotes,
 }: {
   activities: CalendarActivity[];
   hotels: CalendarHotel[];
@@ -546,6 +556,7 @@ export function ItineraryCalendar({
   tripId: string;
   isAdmin: boolean;
   canEdit: boolean;
+  dayNotes: { date: string; label: string }[];
 }) {
   const exportRef = useRef<HTMLDivElement>(null);
   const initialStr = startDate ?? todayStr();
@@ -620,11 +631,16 @@ export function ItineraryCalendar({
     personalByDate.get(pa.date)!.push(pa);
   }
 
+  // Index day notes by date
+  const noteByDate = new Map<string, string>();
+  for (const n of dayNotes) noteByDate.set(n.date, n.label);
+
   const selectedDateStr      = selectedDay;
   const selectedActs         = selectedDateStr ? (actsByDate.get(selectedDateStr) ?? []) : [];
   const selectedTransports   = selectedDateStr ? (transportsByDate.get(selectedDateStr) ?? []) : [];
   const selectedHotelState   = selectedDateStr ? getHotelDayState(selectedDateStr, hotels) : null;
   const selectedPersonalActs = selectedDateStr ? (personalByDate.get(selectedDateStr) ?? []) : [];
+  const selectedDayNote      = selectedDateStr ? (noteByDate.get(selectedDateStr) ?? "") : "";
 
   return (
     <>
@@ -830,6 +846,7 @@ export function ItineraryCalendar({
             const dayTransports = isInTrip ? (transportsByDate.get(dateStr) ?? []) : [];
             const myActs       = personalMode && isInTrip ? (personalByDate.get(dateStr) ?? []) : [];
             const hotelState   = isInTrip ? getHotelDayState(dateStr, hotels) : null;
+            const cellNote     = isInTrip ? (noteByDate.get(dateStr) ?? "") : "";
             const hasActs      = dayActs.length > 0 || myActs.length > 0 || dayTransports.length > 0;
             // Chronological order, capped to MAX_PILLS total
             const allItems: Array<{ type: "transport"; t: CalendarTransport; time: string } | { type: "activity"; a: CalendarActivity; time: string }> = [
@@ -875,6 +892,13 @@ export function ItineraryCalendar({
                     </span>
                   )}
                 </div>
+
+                {/* Day note */}
+                {cellNote && (
+                  <p className="mb-1 truncate text-[10px] font-medium text-zinc-400 lg:text-[11px]">
+                    {cellNote}
+                  </p>
+                )}
 
                 {/* Pills */}
                 <div className="flex flex-col gap-0.5 lg:gap-1">
@@ -953,6 +977,7 @@ export function ItineraryCalendar({
           isAdmin={isAdmin}
           canEdit={canEdit}
           onPersonalChange={fetchPersonalActs}
+          dayNote={selectedDayNote}
         />
       )}
     </>

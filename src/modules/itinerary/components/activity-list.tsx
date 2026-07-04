@@ -9,6 +9,7 @@ import { getMapsUrl } from "@/lib/maps-url";
 import { PastDaysCollapsible } from "@/modules/itinerary/components/past-days-collapsible";
 import { CreateItemFromActivityButton } from "@/modules/proposals/components/create-item-from-activity-button";
 import { DraftActivityActions } from "@/modules/itinerary/components/draft-activity-actions";
+import { DayNoteEditor } from "@/modules/itinerary/components/day-note-editor";
 import {
   PersonalModeProvider,
   PersonalModeToggle,
@@ -157,7 +158,7 @@ export async function ActivityList({
     : null;
   const isAdmin = membership?.role === "ADMIN";
 
-  const [activities, hotels, participants, personalActivities, transports] = await Promise.all([
+  const [activities, hotels, participants, personalActivities, transports, dayNotes] = await Promise.all([
     prisma.activity.findMany({
       where: { tripId, ...(!isAdmin && { isDraft: false }) },
       select: {
@@ -222,6 +223,10 @@ export async function ActivityList({
       },
       orderBy: [{ departureDate: "asc" }, { departureTime: "asc" }],
     }),
+    prisma.dayNote.findMany({
+      where: { tripId },
+      select: { date: true, label: true },
+    }),
   ]);
 
   // Index transports by departure date, and also by arrival date when it differs
@@ -251,6 +256,9 @@ export async function ActivityList({
     if (!personalByDate.has(pa.date)) personalByDate.set(pa.date, []);
     personalByDate.get(pa.date)!.push(pa);
   }
+
+  const noteByDate = new Map<string, string>();
+  for (const n of dayNotes) noteByDate.set(n.date, n.label);
 
   for (const act of activities) {
     if (act.activityDate) {
@@ -317,6 +325,7 @@ export async function ActivityList({
             participants={participants}
             tripStartDate={tripStartYMD}
             personalActs={personalByDate.get(dateStr) ?? []}
+            dayNote={noteByDate.get(dateStr) ?? ""}
           />
         ))}
       </PastDaysCollapsible>
@@ -337,6 +346,7 @@ export async function ActivityList({
             participants={participants}
             tripStartDate={tripStartYMD}
             personalActs={personalByDate.get(dateStr) ?? []}
+            dayNote={noteByDate.get(dateStr) ?? ""}
           />
         </div>
       ))}
@@ -387,6 +397,7 @@ function DayCard({
   participants,
   tripStartDate,
   personalActs,
+  dayNote,
 }: {
   dateStr: string;
   acts: Activity[];
@@ -400,6 +411,7 @@ function DayCard({
   participants: Participant[];
   tripStartDate?: string;
   personalActs: PersonalActivityItem[];
+  dayNote: string;
 }) {
   const { dayNum, weekday, dateLabel } = parseDateHeader(dateStr);
   const departureTransports = transports.filter((t) => !t.isArrival);
@@ -468,13 +480,12 @@ function DayCard({
                 </span>
               )}
             </p>
-            {!isEmpty && (
-              <p className="text-xs font-medium text-zinc-500">
-                {acts.length > 0 && `${acts.length} actividad${acts.length !== 1 ? "es" : ""}`}
-                {acts.length > 0 && departureTransports.length > 0 && " · "}
-                {departureTransports.length > 0 && `${departureTransports.length} transporte${departureTransports.length !== 1 ? "s" : ""}`}
-              </p>
-            )}
+            <DayNoteEditor
+              tripId={tripId}
+              date={dateStr}
+              initialLabel={dayNote}
+              canEdit={canEdit}
+            />
           </div>
         </div>
 

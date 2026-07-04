@@ -104,12 +104,13 @@ function isFlightActivity(title: string): boolean {
 type CalCell = { type: "empty" } | { type: "day"; day: number; dateStr: string };
 
 function PrintCalendarMonth({
-  year, month, tripStart, tripEnd, activities, hotels, transports,
+  year, month, tripStart, tripEnd, activities, hotels, transports, noteByDate,
 }: {
   year: number; month: number;
   tripStart: string; tripEnd: string;
   activities: ActivityRow[]; hotels: HotelRow[];
   transports: TransportRow[];
+  noteByDate: Map<string, string>;
 }) {
   const leading = firstWeekdayMonStart(year, month);
   const total   = daysInMonth(year, month);
@@ -175,6 +176,7 @@ function PrintCalendarMonth({
                 const dayActs = actsByDate.get(ds) ?? [];
                 const dayTrans = inTrip ? (transByDate.get(ds) ?? []) : [];
                 const city = inTrip ? hotelCity(ds) : null;
+                const cellNote = inTrip ? (noteByDate.get(ds) ?? "") : "";
                 const calItems = [
                   ...dayTrans.map((t) => ({ k: "t" as const, t, time: t.isArrival ? (t.arrivalTime ?? "") : (t.departureTime ?? "") })),
                   ...dayActs.map((a) => ({ k: "a" as const, a, time: a.activityTime ?? "" })),
@@ -193,6 +195,11 @@ function PrintCalendarMonth({
                         </span>
                       )}
                     </div>
+                    {cellNote && (
+                      <div className="mb-0.5 truncate text-[9px] font-medium" style={{ color: "#71717a" }}>
+                        {cellNote}
+                      </div>
+                    )}
                     {calItems.slice(0, 2).map((item) =>
                       item.k === "t" ? (
                         item.t.isArrival ? (
@@ -275,7 +282,7 @@ export default async function PrintPage({
   const isAdmin = myParticipant.role === "ADMIN";
   const includeDrafts = drafts === "1" && isAdmin;
 
-  const [rawHotels, rawActivities, rawTransports, rawPasses, rawPersonal] = await Promise.all([
+  const [rawHotels, rawActivities, rawTransports, rawPasses, rawPersonal, rawDayNotes] = await Promise.all([
     prisma.hotel.findMany({
       where: { tripId },
       select: {
@@ -319,6 +326,10 @@ export default async function PrintPage({
       select: { id: true, date: true, title: true, time: true, location: true, notes: true },
       orderBy: [{ date: "asc" }, { time: "asc" }],
     }),
+    prisma.dayNote.findMany({
+      where: { tripId },
+      select: { date: true, label: true },
+    }),
   ]);
 
   const hotels: HotelRow[] = rawHotels.map((h) => ({
@@ -351,6 +362,9 @@ export default async function PrintPage({
     if (!personalByDate.has(p.date)) personalByDate.set(p.date, []);
     personalByDate.get(p.date)!.push(p);
   }
+
+  const noteByDate = new Map<string, string>();
+  for (const n of rawDayNotes) noteByDate.set(n.date, n.label);
 
   const passes: PassRow[] = rawPasses.map((p) => ({
     ...p,
@@ -472,6 +486,7 @@ export default async function PrintPage({
                   activities={activities}
                   hotels={hotels}
                   transports={transports}
+                  noteByDate={noteByDate}
                 />
               ))}
             </div>
@@ -626,6 +641,7 @@ export default async function PrintPage({
                 const dayTrans = transportsByDate.get(ds) ?? [];
                 const dayPersonal = personalByDate.get(ds) ?? [];
                 const hotel = hotels.find((h) => h.checkInDate <= ds && ds <= h.checkOutDate);
+                const dayNote = noteByDate.get(ds) ?? "";
                 type DayItem =
                   | { kind: "transport"; t: TransportRow; time: string }
                   | { kind: "activity"; a: ActivityRow; time: string }
@@ -643,6 +659,7 @@ export default async function PrintPage({
                       </span>
                       <div>
                         <p className="font-semibold text-zinc-800 capitalize">{fmtMed(ds)}</p>
+                        {dayNote && <p className="text-xs font-medium text-zinc-500">{dayNote}</p>}
                         {hotel && <p className="text-xs text-zinc-400">📍 {hotel.city ?? hotel.name}</p>}
                       </div>
                     </div>

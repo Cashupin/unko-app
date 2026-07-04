@@ -22,7 +22,7 @@ export async function ItineraryCalendarServer({
   const isAdmin = membership?.role === "ADMIN";
   const canEdit = membership?.role === "ADMIN" || membership?.role === "EDITOR";
 
-  const [activities, hotels, transports] = await Promise.all([
+  const [activities, hotels, transports, dayNotes] = await Promise.all([
     prisma.activity.findMany({
       where: { tripId, activityDate: { not: null }, ...(!isAdmin && { isDraft: false }) },
       select: {
@@ -56,6 +56,10 @@ export async function ItineraryCalendarServer({
         coveredByPass: { select: { name: true } },
       },
       orderBy: [{ departureDate: "asc" }, { departureTime: "asc" }],
+    }),
+    prisma.dayNote.findMany({
+      where: { tripId },
+      select: { date: true, label: true },
     }),
   ]);
 
@@ -99,6 +103,7 @@ export async function ItineraryCalendarServer({
       startDate={startDate ? startDate.toISOString().slice(0, 10) : null}
       endDate={endDate ? endDate.toISOString().slice(0, 10) : null}
       tripId={tripId}
+      dayNotes={dayNotes}
     />
   );
 }
