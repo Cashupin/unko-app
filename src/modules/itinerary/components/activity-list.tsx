@@ -11,8 +11,6 @@ import { CreateItemFromActivityButton } from "@/modules/proposals/components/cre
 import { DraftActivityActions } from "@/modules/itinerary/components/draft-activity-actions";
 import { DayNoteEditor } from "@/modules/itinerary/components/day-note-editor";
 import {
-  PersonalModeProvider,
-  PersonalModeToggle,
   PersonalActivitySection,
   PersonalRowConditional,
 } from "@/modules/itinerary/components/personal-mode-provider";
@@ -307,11 +305,7 @@ export async function ActivityList({
   }
 
   return (
-    <PersonalModeProvider>
     <div className="flex flex-col gap-3">
-      <div className="flex justify-start">
-        <PersonalModeToggle />
-      </div>
       {/* Past days — collapsed by default */}
       <PastDaysCollapsible count={pastDates.length}>
         {pastDates.map((dateStr) => (
@@ -382,7 +376,6 @@ export async function ActivityList({
         </div>
       )}
     </div>
-    </PersonalModeProvider>
   );
 }
 
