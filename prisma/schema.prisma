@@ -336,7 +336,8 @@ model Ticket {
 
   visitDate   String?  // "YYYY-MM-DD" — día del viaje en que se usa
   buyFrom     String?  // "YYYY-MM-DD" — desde cuándo se puede comprar
-  buyTime     String?  // "HH:MM" — hora local Japón de apertura de venta
+  buyTime     String?  // "HH:MM" — hora de apertura de venta
+  buyTimezone String?  // ej. "JST", "CLT", "UTC"
   buyDeadline String?  // "YYYY-MM-DD" — fecha límite de compra
 
   price    Float?

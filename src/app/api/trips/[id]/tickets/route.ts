@@ -11,6 +11,7 @@ const createSchema = z.object({
   visitDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   buyFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   buyTime: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
+  buyTimezone: z.string().max(10).optional().nullable(),
   buyDeadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   price: z.number().positive().optional().nullable(),
   currency: z.string().default("JPY"),

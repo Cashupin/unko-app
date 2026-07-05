@@ -11,6 +11,7 @@ const patchSchema = z.object({
   visitDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   buyFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   buyTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  buyTimezone: z.string().max(10).nullable().optional(),
   buyDeadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   price: z.number().positive().nullable().optional(),
   currency: z.string().optional(),

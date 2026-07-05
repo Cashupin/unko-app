@@ -6,6 +6,13 @@ import { toast } from "sonner";
 import { CURRENCY_OPTIONS } from "@/lib/constants";
 import { DatePicker } from "@/components/ui/date-picker";
 
+const TIMEZONE_OPTIONS = [
+  { value: "JST", label: "JST — Japón (UTC+9)" },
+  { value: "CLT", label: "CLT — Chile (UTC-4)" },
+  { value: "CLST", label: "CLST — Chile verano (UTC-3)" },
+  { value: "UTC", label: "UTC" },
+];
+
 type Activity = { id: string; title: string; activityDate: string | null };
 
 export function CreateTicketForm({
@@ -29,6 +36,7 @@ export function CreateTicketForm({
     visitDate: "",
     buyFrom: "",
     buyTime: "",
+    buyTimezone: "JST",
     buyDeadline: "",
     price: "",
     currency: defaultCurrency,
@@ -40,7 +48,7 @@ export function CreateTicketForm({
   function reset() {
     setForm({
       title: "", description: "", scope: "GROUP",
-      visitDate: "", buyFrom: "", buyTime: "", buyDeadline: "",
+      visitDate: "", buyFrom: "", buyTime: "", buyTimezone: "JST", buyDeadline: "",
       price: "", currency: defaultCurrency,
       link: "", notes: "", activityId: "",
     });
@@ -71,6 +79,7 @@ export function CreateTicketForm({
           visitDate: form.visitDate || null,
           buyFrom: form.buyFrom || null,
           buyTime: form.buyTime || null,
+          buyTimezone: form.buyTime ? form.buyTimezone : null,
           buyDeadline: form.buyDeadline || null,
           price: form.price ? parseFloat(form.price) : null,
           currency: form.currency,
@@ -216,15 +225,27 @@ export function CreateTicketForm({
                 </div>
               </div>
 
-              {/* Buy time */}
+              {/* Buy time + timezone */}
               <div className="flex flex-col gap-1">
-                <label className={labelCls}>Hora de apertura de venta <span className="text-zinc-500">(hora local Japón)</span></label>
-                <input
-                  type="time"
-                  value={form.buyTime}
-                  onChange={(e) => set("buyTime", e.target.value)}
-                  className={`${inputCls} w-36`}
-                />
+                <label className={labelCls}>Hora de apertura de venta</label>
+                <div className="flex gap-2">
+                  <input
+                    type="time"
+                    value={form.buyTime}
+                    onChange={(e) => set("buyTime", e.target.value)}
+                    className="w-36 shrink-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-[#3f3f46] dark:bg-[#27272a] dark:text-zinc-100 dark:focus:ring-zinc-600"
+                  />
+                  <select
+                    value={form.buyTimezone}
+                    onChange={(e) => set("buyTimezone", e.target.value)}
+                    disabled={!form.buyTime}
+                    className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 disabled:opacity-40 dark:border-[#3f3f46] dark:bg-[#27272a] dark:text-zinc-100 dark:focus:ring-zinc-600"
+                  >
+                    {TIMEZONE_OPTIONS.map((tz) => (
+                      <option key={tz.value} value={tz.value}>{tz.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Price + currency */}
