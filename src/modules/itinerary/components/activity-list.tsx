@@ -91,6 +91,7 @@ type Activity = {
     address: string | null;
     checks: { userId: string; user: { id: string; name: string | null; image: string | null } }[];
   } | null;
+  tickets: { id: string; isPurchased: boolean }[];
 };
 
 type PersonalActivityItem = {
@@ -188,6 +189,7 @@ export async function ActivityList({
             },
           },
         },
+        tickets: { select: { id: true, isPurchased: true } },
       },
       orderBy: [{ activityDate: "asc" }, { activityTime: "asc" }, { createdAt: "asc" }],
     }),
@@ -619,6 +621,18 @@ function ActivityRow({
             <span className="inline-flex items-center rounded-full border border-dashed border-indigo-500/50 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-400">
               Borrador
             </span>
+          )}
+          {act.tickets.length > 0 && (
+            <a
+              href={`/trips/${tripId}?tab=itinerario&subtab=entradas`}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors ${
+                act.tickets.every((t) => t.isPurchased)
+                  ? "border-emerald-700/50 bg-emerald-900/20 text-emerald-400"
+                  : "border-amber-700/50 bg-amber-900/20 text-amber-400"
+              }`}
+            >
+              🎟️ {act.tickets.every((t) => t.isPurchased) ? "Entrada comprada" : "Entrada pendiente"}
+            </a>
           )}
         </div>
 

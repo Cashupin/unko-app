@@ -26,6 +26,7 @@ import { HotelCollapsible } from "@/modules/itinerary/components/hotel-collapsib
 import { CreateHotelForm } from "@/modules/itinerary/components/create-hotel-form";
 import { ItinerarySubNav } from "@/modules/itinerary/components/itinerary-sub-nav";
 import { TransportPanel } from "@/modules/itinerary/components/transport-panel";
+import { TicketsPanel } from "@/modules/itinerary/components/tickets-panel";
 import { TripHome } from "@/modules/trips/components/trip-home";
 import { ExpenseList } from "@/modules/expenses/components/expense-list";
 import { ItemFilterChipsServer } from "@/modules/proposals/components/item-filter-chips-server";
@@ -62,8 +63,8 @@ export default async function TripPage({
   const { tripId } = await params;
   const { tab: tabParam, subtab: subtabParam, itemType, search, hotelId, proposer, view, city } = await searchParams;
 
-  type SubTab = "itinerario" | "alojamiento" | "transporte";
-  const SUBTABS: SubTab[] = ["itinerario", "alojamiento", "transporte"];
+  type SubTab = "itinerario" | "alojamiento" | "transporte" | "entradas";
+  const SUBTABS: SubTab[] = ["itinerario", "alojamiento", "transporte", "entradas"];
   const activeSubtab: SubTab = SUBTABS.includes(subtabParam as SubTab) ? (subtabParam as SubTab) : "itinerario";
   const activeTab: Tab =
     TABS.find((t) => t.id === tabParam)?.id ?? "home";
@@ -447,6 +448,19 @@ export default async function TripPage({
                     defaultCurrency={trip.defaultCurrency}
                     tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : null}
                     tripEndDate={trip.endDate ? trip.endDate.toISOString().slice(0, 10) : null}
+                  />
+                </Suspense>
+              </div>
+            )}
+
+            {/* ── Sub-tab: Entradas ── */}
+            {activeSubtab === "entradas" && (
+              <div className="mt-5">
+                <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando entradas...</div>}>
+                  <TicketsPanel
+                    tripId={tripId}
+                    defaultCurrency={trip.defaultCurrency}
+                    participants={participantOptions}
                   />
                 </Suspense>
               </div>

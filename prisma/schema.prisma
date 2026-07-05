@@ -62,6 +62,11 @@ enum SplitType {
   ITEMIZED // División por ítems individuales
 }
 
+enum TicketScope {
+  GROUP      // Una entrada para todo el grupo
+  INDIVIDUAL // Cada participante necesita la suya
+}
+
 enum TransportType {
   FLIGHT
   TRAIN
@@ -143,6 +148,7 @@ model User {
   expenses            Expense[]          @relation("ExpenseCreatedBy")
   notifications       Notification[]
   personalActivities  PersonalActivity[]
+  createdTickets      Ticket[]           @relation("TicketCreatedBy")
 }
 
 model Invitation {
@@ -197,6 +203,7 @@ model Trip {
   transports         Transport[]
   tasks              Task[]
   dayNotes           DayNote[]
+  tickets            Ticket[]
 
   @@index([createdById])
   @@index([startDate, endDate])
@@ -214,12 +221,13 @@ model TripParticipant {
   trip Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user User? @relation("UserParticipant", fields: [userId], references: [id], onDelete: SetNull)
 
-  expenseParticipants    ExpenseParticipant[]
+  expenseParticipants     ExpenseParticipant[]
   expenseItemParticipants ExpenseItemParticipant[]
-  paidExpenses           Expense[]            @relation("ExpensePaidBy")
-  paymentsMade        Payment[]            @relation("PaymentsFrom")
-  paymentsReceived    Payment[]            @relation("PaymentsTo")
-  taskAssignments     TaskAssignee[]
+  paidExpenses            Expense[]            @relation("ExpensePaidBy")
+  paymentsMade            Payment[]            @relation("PaymentsFrom")
+  paymentsReceived        Payment[]            @relation("PaymentsTo")
+  taskAssignments         TaskAssignee[]
+  purchasedTickets        Ticket[]             @relation("TicketPurchasedBy")
 
   @@unique([tripId, userId])
   @@index([tripId])
@@ -317,6 +325,43 @@ model ItemCommentView {
   @@unique([userId, itemId])
 }
 
+// ─── Tickets / Entradas ───────────────────────────────────────────────────────
+
+model Ticket {
+  id          String      @id @default(cuid())
+  tripId      String
+  title       String
+  description String?
+  scope       TicketScope @default(GROUP)
+
+  visitDate   String?  // "YYYY-MM-DD" — día del viaje en que se usa
+  buyFrom     String?  // "YYYY-MM-DD" — desde cuándo se puede comprar
+  buyDeadline String?  // "YYYY-MM-DD" — fecha límite de compra
+
+  price    Float?
+  currency Currency @default(JPY)
+
+  link  String?
+  notes String?
+
+  isPurchased   Boolean @default(false)
+  purchasedById String? // TripParticipant.id
+
+  activityId String? // enlace opcional a una actividad del itinerario
+
+  createdAt   DateTime @default(now())
+  createdById String
+
+  trip        Trip             @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  createdBy   User             @relation("TicketCreatedBy", fields: [createdById], references: [id])
+  purchasedBy TripParticipant? @relation("TicketPurchasedBy", fields: [purchasedById], references: [id], onDelete: SetNull)
+  activity    Activity?        @relation(fields: [activityId], references: [id], onDelete: SetNull)
+
+  @@index([tripId])
+  @@index([buyDeadline])
+  @@index([activityId])
+}
+
 // ─── Day Notes ────────────────────────────────────────────────────────────────
 
 model DayNote {
@@ -353,7 +398,8 @@ model Activity {
   itemId String?
   item   Item?   @relation(fields: [itemId], references: [id], onDelete: SetNull)
 
-  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  trip    Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
 
   @@index([tripId])
   @@index([activityDate])
