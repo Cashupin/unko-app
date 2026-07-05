@@ -28,6 +28,7 @@ export function CreateTicketForm({
     scope: "GROUP",
     visitDate: "",
     buyFrom: "",
+    buyTime: "",
     buyDeadline: "",
     price: "",
     currency: defaultCurrency,
@@ -39,7 +40,7 @@ export function CreateTicketForm({
   function reset() {
     setForm({
       title: "", description: "", scope: "GROUP",
-      visitDate: "", buyFrom: "", buyDeadline: "",
+      visitDate: "", buyFrom: "", buyTime: "", buyDeadline: "",
       price: "", currency: defaultCurrency,
       link: "", notes: "", activityId: "",
     });
@@ -69,6 +70,7 @@ export function CreateTicketForm({
           scope: form.scope,
           visitDate: form.visitDate || null,
           buyFrom: form.buyFrom || null,
+          buyTime: form.buyTime || null,
           buyDeadline: form.buyDeadline || null,
           price: form.price ? parseFloat(form.price) : null,
           currency: form.currency,
@@ -212,6 +214,17 @@ export function CreateTicketForm({
                   <label className={labelCls}>Límite de compra</label>
                   <DatePicker value={form.buyDeadline} onChange={(v) => set("buyDeadline", v)} placeholder="Sin fecha" />
                 </div>
+              </div>
+
+              {/* Buy time */}
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>Hora de apertura de venta <span className="text-zinc-500">(hora local Japón)</span></label>
+                <input
+                  type="time"
+                  value={form.buyTime}
+                  onChange={(e) => set("buyTime", e.target.value)}
+                  className={`${inputCls} w-36`}
+                />
               </div>
 
               {/* Price + currency */}

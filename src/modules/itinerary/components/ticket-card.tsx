@@ -17,6 +17,7 @@ type TicketData = {
   scope: "GROUP" | "INDIVIDUAL";
   visitDate: string | null;
   buyFrom: string | null;
+  buyTime: string | null;
   buyDeadline: string | null;
   price: number | null;
   currency: string;
@@ -240,6 +241,7 @@ export function TicketCard({
               {ticket.buyFrom && (
                 <span className={isAvailable ? "text-emerald-400" : "text-amber-400"}>
                   {isAvailable ? "✓" : "⏳"} Disponible desde: <strong>{fmtDate(ticket.buyFrom)}</strong>
+                  {ticket.buyTime && <span className="ml-1 opacity-80">a las {ticket.buyTime} JST</span>}
                 </span>
               )}
               {ticket.buyDeadline && (
