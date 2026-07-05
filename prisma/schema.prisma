@@ -149,6 +149,7 @@ model User {
   notifications       Notification[]
   personalActivities  PersonalActivity[]
   createdTickets      Ticket[]           @relation("TicketCreatedBy")
+  createdExcursions   Excursion[]        @relation("ExcursionCreatedBy")
 }
 
 model Invitation {
@@ -204,6 +205,7 @@ model Trip {
   tasks              Task[]
   dayNotes           DayNote[]
   tickets            Ticket[]
+  excursions         Excursion[]
 
   @@index([createdById])
   @@index([startDate, endDate])
@@ -378,6 +380,25 @@ model DayNote {
   @@index([tripId])
 }
 
+// ─── Excursiones ─────────────────────────────────────────────────────────────
+
+model Excursion {
+  id          String  @id @default(cuid())
+  tripId      String
+  title       String  @db.VarChar(200)
+  description String?
+  date        String? // "YYYY-MM-DD" — null = sin fecha asignada
+
+  createdAt   DateTime @default(now())
+  createdById String
+
+  trip       Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  createdBy  User       @relation("ExcursionCreatedBy", fields: [createdById], references: [id])
+  activities Activity[]
+
+  @@index([tripId])
+}
+
 // ─── Itinerary (Activities) ───────────────────────────────────────────────────
 
 model Activity {
@@ -400,12 +421,17 @@ model Activity {
   itemId String?
   item   Item?   @relation(fields: [itemId], references: [id], onDelete: SetNull)
 
+  // Excursión a la que pertenece (opcional)
+  excursionId String?
+  excursion   Excursion? @relation(fields: [excursionId], references: [id], onDelete: SetNull)
+
   trip    Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
   tickets Ticket[]
 
   @@index([tripId])
   @@index([activityDate])
   @@index([itemId])
+  @@index([excursionId])
 }
 
 // ─── Personal Activities ─────────────────────────────────────────────────────

@@ -15,6 +15,8 @@ export function CreateActivityForm({
   isAdmin = false,
   compact = false,
   overlayZIndex = "z-50",
+  excursionId,
+  excursionTitle,
 }: {
   tripId: string;
   defaultDate?: string;
@@ -22,6 +24,8 @@ export function CreateActivityForm({
   isAdmin?: boolean;
   compact?: boolean;
   overlayZIndex?: string;
+  excursionId?: string;
+  excursionTitle?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -72,6 +76,7 @@ export function CreateActivityForm({
     if (notes) body.notes = notes;
     if (photoUrl) body.photoUrl = photoUrl;
     if (isDraft) body.isDraft = true;
+    if (excursionId) body.excursionId = excursionId;
 
     try {
       const res = await fetch(`/api/trips/${tripId}/activities`, {
@@ -152,9 +157,14 @@ export function CreateActivityForm({
         >
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto dark:bg-zinc-800">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                Nueva actividad
-              </h2>
+              <div>
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                  Nueva actividad
+                </h2>
+                {excursionTitle && (
+                  <p className="text-xs text-blue-400 mt-0.5">🗺️ {excursionTitle}</p>
+                )}
+              </div>
               <button
                 onClick={closeModal}
                 className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
@@ -217,21 +227,23 @@ export function CreateActivityForm({
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label
-                  htmlFor="ca-date"
-                  className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                >
-                  Fecha
-                </label>
-                <DatePicker
-                  id="ca-date"
-                  name="activityDate"
-                  defaultValue={defaultDate}
-                  placeholder="Seleccionar fecha"
-                  initialMonth={tripStartDate}
-                />
-              </div>
+              {!excursionId && (
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="ca-date"
+                    className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                  >
+                    Fecha
+                  </label>
+                  <DatePicker
+                    id="ca-date"
+                    name="activityDate"
+                    defaultValue={defaultDate}
+                    placeholder="Seleccionar fecha"
+                    initialMonth={tripStartDate}
+                  />
+                </div>
+              )}
 
               <div className="flex flex-col gap-1">
                 <label
@@ -296,8 +308,8 @@ export function CreateActivityForm({
                 )}
               </div>
 
-              {/* Agregar como borrador — solo ADMIN */}
-              {isAdmin && (
+              {/* Agregar como borrador — solo ADMIN, no aplica en excursiones */}
+              {isAdmin && !excursionId && (
                 <div className="rounded-xl border border-dashed border-indigo-500/30 bg-indigo-950/10 px-3 py-2.5">
                   <label className="flex items-center gap-2.5 cursor-pointer">
                     <input
@@ -321,8 +333,8 @@ export function CreateActivityForm({
                 </div>
               )}
 
-              {/* Crear también como propuesta — incompatible con borrador */}
-              {!isDraft && <div className="rounded-xl border border-zinc-100 px-3 py-2.5 dark:border-zinc-700">
+              {/* Crear también como propuesta — no aplica en excursiones ni en borrador */}
+              {!isDraft && !excursionId && <div className="rounded-xl border border-zinc-100 px-3 py-2.5 dark:border-zinc-700">
                 <label className="flex items-center gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"

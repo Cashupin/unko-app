@@ -27,6 +27,7 @@ import { CreateHotelForm } from "@/modules/itinerary/components/create-hotel-for
 import { ItinerarySubNav } from "@/modules/itinerary/components/itinerary-sub-nav";
 import { TransportPanel } from "@/modules/itinerary/components/transport-panel";
 import { TicketsPanel } from "@/modules/itinerary/components/tickets-panel";
+import { ExcursionsPanel } from "@/modules/itinerary/components/excursions-panel";
 import { TripHome } from "@/modules/trips/components/trip-home";
 import { ExpenseList } from "@/modules/expenses/components/expense-list";
 import { ItemFilterChipsServer } from "@/modules/proposals/components/item-filter-chips-server";
@@ -63,8 +64,8 @@ export default async function TripPage({
   const { tripId } = await params;
   const { tab: tabParam, subtab: subtabParam, itemType, search, hotelId, proposer, view, city } = await searchParams;
 
-  type SubTab = "itinerario" | "alojamiento" | "transporte" | "entradas";
-  const SUBTABS: SubTab[] = ["itinerario", "alojamiento", "transporte", "entradas"];
+  type SubTab = "itinerario" | "alojamiento" | "transporte" | "entradas" | "excursiones";
+  const SUBTABS: SubTab[] = ["itinerario", "alojamiento", "transporte", "entradas", "excursiones"];
   const activeSubtab: SubTab = SUBTABS.includes(subtabParam as SubTab) ? (subtabParam as SubTab) : "itinerario";
   const activeTab: Tab =
     TABS.find((t) => t.id === tabParam)?.id ?? "home";
@@ -462,6 +463,15 @@ export default async function TripPage({
                     defaultCurrency={trip.defaultCurrency}
                     participants={participantOptions}
                   />
+                </Suspense>
+              </div>
+            )}
+
+            {/* ── Sub-tab: Excursiones ── */}
+            {activeSubtab === "excursiones" && (
+              <div className="mt-5">
+                <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando excursiones...</div>}>
+                  <ExcursionsPanel tripId={tripId} />
                 </Suspense>
               </div>
             )}

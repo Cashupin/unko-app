@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
-type SubTab = "itinerario" | "alojamiento" | "transporte" | "entradas";
+type SubTab = "itinerario" | "alojamiento" | "transporte" | "entradas" | "excursiones";
 
 export async function ItinerarySubNav({
   tripId,
@@ -10,12 +10,13 @@ export async function ItinerarySubNav({
   tripId: string;
   activeSubtab: SubTab;
 }) {
-  const [activityCount, hotelCount, transportCount, passCount, ticketCount] = await Promise.all([
+  const [activityCount, hotelCount, transportCount, passCount, ticketCount, excursionCount] = await Promise.all([
     prisma.activity.count({ where: { tripId } }),
     prisma.hotel.count({ where: { tripId } }),
     prisma.transport.count({ where: { tripId } }),
     prisma.pass.count({ where: { tripId } }),
     prisma.ticket.count({ where: { tripId } }),
+    prisma.excursion.count({ where: { tripId } }),
   ]);
 
   const tabs: { id: SubTab; label: string; icon: string; count: number }[] = [
@@ -23,6 +24,7 @@ export async function ItinerarySubNav({
     { id: "alojamiento", label: "Alojamiento", icon: "🏨", count: hotelCount },
     { id: "transporte", label: "Transporte", icon: "🚌", count: transportCount + passCount },
     { id: "entradas", label: "Entradas", icon: "🎟️", count: ticketCount },
+    { id: "excursiones", label: "Excursiones", icon: "🗺️", count: excursionCount },
   ];
 
   return (

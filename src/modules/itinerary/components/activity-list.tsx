@@ -92,6 +92,7 @@ type Activity = {
     checks: { userId: string; user: { id: string; name: string | null; image: string | null } }[];
   } | null;
   tickets: { id: string; isPurchased: boolean }[];
+  excursion: { id: string; title: string } | null;
 };
 
 type PersonalActivityItem = {
@@ -190,6 +191,7 @@ export async function ActivityList({
           },
         },
         tickets: { select: { id: true, isPurchased: true } },
+        excursion: { select: { id: true, title: true } },
       },
       orderBy: [{ activityDate: "asc" }, { activityTime: "asc" }, { createdAt: "asc" }],
     }),
@@ -632,6 +634,14 @@ function ActivityRow({
               }`}
             >
               🎟️ {act.tickets.every((t) => t.isPurchased) ? "Entrada comprada" : "Entrada pendiente"}
+            </a>
+          )}
+          {act.excursion && (
+            <a
+              href={`/trips/${tripId}?tab=itinerario&subtab=excursiones`}
+              className="inline-flex items-center gap-1 rounded-full border border-blue-700/50 bg-blue-900/20 px-2 py-0.5 text-[10px] font-semibold text-blue-400 transition-colors hover:bg-blue-900/40"
+            >
+              🗺️ {act.excursion.title}
             </a>
           )}
         </div>

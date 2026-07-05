@@ -23,6 +23,7 @@ const createActivitySchema = z.object({
   photoUrl: z.string().url().optional().or(z.literal("")).or(z.null()),
   itemId: z.string().cuid().optional(),
   isDraft: z.boolean().optional(),
+  excursionId: z.string().optional().nullable(),
 });
 
 // ─── GET /api/trips/[id]/activities ───────────────────────────────────────────
@@ -79,7 +80,7 @@ export async function POST(
     return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
   }
 
-  let { title, location, locationLat, locationLng, activityDate, activityTime, notes, photoUrl, itemId, isDraft } = result.data;
+  let { title, location, locationLat, locationLng, activityDate, activityTime, notes, photoUrl, itemId, isDraft, excursionId } = result.data;
   // undefined = not sent (inherit from item), null = explicitly excluded, string = provided
   const descriptionFromBody = result.data.description;
   let description: string | undefined = typeof descriptionFromBody === "string" ? descriptionFromBody : undefined;
@@ -116,6 +117,7 @@ export async function POST(
       photoUrl: photoUrl || null,
       itemId: itemId ?? null,
       isDraft: isDraft ?? false,
+      excursionId: excursionId ?? null,
     },
     select: {
       id: true, title: true, description: true, location: true, locationLat: true, locationLng: true,
