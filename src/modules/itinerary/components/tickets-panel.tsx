@@ -89,7 +89,7 @@ export async function TicketsPanel({
           {pending.length > 0 && (
             <div className="flex flex-col gap-3">
               {pending.map((t) => (
-                <TicketCard key={t.id} ticket={t} tripId={tripId} participants={participants} isAdmin={isAdmin} />
+                <TicketCard key={t.id} ticket={t} tripId={tripId} participants={participants} isAdmin={isAdmin} activities={activitiesForForm} />
               ))}
             </div>
           )}
@@ -97,7 +97,7 @@ export async function TicketsPanel({
             <div className="flex flex-col gap-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-zinc-600">Compradas</p>
               {purchased.map((t) => (
-                <TicketCard key={t.id} ticket={t} tripId={tripId} participants={participants} isAdmin={isAdmin} />
+                <TicketCard key={t.id} ticket={t} tripId={tripId} participants={participants} isAdmin={isAdmin} activities={activitiesForForm} />
               ))}
             </div>
           )}

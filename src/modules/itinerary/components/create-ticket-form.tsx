@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CURRENCY_OPTIONS } from "@/lib/constants";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Activity = { id: string; title: string; activityDate: string | null };
 
@@ -201,15 +202,15 @@ export function CreateTicketForm({
               <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1">
                   <label className={labelCls}>Día de visita</label>
-                  <input type="date" value={form.visitDate} onChange={(e) => set("visitDate", e.target.value)} className={inputCls} />
+                  <DatePicker value={form.visitDate} onChange={(v) => set("visitDate", v)} placeholder="Sin fecha" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className={labelCls}>Comprar desde</label>
-                  <input type="date" value={form.buyFrom} onChange={(e) => set("buyFrom", e.target.value)} className={inputCls} />
+                  <DatePicker value={form.buyFrom} onChange={(v) => set("buyFrom", v)} placeholder="Sin fecha" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className={labelCls}>Límite de compra</label>
-                  <input type="date" value={form.buyDeadline} onChange={(e) => set("buyDeadline", e.target.value)} className={inputCls} />
+                  <DatePicker value={form.buyDeadline} onChange={(v) => set("buyDeadline", v)} placeholder="Sin fecha" />
                 </div>
               </div>
 

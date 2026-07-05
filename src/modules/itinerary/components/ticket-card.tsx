@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { fmtAmount, CURRENCY_OPTIONS, CURRENCY_DECIMALS } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
+import { ConvertedAmount } from "@/components/ui/converted-amount";
+import { EditTicketForm } from "@/modules/itinerary/components/edit-ticket-form";
 
 type Participant = { id: string; name: string };
 
@@ -62,19 +64,24 @@ function parseInputVal(input: string, cur: string): string {
   return input.replace(/\./g, "").replace(",", ".");
 }
 
+type Activity = { id: string; title: string; activityDate: string | null };
+
 export function TicketCard({
   ticket,
   tripId,
   participants,
   isAdmin,
+  activities,
 }: {
   ticket: TicketData;
   tripId: string;
   participants: Participant[];
   isAdmin: boolean;
+  activities: Activity[];
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   // ── Mark as purchased (no expense) ──────────────────────────────────────────
   const [purchaseOpen, setPurchaseOpen] = useState(false);
@@ -241,7 +248,9 @@ export function TicketCard({
                 </span>
               )}
               {ticket.price != null && (
-                <span className="text-zinc-400">💴 {fmtAmount(ticket.price, ticket.currency as Currency)}/persona</span>
+                <span className="text-zinc-400">
+                  💴 <ConvertedAmount amount={ticket.price} currency={ticket.currency} className="text-zinc-400" />/persona
+                </span>
               )}
             </div>
 
@@ -270,6 +279,13 @@ export function TicketCard({
             <button type="button" onClick={() => setExpenseOpen(true)}
               className="rounded-lg border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 transition-colors">
               💳 Crear gasto
+            </button>
+            <button type="button" onClick={() => setEditOpen(true)}
+              className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300"
+              aria-label="Editar">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
             </button>
             <button type="button" onClick={handleDelete} disabled={deleting}
               className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-red-400 disabled:opacity-40"
@@ -383,6 +399,14 @@ export function TicketCard({
           </div>
         </div>
       )}
+
+      <EditTicketForm
+        tripId={tripId}
+        ticket={ticket}
+        activities={activities}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+      />
     </>
   );
 }
