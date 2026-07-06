@@ -300,7 +300,7 @@ export default async function PrintPage({
       orderBy: { checkInDate: "asc" },
     }),
     prisma.activity.findMany({
-      where: { tripId, ...(!includeDrafts && { isDraft: false }) },
+      where: { tripId, excursionId: null, ...(!includeDrafts && { isDraft: false }) },
       select: {
         id: true, title: true, activityDate: true,
         activityTime: true, location: true, description: true, notes: true,
