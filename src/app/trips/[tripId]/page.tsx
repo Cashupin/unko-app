@@ -361,14 +361,8 @@ export default async function TripPage({
                   <ItineraryViewToggle tripId={tripId} view={view} />
                   <div className="flex items-center gap-1.5">
                     {view !== "calendar" && <PersonalModeToggle />}
-                    {view !== "calendar" && (
-                      <div className="hidden md:block">
-                        <CollapseAllButton />
-                      </div>
-                    )}
-                    <div className="hidden md:block">
-                      <PdfExportButton tripId={tripId} isAdmin={isAdmin} />
-                    </div>
+                    {view !== "calendar" && <CollapseAllButton />}
+                    <PdfExportButton tripId={tripId} isAdmin={isAdmin} />
                     {canEdit && view !== "calendar" && (
                       <div className="hidden md:block">
                         <CreateActivityForm tripId={tripId} isAdmin={isAdmin} tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined} />
