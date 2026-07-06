@@ -251,11 +251,13 @@ export default async function TripPage({
         {/* Itinerary subnav + action bar — live inside the sticky header, no pixel offsets needed */}
         {activeTab === "itinerario" && (
           <>
-            <div className="border-t border-zinc-200 px-4 dark:border-zinc-700/80 md:px-6">
-              <ItinerarySubNav tripId={tripId} activeSubtab={activeSubtab} />
+            <div className="border-t border-zinc-200 dark:border-zinc-700/80">
+              <div className="mx-auto max-w-5xl px-4 md:px-6">
+                <ItinerarySubNav tripId={tripId} activeSubtab={activeSubtab} />
+              </div>
             </div>
             {activeSubtab === "itinerario" && (
-              <div className="flex items-center justify-between gap-2 px-4 py-2 md:px-6">
+              <div className="mx-auto max-w-5xl flex items-center justify-between gap-2 px-4 py-2 md:px-6">
                 <ItineraryViewToggle tripId={tripId} view={view} />
                 <div className="flex items-center gap-1.5">
                   {view !== "calendar" && <PersonalModeToggle />}
