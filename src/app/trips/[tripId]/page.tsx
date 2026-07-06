@@ -164,6 +164,8 @@ export default async function TripPage({
   ) : null;
 
   return (
+    <PersonalModeProvider>
+    <DayCollapseProvider>
     <div className="min-h-screen bg-white dark:bg-[#0E1113]">
       {/* Header */}
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-700/80 dark:bg-zinc-900 sticky top-0 z-30">
@@ -245,6 +247,34 @@ export default async function TripPage({
             ))}
           </nav>
         </div>
+
+        {/* Itinerary subnav + action bar — live inside the sticky header, no pixel offsets needed */}
+        {activeTab === "itinerario" && (
+          <>
+            <div className="border-t border-zinc-200 px-4 dark:border-zinc-700/80 md:px-6">
+              <ItinerarySubNav tripId={tripId} activeSubtab={activeSubtab} />
+            </div>
+            {activeSubtab === "itinerario" && (
+              <div className="flex items-center justify-between gap-2 px-4 py-2 md:px-6">
+                <ItineraryViewToggle tripId={tripId} view={view} />
+                <div className="flex items-center gap-1.5">
+                  {view !== "calendar" && <PersonalModeToggle />}
+                  {view !== "calendar" && <CollapseAllButton />}
+                  <PdfExportButton tripId={tripId} isAdmin={isAdmin} />
+                  {canEdit && view !== "calendar" && (
+                    <div className="hidden md:block">
+                      <CreateActivityForm
+                        tripId={tripId}
+                        isAdmin={isAdmin}
+                        tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </header>
 
       {/* Content */}
@@ -342,36 +372,7 @@ export default async function TripPage({
 
         {/* ── Itinerario ──────────────────────────────────────────────────── */}
         {activeTab === "itinerario" && (
-          <PersonalModeProvider>
-          <DayCollapseProvider>
           <div>
-
-            {/* Sticky subnav + action bar */}
-            <div className="sticky top-18.25 md:top-30.25 z-20 -mx-4 md:-mx-6 bg-white dark:bg-[#0E1113]">
-              {/* Sub-nav tabs */}
-              <Suspense fallback={null}>
-                <div className="px-4 md:px-6">
-                  <ItinerarySubNav tripId={tripId} activeSubtab={activeSubtab} />
-                </div>
-              </Suspense>
-
-              {/* Action bar — only on itinerario sub-tab */}
-              {activeSubtab === "itinerario" && (
-                <div className="flex items-center justify-between gap-2 px-4 md:px-6 py-2.5 border-b border-zinc-800">
-                  <ItineraryViewToggle tripId={tripId} view={view} />
-                  <div className="flex items-center gap-1.5">
-                    {view !== "calendar" && <PersonalModeToggle />}
-                    {view !== "calendar" && <CollapseAllButton />}
-                    <PdfExportButton tripId={tripId} isAdmin={isAdmin} />
-                    {canEdit && view !== "calendar" && (
-                      <div className="hidden md:block">
-                        <CreateActivityForm tripId={tripId} isAdmin={isAdmin} tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* ── Sub-tab: Itinerario ── */}
             {activeSubtab === "itinerario" && (
@@ -468,8 +469,6 @@ export default async function TripPage({
               </div>
             )}
           </div>
-          </DayCollapseProvider>
-          </PersonalModeProvider>
         )}
 
         {/* ── Checklist ───────────────────────────────────────────────────── */}
@@ -516,5 +515,7 @@ export default async function TripPage({
       <TripBottomNav tripId={tripId} activeTab={activeTab} />
       <TripLiveUpdater tripId={tripId} />
     </div>
+    </DayCollapseProvider>
+    </PersonalModeProvider>
   );
 }

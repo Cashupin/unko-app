@@ -43,13 +43,14 @@ export function PersonalModeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+      title={show ? "Ocultar mi plan" : "Mi plan"}
+      className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
         show
           ? "border-violet-700/60 bg-violet-900/30 text-violet-300 hover:bg-violet-900/50"
           : "border-[#27272a] bg-[#18191c]/60 text-zinc-400 hover:bg-[#27272a] hover:text-zinc-200"
       }`}
     >
-      🔒 {show ? "Ocultar mi plan" : "Mi plan"}
+      🔒<span className="ml-1 hidden md:inline">{show ? "Ocultar mi plan" : "Mi plan"}</span>
     </button>
   );
 }
