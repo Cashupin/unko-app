@@ -82,6 +82,12 @@ type PersonalActivityRow = {
   time: string | null; location: string | null; notes: string | null;
 };
 
+type ExcursionRow = {
+  id: string; title: string; description: string | null;
+  notes: string | null; date: string | null;
+  activities: { id: string; title: string; activityTime: string | null; location: string | null; description: string | null; notes: string | null; isDraft: boolean }[];
+};
+
 type PassRow = {
   id: string; name: string;
   validFrom: string | null; validTo: string | null;
@@ -282,7 +288,7 @@ export default async function PrintPage({
   const isAdmin = myParticipant.role === "ADMIN";
   const includeDrafts = drafts === "1" && isAdmin;
 
-  const [rawHotels, rawActivities, rawTransports, rawPasses, rawPersonal, rawDayNotes] = await Promise.all([
+  const [rawHotels, rawActivities, rawTransports, rawPasses, rawPersonal, rawDayNotes, rawExcursions] = await Promise.all([
     prisma.hotel.findMany({
       where: { tripId },
       select: {
@@ -330,6 +336,18 @@ export default async function PrintPage({
       where: { tripId },
       select: { date: true, label: true },
     }),
+    prisma.excursion.findMany({
+      where: { tripId },
+      select: {
+        id: true, title: true, description: true, notes: true, date: true,
+        activities: {
+          where: !includeDrafts ? { isDraft: false } : undefined,
+          select: { id: true, title: true, activityTime: true, location: true, description: true, notes: true, isDraft: true },
+          orderBy: [{ activityTime: "asc" }],
+        },
+      },
+      orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+    }),
   ]);
 
   const hotels: HotelRow[] = rawHotels.map((h) => ({
@@ -365,6 +383,15 @@ export default async function PrintPage({
 
   const noteByDate = new Map<string, string>();
   for (const n of rawDayNotes) noteByDate.set(n.date, n.label);
+
+  const excursions: ExcursionRow[] = rawExcursions.map((e) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    notes: e.notes,
+    date: e.date ?? null,
+    activities: e.activities,
+  }));
 
   const passes: PassRow[] = rawPasses.map((p) => ({
     ...p,
@@ -763,6 +790,69 @@ export default async function PrintPage({
             </div>
           )}
         </section>
+
+        {/* ── Sección 5: Excursiones ──────────────────────────────────────────── */}
+        {excursions.length > 0 && (
+          <section className="print-section-break mb-10">
+            <h2 className="mb-4 text-lg font-bold uppercase tracking-wider text-zinc-400">
+              5. Excursiones
+            </h2>
+            <div className="flex flex-col gap-6">
+              {excursions.map((exc) => (
+                <div key={exc.id} className="break-inside-avoid rounded-xl border border-zinc-200 overflow-hidden">
+                  {/* Excursion header */}
+                  <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-bold text-zinc-900">🗺️ {exc.title}</p>
+                      {exc.date ? (
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                          📅 {fmtMed(exc.date)}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-500">Sin fecha</span>
+                      )}
+                      <span className="text-xs text-zinc-400">
+                        {exc.activities.length} actividad{exc.activities.length !== 1 ? "es" : ""}
+                      </span>
+                    </div>
+                    {exc.description && (
+                      <p className="mt-1 text-sm text-zinc-500">{exc.description}</p>
+                    )}
+                    {exc.notes && (
+                      <p className="mt-1 text-xs font-medium text-amber-600">⚠️ {exc.notes}</p>
+                    )}
+                  </div>
+
+                  {/* Activities */}
+                  {exc.activities.length > 0 && (
+                    <div className="divide-y divide-zinc-100 px-4">
+                      {exc.activities.map((a) => (
+                        <div key={a.id} className={`py-2.5 ${a.isDraft ? "opacity-60" : ""}`}>
+                          <div className="flex items-center gap-2">
+                            {a.activityTime && (
+                              <span className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-bold text-zinc-600 tabular-nums">
+                                {a.activityTime}
+                              </span>
+                            )}
+                            {a.isDraft && (
+                              <span className="rounded border border-dashed border-indigo-300 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-500">
+                                Borrador
+                              </span>
+                            )}
+                            <p className="font-semibold text-zinc-800">{a.title}</p>
+                          </div>
+                          {a.location && <p className="mt-0.5 text-xs text-zinc-500">📍 {a.location}</p>}
+                          {a.description && <p className="mt-0.5 text-sm text-zinc-600">{a.description}</p>}
+                          {a.notes && <p className="mt-0.5 text-xs italic text-zinc-400">{a.notes}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="mt-12 border-t border-zinc-100 pt-4 text-center text-xs text-zinc-300 print:block">
           Generado con UnkoTrip · {new Date().toLocaleDateString("es-CL")}
