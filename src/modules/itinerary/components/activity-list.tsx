@@ -490,7 +490,7 @@ function DayCard({
             </span>
           )}
           {hotels.length > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="hidden md:flex items-center gap-1">
               {hotels.length === 1 ? (
                 <a
                   href={`/trips/${tripId}?tab=itinerario&hotelId=${hotels[0].id}`}
