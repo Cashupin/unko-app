@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -49,6 +49,13 @@ export function ExcursionCard({
   const [editDescription, setEditDescription] = useState(excursion.description ?? "");
   const [editNotes, setEditNotes] = useState(excursion.notes ?? "");
   const [editLoading, setEditLoading] = useState(false);
+
+  // ── Collapse (persiste en localStorage por excursión) ────────────────────────
+  const collapseKey = `itin-exc-${excursion.id}`;
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  useEffect(() => {
+    setIsCollapsed(localStorage.getItem(collapseKey) === "true");
+  }, [collapseKey]);
 
   // ── Delete ───────────────────────────────────────────────────────────────────
   const [deleting, setDeleting] = useState(false);
@@ -150,61 +157,82 @@ export function ExcursionCard({
             )}
           </div>
 
-          {canEdit && (
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                type="button"
-                onClick={() => { setDateValue(excursion.date ?? ""); setDateOpen(true); }}
-                className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                  hasDate
-                    ? "border-blue-700/50 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40"
-                    : "border-emerald-700/50 bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40"
-                }`}
-              >
-                {hasDate ? "📅 Cambiar fecha" : "📅 Asignar fecha"}
-              </button>
-              <button type="button" onClick={() => { setEditTitle(excursion.title); setEditDescription(excursion.description ?? ""); setEditNotes(excursion.notes ?? ""); setEditOpen(true); }}
-                className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
-                aria-label="Editar">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              {isAdmin && (
-                <button type="button" onClick={handleDelete} disabled={deleting}
-                  className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-red-400 disabled:opacity-40 transition-colors"
-                  aria-label="Eliminar">
+          <div className="flex shrink-0 items-center gap-1">
+            {canEdit && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setDateValue(excursion.date ?? ""); setDateOpen(true); }}
+                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    hasDate
+                      ? "border-blue-700/50 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40"
+                      : "border-emerald-700/50 bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40"
+                  }`}
+                >
+                  {hasDate ? "📅 Cambiar fecha" : "📅 Asignar fecha"}
+                </button>
+                <button type="button" onClick={() => { setEditTitle(excursion.title); setEditDescription(excursion.description ?? ""); setEditNotes(excursion.notes ?? ""); setEditOpen(true); }}
+                  className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
+                  aria-label="Editar">
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </button>
-              )}
-            </div>
-          )}
+                {isAdmin && (
+                  <button type="button" onClick={handleDelete} disabled={deleting}
+                    className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-red-400 disabled:opacity-40 transition-colors"
+                    aria-label="Eliminar">
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsCollapsed((v) => {
+                const next = !v;
+                localStorage.setItem(collapseKey, String(next));
+                return next;
+              })}
+              aria-label={isCollapsed ? "Expandir" : "Colapsar"}
+              className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-zinc-400 transition-colors"
+            >
+              <svg
+                className={`h-3.5 w-3.5 transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* ── Activity list ───────────────────────────────────────────────────── */}
-        <div className="border-t border-zinc-800/60 px-3 py-3 flex flex-col gap-2">
-          {activityCount === 0 && (
-            <p className="text-xs text-zinc-600 italic px-1 py-1">
-              Sin actividades todavía — añade la primera abajo
-            </p>
-          )}
-          {activitiesSlot}
+        {!isCollapsed && (
+          <div className="border-t border-zinc-800/60 px-3 py-3 flex flex-col gap-2">
+            {activityCount === 0 && (
+              <p className="text-xs text-zinc-600 italic px-1 py-1">
+                Sin actividades todavía — añade la primera abajo
+              </p>
+            )}
+            {activitiesSlot}
 
-          {/* Add activity */}
-          {canEdit && (
-            <div className="mt-1 px-1">
-              <CreateActivityForm
-                tripId={tripId}
-                compact
-                overlayZIndex="z-[60]"
-                excursionId={excursion.id}
-                excursionTitle={excursion.title}
-              />
-            </div>
-          )}
-        </div>
+            {/* Add activity */}
+            {canEdit && (
+              <div className="mt-1 px-1">
+                <CreateActivityForm
+                  tripId={tripId}
+                  compact
+                  overlayZIndex="z-[60]"
+                  excursionId={excursion.id}
+                  excursionTitle={excursion.title}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Modal: Asignar fecha ─────────────────────────────────────────────── */}
