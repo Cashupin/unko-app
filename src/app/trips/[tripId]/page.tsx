@@ -27,6 +27,7 @@ import { CreateHotelForm } from "@/modules/itinerary/components/create-hotel-for
 import { ItinerarySubNav } from "@/modules/itinerary/components/itinerary-sub-nav";
 import { PersonalModeProvider, PersonalModeToggle } from "@/modules/itinerary/components/personal-mode-provider";
 import { PdfExportButton } from "@/modules/itinerary/components/pdf-export-button";
+import { DayCollapseProvider, CollapseAllButton } from "@/modules/itinerary/components/day-collapse-provider";
 import { TransportPanel } from "@/modules/itinerary/components/transport-panel";
 import { TicketsPanel } from "@/modules/itinerary/components/tickets-panel";
 import { ExcursionsPanel } from "@/modules/itinerary/components/excursions-panel";
@@ -342,6 +343,7 @@ export default async function TripPage({
         {/* ── Itinerario ──────────────────────────────────────────────────── */}
         {activeTab === "itinerario" && (
           <PersonalModeProvider>
+          <DayCollapseProvider>
           <div>
 
             {/* Sticky subnav + action bar */}
@@ -359,6 +361,11 @@ export default async function TripPage({
                   <ItineraryViewToggle tripId={tripId} view={view} />
                   <div className="flex items-center gap-1.5">
                     {view !== "calendar" && <PersonalModeToggle />}
+                    {view !== "calendar" && (
+                      <div className="hidden md:block">
+                        <CollapseAllButton />
+                      </div>
+                    )}
                     <div className="hidden md:block">
                       <PdfExportButton tripId={tripId} isAdmin={isAdmin} />
                     </div>
@@ -467,6 +474,7 @@ export default async function TripPage({
               </div>
             )}
           </div>
+          </DayCollapseProvider>
           </PersonalModeProvider>
         )}
 

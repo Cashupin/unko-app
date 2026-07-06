@@ -14,6 +14,10 @@ import {
   PersonalActivitySection,
   PersonalRowConditional,
 } from "@/modules/itinerary/components/personal-mode-provider";
+import {
+  DayBadgeCollapseButton,
+  CollapsibleDayBody,
+} from "@/modules/itinerary/components/day-collapse-provider";
 
 function toDateStr(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -452,21 +456,14 @@ function DayCard({
         }`}
       >
         <div className="flex items-center gap-3 min-w-0">
-          {/* Day badge */}
-          <div
-            className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl ${
-              isToday
-                ? "bg-linear-to-br from-violet-600 to-indigo-600 text-white"
-                : isPast
-                ? "bg-[#27272a] text-zinc-500"
-                : "bg-zinc-100 text-zinc-900"
-            }`}
-          >
-            <span className="text-[8.5px] font-bold leading-none tracking-widest opacity-65 uppercase">
-              {weekday}
-            </span>
-            <span className="text-[17px] font-extrabold leading-tight">{dayNum}</span>
-          </div>
+          {/* Day badge — also the collapse toggle */}
+          <DayBadgeCollapseButton
+            dateStr={dateStr}
+            weekday={weekday}
+            dayNum={dayNum}
+            isToday={isToday}
+            isPast={isPast}
+          />
 
           <div className="min-w-0">
             <p className="text-sm font-semibold text-zinc-200 flex flex-wrap items-center gap-2">
@@ -487,6 +484,11 @@ function DayCard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {acts.length > 0 && (
+            <span className="tabular-nums text-[11px] text-zinc-600 hidden md:inline">
+              {acts.length}
+            </span>
+          )}
           {hotels.length > 0 && (
             <div className="flex items-center gap-1">
               {hotels.length === 1 ? (
@@ -522,36 +524,37 @@ function DayCard({
       </div>
 
       {/* Body */}
-      {isEmpty ? (
-        <>
-          <div className="flex items-center justify-center px-5 py-10">
-            <p className="text-sm font-medium text-zinc-600">☀️ Día libre</p>
+      <CollapsibleDayBody dateStr={dateStr}>
+        {isEmpty ? (
+          <>
+            <div className="flex items-center justify-center px-5 py-10">
+              <p className="text-sm font-medium text-zinc-600">☀️ Día libre</p>
+            </div>
+            <PersonalActivitySection activities={personalActs} tripId={tripId} date={dateStr} />
+          </>
+        ) : (
+          <div className="flex flex-col gap-2 p-3">
+            {merged.map((entry) =>
+              entry.kind === "activity" ? (
+                <ActivityRow
+                  key={entry.item.id}
+                  act={entry.item}
+                  tripId={tripId}
+                  canEdit={canEdit}
+                  isAdmin={isAdmin}
+                  participants={participants}
+                  tripStartDate={tripStartDate}
+                />
+              ) : entry.kind === "transport" ? (
+                <TransportBlock key={entry.item.id} transport={entry.item} tripId={tripId} />
+              ) : (
+                <PersonalRowConditional key={entry.item.id} activity={entry.item} tripId={tripId} />
+              )
+            )}
+            <PersonalActivitySection activities={[]} tripId={tripId} date={dateStr} />
           </div>
-          <PersonalActivitySection activities={personalActs} tripId={tripId} date={dateStr} />
-        </>
-      ) : (
-        <div className="flex flex-col gap-2 p-3">
-          {merged.map((entry) =>
-            entry.kind === "activity" ? (
-              <ActivityRow
-                key={entry.item.id}
-                act={entry.item}
-                tripId={tripId}
-                canEdit={canEdit}
-                isAdmin={isAdmin}
-                participants={participants}
-                tripStartDate={tripStartDate}
-              />
-            ) : entry.kind === "transport" ? (
-              <TransportBlock key={entry.item.id} transport={entry.item} tripId={tripId} />
-            ) : (
-              <PersonalRowConditional key={entry.item.id} activity={entry.item} tripId={tripId} />
-            )
-          )}
-          {/* Solo el formulario de agregar — los items ya están en la lista mezclada */}
-          <PersonalActivitySection activities={[]} tripId={tripId} date={dateStr} />
-        </div>
-      )}
+        )}
+      </CollapsibleDayBody>
     </div>
   );
 }
