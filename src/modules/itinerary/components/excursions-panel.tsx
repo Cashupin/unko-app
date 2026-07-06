@@ -101,7 +101,7 @@ export async function ExcursionsPanel({ tripId }: { tripId: string }) {
               {floating.map((e) => (
                 <ExcursionCard
                   key={e.id}
-                  excursion={{ id: e.id, title: e.title, description: e.description, date: e.date }}
+                  excursion={{ id: e.id, title: e.title, description: e.description, notes: e.notes, date: e.date }}
                   tripId={tripId}
                   activityCount={e.activities.length}
                   activitiesSlot={buildSlot(e.activities)}
@@ -121,7 +121,7 @@ export async function ExcursionsPanel({ tripId }: { tripId: string }) {
               {scheduled.map((e) => (
                 <ExcursionCard
                   key={e.id}
-                  excursion={{ id: e.id, title: e.title, description: e.description, date: e.date }}
+                  excursion={{ id: e.id, title: e.title, description: e.description, notes: e.notes, date: e.date }}
                   tripId={tripId}
                   activityCount={e.activities.length}
                   activitiesSlot={buildSlot(e.activities)}

@@ -387,6 +387,7 @@ model Excursion {
   tripId      String
   title       String  @db.VarChar(200)
   description String?
+  notes       String? // Restricciones o advertencias (ej: "No sábados — templo cerrado")
   date        String? // "YYYY-MM-DD" — null = sin fecha asignada
 
   createdAt   DateTime @default(now())

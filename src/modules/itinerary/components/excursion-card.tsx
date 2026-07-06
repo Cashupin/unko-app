@@ -10,6 +10,7 @@ type ExcursionData = {
   id: string;
   title: string;
   description: string | null;
+  notes: string | null;
   date: string | null;
 };
 
@@ -46,6 +47,7 @@ export function ExcursionCard({
   const [editOpen, setEditOpen] = useState(false);
   const [editTitle, setEditTitle] = useState(excursion.title);
   const [editDescription, setEditDescription] = useState(excursion.description ?? "");
+  const [editNotes, setEditNotes] = useState(excursion.notes ?? "");
   const [editLoading, setEditLoading] = useState(false);
 
   // ── Delete ───────────────────────────────────────────────────────────────────
@@ -82,7 +84,7 @@ export function ExcursionCard({
       const res = await fetch(`/api/trips/${tripId}/excursions/${excursion.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editTitle.trim(), description: editDescription.trim() || null }),
+        body: JSON.stringify({ title: editTitle.trim(), description: editDescription.trim() || null, notes: editNotes.trim() || null }),
       });
       if (!res.ok) { toast.error("Error al guardar"); return; }
       setEditOpen(false);
@@ -140,6 +142,12 @@ export function ExcursionCard({
             {excursion.description && (
               <p className="mt-1 text-xs text-zinc-400">{excursion.description}</p>
             )}
+            {excursion.notes && (
+              <p className="mt-1.5 flex items-start gap-1 text-xs text-amber-400/80">
+                <span className="shrink-0 mt-px">⚠️</span>
+                {excursion.notes}
+              </p>
+            )}
           </div>
 
           {canEdit && (
@@ -155,7 +163,7 @@ export function ExcursionCard({
               >
                 {hasDate ? "📅 Cambiar fecha" : "📅 Asignar fecha"}
               </button>
-              <button type="button" onClick={() => setEditOpen(true)}
+              <button type="button" onClick={() => { setEditTitle(excursion.title); setEditDescription(excursion.description ?? ""); setEditNotes(excursion.notes ?? ""); setEditOpen(true); }}
                 className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
                 aria-label="Editar">
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -255,8 +263,19 @@ export function ExcursionCard({
                 <input autoFocus type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required className={inputCls} />
               </div>
               <div className="flex flex-col gap-1">
-                <label className={labelCls}>Notas</label>
+                <label className={labelCls}>Descripción</label>
                 <textarea rows={2} value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className={`${inputCls} resize-none`} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-amber-600 dark:text-amber-400">⚠️ Restricción / nota</label>
+                <textarea
+                  rows={2}
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="Ej: No sábados — templo cerrado"
+                  className={`${inputCls} resize-none placeholder:text-zinc-500`}
+                />
+                <p className="text-[10px] text-zinc-500">Se muestra como advertencia en la tarjeta</p>
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={() => setEditOpen(false)} disabled={editLoading}
