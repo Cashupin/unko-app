@@ -58,6 +58,7 @@ export type ItemCardData = {
   canAddToItinerary: boolean;
   tripStartDate: string | null;
   tripEndDate: string | null;
+  excursions: { id: string; title: string; date: string | null }[];
   // Full ItemSummary for EditItemForm compatibility
   itemSummary: ItemSummary;
 };
@@ -448,6 +449,7 @@ export function ItemCardWithModal({ item }: { item: ItemCardData }) {
                       tripEndDate={item.tripEndDate ? new Date(item.tripEndDate) : null}
                       inItinerary={item.inItinerary}
                       isAdmin={item.isAdmin}
+                      excursions={item.excursions}
                     />
                   )}
                 </div>

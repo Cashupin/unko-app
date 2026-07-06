@@ -5,11 +5,18 @@ import { useRouter } from "next/navigation";
 import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
 
+type ExcursionOption = { id: string; title: string; date: string | null };
+
 function toDateInput(date: Date | null | undefined): string {
   if (!date) return "";
   return date instanceof Date
     ? date.toISOString().slice(0, 10)
     : String(date).slice(0, 10);
+}
+
+function fmtExcDate(ymd: string) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("es-CL", { day: "numeric", month: "short" });
 }
 
 export function AddToItineraryButton({
@@ -21,6 +28,7 @@ export function AddToItineraryButton({
   tripEndDate,
   inItinerary = false,
   isAdmin = false,
+  excursions = [],
 }: {
   tripId: string;
   itemId: string;
@@ -30,11 +38,13 @@ export function AddToItineraryButton({
   tripEndDate?: Date | null;
   inItinerary?: boolean;
   isAdmin?: boolean;
+  excursions?: ExcursionOption[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [excursionId, setExcursionId] = useState<string | null>(null);
   const [includeDescription, setIncludeDescription] = useState(true);
   const [isDraft, setIsDraft] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,6 +65,7 @@ export function AddToItineraryButton({
       if (time) body.activityTime = time;
       if (description) body.description = includeDescription ? description : null;
       if (isDraft) body.isDraft = true;
+      if (excursionId) body.excursionId = excursionId;
 
       const res = await fetch(`/api/trips/${tripId}/activities`, {
         method: "POST",
@@ -92,7 +103,7 @@ export function AddToItineraryButton({
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => { setDate(""); setTime(""); setExcursionId(null); setIsDraft(false); setOpen(true); }}
         className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-50 transition-colors dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
       >
         + Itinerario
@@ -121,10 +132,13 @@ export function AddToItineraryButton({
               {title}
             </p>
 
+            {(() => {
+              const canSubmit = !!date || !!excursionId;
+              return (
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Fecha (opcional)
+                  Fecha {excursions.length === 0 && <span className="text-red-500">*</span>}
                 </label>
                 <DatePicker
                   value={date}
@@ -135,6 +149,45 @@ export function AddToItineraryButton({
                   placeholder="Seleccionar fecha"
                 />
               </div>
+
+              {excursions.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
+                    <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">o</span>
+                    <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      Excursión
+                    </label>
+                    <select
+                      value={excursionId ?? ""}
+                      onChange={(e) => {
+                        const id = e.target.value || null;
+                        setExcursionId(id);
+                        if (id) {
+                          const exc = excursions.find((x) => x.id === id);
+                          if (exc?.date) setDate(exc.date);
+                        }
+                      }}
+                      className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
+                    >
+                      <option value="">Sin excursión</option>
+                      {excursions.map((exc) => (
+                        <option key={exc.id} value={exc.id}>
+                          🗺️ {exc.title}{exc.date ? ` · ${fmtExcDate(exc.date)}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {!canSubmit && (
+                    <p className="text-[11px] text-amber-500 dark:text-amber-400">
+                      Elige una fecha o una excursión para continuar
+                    </p>
+                  )}
+                </>
+              )}
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
@@ -198,13 +251,15 @@ export function AddToItineraryButton({
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={loading}
+                  disabled={loading || !canSubmit}
                   className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                 >
                   {loading ? "Agregando..." : "Agregar"}
                 </button>
               </div>
             </div>
+            );
+          })()}
           </div>
         </div>
       )}

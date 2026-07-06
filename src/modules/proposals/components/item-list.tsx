@@ -32,7 +32,7 @@ export async function ItemList({
       ? proposerFilter
       : undefined;
 
-  const [rawItems, registeredParticipants, tripParticipants, myCommentViews] = await Promise.all([
+  const [rawItems, registeredParticipants, tripParticipants, myCommentViews, excursions] = await Promise.all([
     prisma.item.findMany({
       where: {
         tripId,
@@ -105,6 +105,11 @@ export async function ItemList({
     prisma.itemCommentView.findMany({
       where: { userId: currentUserId, item: { tripId } },
       select: { itemId: true, lastSeenAt: true },
+    }),
+    prisma.excursion.findMany({
+      where: { tripId },
+      select: { id: true, title: true, date: true },
+      orderBy: [{ date: "asc" }, { createdAt: "asc" }],
     }),
   ]);
 
@@ -217,6 +222,11 @@ export async function ItemList({
       canAddToItinerary: isAdmin || hasMajority,
       tripStartDate: tripStartDate ? tripStartDate.toISOString() : null,
       tripEndDate: tripEndDate ? tripEndDate.toISOString() : null,
+      excursions: excursions.map((e) => ({
+        id: e.id,
+        title: e.title,
+        date: e.date ?? null,
+      })),
       itemSummary,
     };
   });
