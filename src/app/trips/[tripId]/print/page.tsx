@@ -793,7 +793,7 @@ export default async function PrintPage({
 
         {/* ── Sección 5: Excursiones ──────────────────────────────────────────── */}
         {excursions.length > 0 && (
-          <section className="print-section-break mb-10">
+          <section className="print-section-break mt-10 mb-10">
             <h2 className="mb-4 text-lg font-bold uppercase tracking-wider text-zinc-400">
               5. Excursiones
             </h2>
