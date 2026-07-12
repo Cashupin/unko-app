@@ -484,11 +484,6 @@ function DayCard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {acts.length > 0 && (
-            <span className="tabular-nums text-[11px] text-zinc-600 hidden md:inline">
-              {acts.length}
-            </span>
-          )}
           {hotels.length > 0 && (
             <div className="hidden md:flex items-center gap-1">
               {hotels.length === 1 ? (

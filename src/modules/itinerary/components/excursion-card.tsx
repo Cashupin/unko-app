@@ -57,6 +57,28 @@ export function ExcursionCard({
     setIsCollapsed(localStorage.getItem(collapseKey) === "true");
   }, [collapseKey]);
 
+  // ── Download image ───────────────────────────────────────────────────────────
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownloadImage() {
+    setDownloading(true);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/excursions/${excursion.id}/image`);
+      if (!res.ok) { toast.error("Error al generar imagen"); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${excursion.title}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Error al descargar");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   // ── Delete ───────────────────────────────────────────────────────────────────
   const [deleting, setDeleting] = useState(false);
 
@@ -120,6 +142,9 @@ export function ExcursionCard({
 
   const hasDate = !!excursion.date;
 
+  // ── Notes expand ─────────────────────────────────────────────────────────────
+  const [notesExpanded, setNotesExpanded] = useState(false);
+
   const inputCls = "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-[#3f3f46] dark:bg-[#27272a] dark:text-zinc-100 dark:placeholder-zinc-600 dark:focus:ring-zinc-600";
   const labelCls = "text-xs font-medium text-zinc-600 dark:text-zinc-400";
 
@@ -129,47 +154,25 @@ export function ExcursionCard({
         hasDate ? "border-blue-800/40 bg-blue-950/20" : "border-[#27272a] bg-[#18191c]"
       }`}>
         {/* ── Header ─────────────────────────────────────────────────────────── */}
-        <div className="flex items-start justify-between gap-3 p-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold text-zinc-100">🗺️ {excursion.title}</p>
-              {hasDate ? (
-                <span className="rounded-full border border-blue-700/50 bg-blue-900/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
-                  📅 {fmtDate(excursion.date!)}
-                </span>
-              ) : (
-                <span className="rounded-full border border-zinc-700 px-2 py-0.5 text-[10px] font-medium text-zinc-500">
-                  Sin fecha
-                </span>
-              )}
-              <span className="text-[10px] text-zinc-600">
-                {activityCount} actividad{activityCount !== 1 ? "es" : ""}
-              </span>
-            </div>
-            {excursion.description && (
-              <p className="mt-1 text-xs text-zinc-400">{excursion.description}</p>
-            )}
-            {excursion.notes && (
-              <p className="mt-1.5 flex items-start gap-1 text-xs text-amber-400/80">
-                <span className="shrink-0 mt-px">⚠️</span>
-                {excursion.notes}
-              </p>
-            )}
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1">
+        <div className="p-4">
+          {/* Fila 1: título + botones */}
+          <div className="flex items-center justify-between gap-2">
+            <p className="min-w-0 truncate text-sm font-semibold text-zinc-100">🗺️ {excursion.title}</p>
+            <div className="flex shrink-0 items-center gap-1">
             {canEdit && (
               <>
                 <button
                   type="button"
                   onClick={() => { setDateValue(excursion.date ?? ""); setDateOpen(true); }}
-                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                  title={hasDate ? "Cambiar fecha" : "Asignar fecha"}
+                  className={`rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors ${
                     hasDate
                       ? "border-blue-700/50 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40"
                       : "border-emerald-700/50 bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40"
                   }`}
                 >
-                  {hasDate ? "📅 Cambiar fecha" : "📅 Asignar fecha"}
+                  <span>📅</span>
+                  <span className="hidden md:inline ml-1">{hasDate ? "Cambiar fecha" : "Asignar fecha"}</span>
                 </button>
                 <button type="button" onClick={() => { setEditTitle(excursion.title); setEditDescription(excursion.description ?? ""); setEditNotes(excursion.notes ?? ""); setEditOpen(true); }}
                   className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
@@ -191,6 +194,24 @@ export function ExcursionCard({
             )}
             <button
               type="button"
+              onClick={handleDownloadImage}
+              disabled={downloading}
+              aria-label="Exportar como imagen"
+              title="Exportar como imagen"
+              className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-40 transition-colors"
+            >
+              {downloading ? (
+                <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              ) : (
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              )}
+            </button>
+            <button
+              type="button"
               onClick={() => setIsCollapsed((v) => {
                 const next = !v;
                 localStorage.setItem(collapseKey, String(next));
@@ -207,6 +228,37 @@ export function ExcursionCard({
               </svg>
             </button>
           </div>
+          </div>
+
+          {/* Fila 2: badges + descripción + notas (ancho completo) */}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {hasDate ? (
+              <span className="rounded-full border border-blue-700/50 bg-blue-900/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
+                📅 {fmtDate(excursion.date!)}
+              </span>
+            ) : (
+              <span className="rounded-full border border-zinc-700 px-2 py-0.5 text-[10px] font-medium text-zinc-500">
+                Sin fecha
+              </span>
+            )}
+            <span className="text-[10px] text-zinc-600">
+              {activityCount} actividad{activityCount !== 1 ? "es" : ""}
+            </span>
+          </div>
+
+          {excursion.description && (
+            <p className="mt-1.5 text-xs text-zinc-400">{excursion.description}</p>
+          )}
+
+          {excursion.notes && (
+            <p
+              role="button"
+              onClick={() => setNotesExpanded((v) => !v)}
+              className={`mt-1.5 text-xs text-amber-400/80 cursor-pointer select-none ${notesExpanded ? "" : "line-clamp-3"}`}
+            >
+              ⚠️ {excursion.notes}
+            </p>
+          )}
         </div>
 
         {/* ── Activity list ───────────────────────────────────────────────────── */}
