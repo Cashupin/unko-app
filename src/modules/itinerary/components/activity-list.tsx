@@ -725,7 +725,7 @@ function ActivityRow({
       {act.photoUrl ? (
         <div className="flex shrink-0 flex-col items-center gap-1.5 self-start pt-0.5">
           {canEdit && (
-            <div className="flex items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center justify-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
               <EditActivityForm tripId={tripId} activity={activityForEdit} tripStartDate={tripStartDate} />
               {!act.isDraft && <DeleteActivityButton tripId={tripId} activityId={act.id} />}
             </div>
@@ -735,7 +735,7 @@ function ActivityRow({
       ) : act.item?.imageUrl ? (
         <div className="flex shrink-0 flex-col items-center gap-1.5 self-start pt-0.5">
           {canEdit && (
-            <div className="flex items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center justify-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
               <EditActivityForm tripId={tripId} activity={activityForEdit} tripStartDate={tripStartDate} />
               {!act.isDraft && <DeleteActivityButton tripId={tripId} activityId={act.id} />}
             </div>
@@ -745,7 +745,7 @@ function ActivityRow({
           </div>
         </div>
       ) : canEdit ? (
-        <div className="flex shrink-0 items-center gap-1 self-start pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex shrink-0 items-center gap-1 self-start pt-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <EditActivityForm tripId={tripId} activity={activityForEdit} />
           {!act.isDraft && <DeleteActivityButton tripId={tripId} activityId={act.id} />}
         </div>

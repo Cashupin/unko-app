@@ -68,7 +68,7 @@ export function PersonalActivityListRow({
         type="button"
         onClick={handleDelete}
         disabled={deleting}
-        className="mt-0.5 shrink-0 rounded-lg p-1.5 text-violet-600 opacity-0 transition-all group-hover:opacity-100 hover:bg-violet-900/40 hover:text-violet-400 disabled:opacity-40"
+        className="mt-0.5 shrink-0 rounded-lg p-1.5 text-violet-600 opacity-100 md:opacity-0 transition-all md:group-hover:opacity-100 hover:bg-violet-900/40 hover:text-violet-400 disabled:opacity-40"
         aria-label="Eliminar"
       >
         {deleting ? "…" : (
