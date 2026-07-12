@@ -6,6 +6,7 @@ import { ConvertedAmount } from "@/components/ui/converted-amount";
 import { ExpenseStatsCard } from "@/modules/expenses/components/expense-stats-card";
 import { ExpenseSettlementPanel, type ParticipantBreakdown } from "@/modules/expenses/components/expense-settlement-panel";
 import { CreateExpenseForm } from "@/modules/expenses/components/create-expense-form";
+import { SettledExpensesCollapsible } from "@/modules/expenses/components/settled-expenses-collapsible";
 
 type Participant = { id: string; name: string };
 
@@ -67,7 +68,7 @@ export async function ExpenseList({
           orderBy: { id: "asc" },
         },
       },
-      orderBy: { expenseDate: "desc" },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.payment.findMany({
       where: { tripId },
@@ -83,8 +84,12 @@ export async function ExpenseList({
     }),
   ]);
 
+  // Unsettled (active) vs settled (liquidado)
+  const unsettledExpenses = rawExpenses.filter((e) => e.isActive);
+  const settledExpenses = rawExpenses.filter((e) => !e.isActive);
+
   // Only active expenses count for settlement
-  const activeExpenses = rawExpenses.filter((e) => e.isActive);
+  const activeExpenses = unsettledExpenses;
 
   const expensesForSettlement = activeExpenses.map((e) => ({
     id: e.id,
@@ -199,7 +204,7 @@ export async function ExpenseList({
         {/* Section header */}
         <div className="flex items-center justify-between">
           <h3 className="text-[11px] font-bold uppercase tracking-[.06em] text-zinc-400 dark:text-zinc-500">
-            Gastos · {rawExpenses.length}
+            Gastos · {unsettledExpenses.length}{settledExpenses.length > 0 ? ` (+${settledExpenses.length} liquidados)` : ""}
           </h3>
           {canEdit && (
             <div id="tutorial-create-expense">
@@ -217,19 +222,42 @@ export async function ExpenseList({
             Sin gastos registrados aún.
           </p>
         ) : (
-          <div className="flex flex-col gap-3">
-            {rawExpenses.map((expense) => (
-              <ExpenseCard
-                key={expense.id}
-                expense={expense}
-                tripId={tripId}
-                canEdit={canEdit}
-                isCreator={expense.createdById === myUserId}
-                isAdmin={isAdmin}
-                myParticipantId={myParticipantId}
-                tripParticipants={participants}
-              />
-            ))}
+          <div className="flex flex-col gap-6">
+            {/* Gastos pendientes */}
+            {unsettledExpenses.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {unsettledExpenses.map((expense) => (
+                  <ExpenseCard
+                    key={expense.id}
+                    expense={expense}
+                    tripId={tripId}
+                    canEdit={canEdit}
+                    isCreator={expense.createdById === myUserId}
+                    isAdmin={isAdmin}
+                    myParticipantId={myParticipantId}
+                    tripParticipants={participants}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Gastos liquidados — colapsable */}
+            {settledExpenses.length > 0 && (
+              <SettledExpensesCollapsible count={settledExpenses.length}>
+                {settledExpenses.map((expense) => (
+                  <ExpenseCard
+                    key={expense.id}
+                    expense={expense}
+                    tripId={tripId}
+                    canEdit={canEdit}
+                    isCreator={expense.createdById === myUserId}
+                    isAdmin={isAdmin}
+                    myParticipantId={myParticipantId}
+                    tripParticipants={participants}
+                  />
+                ))}
+              </SettledExpensesCollapsible>
+            )}
           </div>
         )}
 
