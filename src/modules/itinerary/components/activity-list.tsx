@@ -659,12 +659,16 @@ function ActivityRow({
         )}
 
         {act.description && (
-          <p className="mt-1.5 text-sm text-zinc-400 leading-relaxed">
+          <p className="mt-1.5 text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">
             {act.description}
           </p>
         )}
 
-        <div className="mt-2 flex flex-wrap items-center gap-3">
+        {act.notes && (
+          <p className="mt-1.5 text-xs text-zinc-500 italic">{act.notes}</p>
+        )}
+
+        <div className="mt-1.5 flex flex-wrap items-center gap-3">
           {act.location && (
             <a
               href={getMapsUrl(act.location, act.locationLat, act.locationLng)}
@@ -697,9 +701,6 @@ function ActivityRow({
               <span>📍</span>
               {act.locationLat.toFixed(5)}, {act.locationLng.toFixed(5)}
             </a>
-          )}
-          {act.notes && (
-            <span className="text-xs text-zinc-500 italic">{act.notes}</span>
           )}
         </div>
 
