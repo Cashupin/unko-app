@@ -43,9 +43,8 @@ export function useSheetHistoryOpen(open: boolean, onClose: () => void) {
     const handlePopState = () => onCloseRef.current();
     window.addEventListener("popstate", handlePopState);
 
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      if (history.state?.sheet) history.back();
-    };
+    // No llamamos history.back() en cleanup: el timing de React vs Next.js router
+    // es indeterminado y causaría cancelar la navegación de los links internos.
+    return () => window.removeEventListener("popstate", handlePopState);
   }, [open]);
 }
