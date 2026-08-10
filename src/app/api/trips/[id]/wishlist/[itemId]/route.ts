@@ -7,7 +7,7 @@ import { broadcast } from "@/lib/supabase-broadcast";
 async function requireOwner(itemId: string, participantId: string) {
   return prisma.wishlistItem.findFirst({
     where: { id: itemId, ownedByParticipantId: participantId },
-    select: { id: true, tripId: true },
+    select: { id: true, tripId: true, name: true },
   });
 }
 
@@ -39,7 +39,7 @@ export async function PATCH(
 
   const participant = await prisma.tripParticipant.findFirst({
     where: { tripId, userId: session.user.id },
-    select: { id: true },
+    select: { id: true, name: true },
   });
   if (!participant) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -76,7 +76,8 @@ export async function PATCH(
     select: ITEM_SELECT,
   });
 
-  broadcast(`trip:${tripId}`, "update");
+  const action = toggleBought !== undefined ? (updated.bought ? "bought" : "unbought") : "updated";
+  broadcast(`trip:${tripId}`, "update", { type: "wishlist", actorId: participant.id, actorName: participant.name, action, itemName: updated.name });
   return NextResponse.json(updated);
 }
 
@@ -94,7 +95,7 @@ export async function DELETE(
 
   const participant = await prisma.tripParticipant.findFirst({
     where: { tripId, userId: session.user.id },
-    select: { id: true },
+    select: { id: true, name: true },
   });
   if (!participant) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -103,6 +104,6 @@ export async function DELETE(
 
   await prisma.wishlistItem.delete({ where: { id: itemId } });
 
-  broadcast(`trip:${tripId}`, "update");
+  broadcast(`trip:${tripId}`, "update", { type: "wishlist", actorId: participant.id, actorName: participant.name, action: "deleted", itemName: item.name });
   return new NextResponse(null, { status: 204 });
 }

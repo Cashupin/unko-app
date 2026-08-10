@@ -19,7 +19,7 @@ export async function POST(
 
   const participant = await prisma.tripParticipant.findFirst({
     where: { tripId, userId: session.user.id },
-    select: { id: true, role: true },
+    select: { id: true, role: true, name: true },
   });
   if (!participant || participant.role === "VIEWER") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -69,7 +69,7 @@ export async function POST(
     },
   });
 
-  broadcast(`trip:${tripId}`, "update");
+  broadcast(`trip:${tripId}`, "update", { type: "wishlist", actorId: participant.id, actorName: participant.name, action: "wanted", itemName: source.name });
   return NextResponse.json(copy, { status: 201 });
 }
 
@@ -88,7 +88,7 @@ export async function DELETE(
 
   const participant = await prisma.tripParticipant.findFirst({
     where: { tripId, userId: session.user.id },
-    select: { id: true },
+    select: { id: true, name: true },
   });
   if (!participant) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -99,12 +99,12 @@ export async function DELETE(
       ownedByParticipantId: participant.id,
       originItemId: itemId,
     },
-    select: { id: true },
+    select: { id: true, name: true },
   });
   if (!copy) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.wishlistItem.delete({ where: { id: copy.id } });
 
-  broadcast(`trip:${tripId}`, "update");
+  broadcast(`trip:${tripId}`, "update", { type: "wishlist", actorId: participant.id, actorName: participant.name, action: "unwanted", itemName: copy.name });
   return new NextResponse(null, { status: 204 });
 }

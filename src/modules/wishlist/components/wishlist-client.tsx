@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 import { WishlistDetailSheet } from "./wishlist-detail-sheet";
 import { AddWishlistItemForm } from "./add-wishlist-item-form";
 import type { WishlistItem, WishlistGroup, WishlistParticipant } from "../types";
@@ -110,6 +111,34 @@ const PERSON_KEY  = (id: string) => `wishlist-person-${id}`;
 function readStorage(key: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
   return localStorage.getItem(key) ?? fallback;
+}
+
+// ── Live toast ───────────────────────────────────────────────────────────────
+
+const TOAST_MESSAGES: Record<string, (actor: string, item: string) => string> = {
+  added:    (a, i) => `${a} agregó "${i}" a la wishlist`,
+  wanted:   (a, i) => `${a} también quiere "${i}"`,
+  unwanted: (a, i) => `${a} ya no quiere "${i}"`,
+  bought:   (a, i) => `${a} compró "${i}" ✓`,
+  unbought: (a, i) => `${a} desmarcó "${i}"`,
+  updated:  (a, i) => `${a} actualizó "${i}"`,
+  deleted:  (a, i) => `${a} eliminó "${i}" de la wishlist`,
+};
+
+function WishlistLiveToast({ tripId, myParticipantId }: { tripId: string; myParticipantId: string }) {
+  useEffect(() => {
+    const channel = supabase
+      .channel(`trip:${tripId}`)
+      .on("broadcast", { event: "update" }, ({ payload }) => {
+        if (payload?.type !== "wishlist") return;
+        if (payload?.actorId === myParticipantId) return;
+        const fmt = TOAST_MESSAGES[payload?.action as string];
+        if (fmt) toast(fmt(payload.actorName as string, payload.itemName as string), { duration: 4000 });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [tripId, myParticipantId]);
+  return null;
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -232,6 +261,7 @@ export function WishlistClient({ tripId, myParticipantId, canEdit, initialItems,
 
   return (
     <div className="flex flex-col gap-0">
+      <WishlistLiveToast tripId={tripId} myParticipantId={myParticipantId} />
 
       {/* Filtros */}
       <div className="flex flex-col gap-2 mb-4">

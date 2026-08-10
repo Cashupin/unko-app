@@ -7,7 +7,7 @@ import { broadcast } from "@/lib/supabase-broadcast";
 async function requireMember(tripId: string, userId: string) {
   return prisma.tripParticipant.findFirst({
     where: { tripId, userId },
-    select: { id: true, role: true },
+    select: { id: true, role: true, name: true },
   });
 }
 
@@ -93,6 +93,6 @@ export async function POST(
     select: ITEM_SELECT,
   });
 
-  broadcast(`trip:${tripId}`, "update");
+  broadcast(`trip:${tripId}`, "update", { type: "wishlist", actorId: membership.id, actorName: membership.name, action: "added", itemName: item.name });
   return NextResponse.json(item, { status: 201 });
 }
