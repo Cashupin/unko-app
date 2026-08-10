@@ -757,21 +757,25 @@ model Notification {
 // ─── Wishlist ─────────────────────────────────────────────────────────────────
 
 model WishlistItem {
-  id        String    @id @default(cuid())
-  tripId    String
-  name      String
-  notes     String?
-  imageUrl  String?
-  bought    Boolean   @default(false)
-  boughtAt  DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  tripId       String
+  name         String
+  notes        String?
+  imageUrl     String?
+  bought       Boolean   @default(false)
+  boughtAt     DateTime?
+  originItemId String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   ownedByParticipantId String
   ownedByParticipant   TripParticipant @relation("WishlistOwner", fields: [ownedByParticipantId], references: [id], onDelete: Cascade)
 
-  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  trip       Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  originItem WishlistItem?  @relation("WishlistCopies", fields: [originItemId], references: [id], onDelete: SetNull)
+  copies     WishlistItem[] @relation("WishlistCopies")
 
   @@index([tripId])
   @@index([ownedByParticipantId])
+  @@index([originItemId])
 }
