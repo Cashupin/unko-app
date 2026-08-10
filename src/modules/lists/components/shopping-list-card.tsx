@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { toast } from "sonner";
 import { ShoppingListSection } from "./shopping-list-section";
 import { ShoppingListItem } from "./shopping-list-item";
 import { InlineAddItem } from "./inline-add-item";
@@ -61,6 +62,16 @@ export function ShoppingListCard({
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(list.title);
   const [mounted, setMounted] = useState(false);
+  // "direct" = zona sin sección; sectionId = esa sección; null = ninguno
+  const [activeAddFor, setActiveAddFor] = useState<string | null>(null);
+
+  function openAddFor(id: string) {
+    setActiveAddFor(id);
+  }
+
+  function closeAddFor(id: string) {
+    setActiveAddFor((current) => (current === id ? null : current));
+  }
 
   useEffect(() => setMounted(true), []);
 
@@ -103,6 +114,7 @@ export function ShoppingListCard({
   const sectionIds = list.sections.map((s) => s.id);
 
   const visibilityIcon = list.visibility === "PRIVATE" ? "🔒" : "🌍";
+  const showCheckedBy = list.visibility !== "PRIVATE";
 
   return (
     <div ref={setNodeRef} style={style} className="group/list rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700/80 dark:bg-zinc-900">
@@ -164,8 +176,11 @@ export function ShoppingListCard({
 
           {canEdit && (
             <button
-              onClick={() => onDeleteList(list.id)}
-              className="text-zinc-300 opacity-0 group-hover/list:opacity-100 hover:text-red-400 transition-colors dark:text-zinc-600 dark:hover:text-red-400"
+              onClick={() => toast(`¿Eliminar la lista "${list.title}"?`, {
+                action: { label: "Eliminar", onClick: () => onDeleteList(list.id) },
+                cancel: { label: "Cancelar", onClick: () => {} },
+              })}
+              className="text-zinc-300 md:opacity-0 md:group-hover/list:opacity-100 hover:text-red-400 transition-colors dark:text-zinc-600 dark:hover:text-red-400"
               aria-label="Eliminar lista"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
@@ -215,10 +230,12 @@ export function ShoppingListCard({
               <ShoppingListSection
                 key={section.id}
                 section={section}
-                listId={list.id}
-                tripId={tripId}
                 canEdit={canEdit}
                 myParticipantId={myParticipantId}
+                showCheckedBy={showCheckedBy}
+                addItemOpen={activeAddFor === section.id}
+                onOpenAddItem={() => openAddFor(section.id)}
+                onCloseAddItem={() => closeAddFor(section.id)}
                 onAddItem={(data) => onAddItem(list.id, data)}
                 onToggleItem={(itemId, checked) => onToggleItem(list.id, itemId, checked)}
                 onDeleteItem={(itemId) => onDeleteItem(list.id, itemId)}
@@ -231,9 +248,7 @@ export function ShoppingListCard({
 
           {/* Direct items (no section) */}
           {list.sections.length > 0 && list.items.length > 0 && (
-            <div className="mt-3 mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-              Sin sección
-            </div>
+            <div className="mt-4 border-t border-zinc-100 pt-1 dark:border-zinc-800" />
           )}
           <SortableContext items={directItemIds} strategy={verticalListSortingStrategy}>
             <div className="flex flex-col gap-0.5">
@@ -243,6 +258,7 @@ export function ShoppingListCard({
                   item={item}
                   canEdit={canEdit}
                   myParticipantId={myParticipantId}
+                  showCheckedBy={showCheckedBy}
                   onToggle={(itemId, checked) => onToggleItem(list.id, itemId, checked)}
                   onDelete={(itemId) => onDeleteItem(list.id, itemId)}
                   onEdit={(itemId, text, notes) => onEditItem(list.id, itemId, text, notes)}
@@ -255,8 +271,9 @@ export function ShoppingListCard({
           {canEdit && (
             <div className="mt-2">
               <InlineAddItem
-                listId={list.id}
-                tripId={tripId}
+                isOpen={activeAddFor === "direct"}
+                onOpen={() => openAddFor("direct")}
+                onClose={() => closeAddFor("direct")}
                 onAdd={(data) => onAddItem(list.id, data)}
               />
             </div>

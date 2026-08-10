@@ -9,10 +9,12 @@ import type { ListSection, ListItem } from "../types";
 
 type Props = {
   section: ListSection;
-  listId: string;
-  tripId: string;
   canEdit: boolean;
   myParticipantId: string;
+  showCheckedBy?: boolean;
+  addItemOpen: boolean;
+  onOpenAddItem: () => void;
+  onCloseAddItem: () => void;
   onAddItem: (data: { text: string; sectionId?: string }) => Promise<void>;
   onToggleItem: (itemId: string, checked: boolean) => Promise<void>;
   onDeleteItem: (itemId: string) => Promise<void>;
@@ -23,10 +25,12 @@ type Props = {
 
 export function ShoppingListSection({
   section,
-  listId,
-  tripId,
   canEdit,
   myParticipantId,
+  showCheckedBy = true,
+  addItemOpen,
+  onOpenAddItem,
+  onCloseAddItem,
   onAddItem,
   onToggleItem,
   onDeleteItem,
@@ -115,6 +119,7 @@ export function ShoppingListSection({
               item={item}
               canEdit={canEdit}
               myParticipantId={myParticipantId}
+              showCheckedBy={showCheckedBy}
               onToggle={onToggleItem}
               onDelete={onDeleteItem}
               onEdit={onEditItem}
@@ -126,9 +131,10 @@ export function ShoppingListSection({
       {canEdit && (
         <div className="mt-1 pl-4">
           <InlineAddItem
-            listId={listId}
-            tripId={tripId}
             sectionId={section.id}
+            isOpen={addItemOpen}
+            onOpen={onOpenAddItem}
+            onClose={onCloseAddItem}
             onAdd={onAddItem}
           />
         </div>

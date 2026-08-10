@@ -12,14 +12,14 @@ export function CreateListModal({ onSubmit }: Props) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [emoji, setEmoji] = useState("");
-  const [visibility, setVisibility] = useState<"PRIVATE" | "TRIP">("TRIP");
+  const [visibility, setVisibility] = useState<"PRIVATE" | "TRIP">("PRIVATE");
   const [loading, setLoading] = useState(false);
 
   function handleClose() {
     setOpen(false);
     setTitle("");
     setEmoji("");
-    setVisibility("TRIP");
+    setVisibility("PRIVATE");
   }
 
   async function handleSubmit(e: React.FormEvent) {
