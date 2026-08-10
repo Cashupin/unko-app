@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useCurrency } from "@/providers/currency-provider";
@@ -98,33 +98,6 @@ export function TripMobileNav({
 
   const menuActive = SECONDARY_TABS.has(activeTab);
 
-  // ── Drag-to-dismiss ──────────────────────────────────────────────────────
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const dragStartY = useRef<number | null>(null);
-  const dragDelta = useRef<number>(0);
-
-  function onDragStart(e: React.TouchEvent) {
-    dragStartY.current = e.touches[0].clientY;
-    dragDelta.current = 0;
-    if (sheetRef.current) sheetRef.current.style.transition = "none";
-  }
-
-  function onDragMove(e: React.TouchEvent) {
-    if (dragStartY.current === null) return;
-    const delta = Math.max(0, e.touches[0].clientY - dragStartY.current);
-    dragDelta.current = delta;
-    if (sheetRef.current) sheetRef.current.style.transform = `translateY(${delta}px)`;
-  }
-
-  function onDragEnd() {
-    if (sheetRef.current) sheetRef.current.style.transition = "";
-    if (dragDelta.current > 100) {
-      setMenuOpen(false);
-    }
-    if (sheetRef.current) sheetRef.current.style.transform = "";
-    dragStartY.current = null;
-    dragDelta.current = 0;
-  }
 
   const tabClass = (id: string) =>
     `flex flex-1 flex-col items-center gap-1 px-1 py-3 text-xs font-medium transition-colors ${
@@ -197,20 +170,20 @@ export function TripMobileNav({
       />
 
       {/* ── Menu bottom sheet ────────────────────────────────────────────── */}
-      <div
-        ref={sheetRef}
-        className={`fixed bottom-0 left-0 right-0 z-50 min-h-[90vh] max-h-[88vh] overflow-y-auto rounded-t-3xl bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 md:hidden ${
-          menuOpen ? "translate-y-0" : "translate-y-full"
-        }`}
-      >
-        {/* Handle — área de drag */}
-        <div
-          className="sticky top-0 z-10 flex justify-center bg-white pt-3 pb-2 dark:bg-zinc-950 cursor-grab active:cursor-grabbing"
-          onTouchStart={onDragStart}
-          onTouchMove={onDragMove}
-          onTouchEnd={onDragEnd}
-        >
-          <div className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"/>
+      <div className={`fixed bottom-0 left-0 right-0 z-50 min-h-[90vh] max-h-[88vh] overflow-y-auto rounded-t-3xl bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 md:hidden ${
+        menuOpen ? "translate-y-0" : "translate-y-full"
+      }`}>
+        {/* Botón cerrar */}
+        <div className="sticky top-0 z-10 flex justify-center bg-white pt-2 pb-1 dark:bg-zinc-950">
+          <button
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center justify-center rounded-full p-3 text-zinc-400 transition-colors active:bg-zinc-100 dark:text-zinc-500 dark:active:bg-zinc-800"
+            aria-label="Cerrar menú"
+          >
+            <svg width="56" height="16" viewBox="0 0 56 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 8l24 12 24-12"/>
+            </svg>
+          </button>
         </div>
 
         <div className="px-4 pb-10 pt-3">
