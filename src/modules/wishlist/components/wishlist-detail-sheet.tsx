@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { UploadPhoto } from "@/components/ui/upload-photo";
+import { useSheetHistory } from "@/lib/use-sheet-history";
 import { participantColor, participantInitial } from "./wishlist-client";
 import type { WishlistGroup, WishlistItem, WishlistParticipant } from "../types";
 
@@ -40,6 +41,8 @@ export function WishlistDetailSheet({ group, participants, myParticipantId, canE
   const amIOwner = myItem?.id === root.id;
   const amIMember = myItem !== null;
 
+  useSheetHistory(onClose);
+
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(root.name);
   const [editNotes, setEditNotes] = useState(root.notes ?? "");
@@ -72,11 +75,15 @@ export function WishlistDetailSheet({ group, participants, myParticipantId, canE
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/50 md:bg-black/40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-900 md:bottom-auto md:left-1/2 md:top-1/2 md:right-auto md:w-[440px] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl">
+      <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-900 md:bottom-auto md:left-1/2 md:top-1/2 md:right-auto md:w-110 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl">
 
         {/* Handle mobile */}
-        <div className="flex justify-center pt-3 pb-2 md:hidden">
-          <div className="h-1 w-9 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+        <div className="flex justify-center pt-2 pb-1 md:hidden">
+          <button onClick={onClose} className="flex items-center justify-center p-1 text-zinc-300 dark:text-zinc-600" aria-label="Cerrar">
+            <svg width="56" height="24" viewBox="0 0 56 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 8l24 12 24-12" />
+            </svg>
+          </button>
         </div>
 
         {/* ── MODO VER ─────────────────────────────────────────────────────── */}
