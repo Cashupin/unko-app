@@ -9,7 +9,7 @@ const LEFT_TABS = [
 
 const RIGHT_TABS = [
   { id: "actividades", label: "Actividades", icon: "💡" },
-  { id: "galería", label: "Galería", icon: "📸" },
+  { id: "listas", label: "Listas", icon: "📋" },
 ] as const;
 
 export function TripBottomNav({

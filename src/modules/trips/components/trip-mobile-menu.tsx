@@ -13,6 +13,7 @@ const TABS = [
   { id: "itinerario", label: "Itinerario", icon: "🗓️" },
   { id: "checklist", label: "Checklist", icon: "✅" },
   { id: "gastos", label: "Gastos", icon: "💰" },
+  { id: "listas", label: "Listas", icon: "📋" },
   { id: "galería", label: "Galería", icon: "📸" },
 ] as const;
 

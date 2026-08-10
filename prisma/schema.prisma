@@ -81,6 +81,12 @@ enum NotificationType {
   PAYMENT_RECEIVED  // Alguien marcó un pago como pagado
 }
 
+enum ListVisibility {
+  PRIVATE       // Solo visible al creador
+  TRIP          // Todos los participantes del viaje
+  COLLABORATIVE // Participantes específicos (futuro)
+}
+
 // ─── NextAuth required models ─────────────────────────────────────────────────
 
 model Account {
@@ -206,6 +212,7 @@ model Trip {
   dayNotes           DayNote[]
   tickets            Ticket[]
   excursions         Excursion[]
+  shoppingLists      ShoppingList[]
 
   @@index([createdById])
   @@index([startDate, endDate])
@@ -230,6 +237,8 @@ model TripParticipant {
   paymentsReceived        Payment[]            @relation("PaymentsTo")
   taskAssignments         TaskAssignee[]
   purchasedTickets        Ticket[]             @relation("TicketPurchasedBy")
+  createdLists            ShoppingList[]       @relation("ListCreatedBy")
+  checkedItems            ShoppingListItem[]   @relation("ItemCheckedBy")
 
   @@unique([tripId, userId])
   @@index([tripId])
@@ -663,6 +672,66 @@ model TaskAssignee {
 
   @@unique([taskId, participantId])
   @@index([participantId])
+}
+
+// ─── Shopping Lists / TODOs ───────────────────────────────────────────────────
+
+model ShoppingList {
+  id         String         @id @default(cuid())
+  tripId     String
+  title      String
+  emoji      String?
+  visibility ListVisibility @default(TRIP)
+  order      Int            @default(0)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  createdByParticipantId String
+  createdByParticipant   TripParticipant @relation("ListCreatedBy", fields: [createdByParticipantId], references: [id])
+
+  trip     Trip                  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  sections ShoppingListSection[]
+  items    ShoppingListItem[]
+
+  @@index([tripId])
+  @@index([createdByParticipantId])
+}
+
+model ShoppingListSection {
+  id        String   @id @default(cuid())
+  listId    String
+  title     String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  list  ShoppingList     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  items ShoppingListItem[]
+
+  @@index([listId])
+}
+
+model ShoppingListItem {
+  id        String   @id @default(cuid())
+  listId    String
+  sectionId String?
+  text      String
+  notes     String?
+  checked   Boolean  @default(false)
+  checkedAt DateTime?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  checkedByParticipantId String?
+  checkedByParticipant   TripParticipant? @relation("ItemCheckedBy", fields: [checkedByParticipantId], references: [id], onDelete: SetNull)
+
+  list    ShoppingList         @relation(fields: [listId], references: [id], onDelete: Cascade)
+  section ShoppingListSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  @@index([listId])
+  @@index([sectionId])
+  @@index([checkedByParticipantId])
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────

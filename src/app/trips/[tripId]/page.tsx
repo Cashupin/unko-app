@@ -38,17 +38,19 @@ import { NearbyActivitiesServer } from "@/modules/proposals/components/nearby-ac
 import { HashHighlight } from "@/modules/proposals/components/hash-highlight";
 import { KmlImport } from "@/modules/proposals/components/kml-import";
 import { ChecklistPanel } from "@/modules/checklist/components/checklist-panel";
+import { ListsView } from "@/modules/lists/components/lists-view";
 import type { ParticipantSummary } from "@/modules/trips/types/trip";
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
 
-type Tab = "home" | "actividades" | "itinerario" | "checklist" | "gastos" | "galería";
+type Tab = "home" | "actividades" | "itinerario" | "checklist" | "gastos" | "listas" | "galería";
 const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Resumen del Viaje" },
   { id: "actividades", label: "Actividades" },
   { id: "itinerario", label: "Itinerario" },
   { id: "checklist", label: "Checklist" },
   { id: "gastos", label: "Gastos" },
+  { id: "listas", label: "Listas" },
   { id: "galería", label: "Galería" },
 ];
 
@@ -503,6 +505,17 @@ export default async function TripPage({
               />
             </Suspense>
           </div>
+        )}
+
+        {/* ── Listas ──────────────────────────────────────────────────────── */}
+        {activeTab === "listas" && (
+          <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando listas...</div>}>
+            <ListsView
+              tripId={tripId}
+              myParticipantId={myParticipant.id}
+              canEdit={canEdit}
+            />
+          </Suspense>
         )}
 
         {/* ── Galería ─────────────────────────────────────────────────────── */}
