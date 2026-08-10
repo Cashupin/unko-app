@@ -8,7 +8,6 @@ import { UserMenu } from "@/components/ui/user-menu";
 import { NotificationsBell } from "@/modules/notifications/components/notifications-bell";
 import { TutorialButton } from "@/components/ui/tutorial-button";
 import { TripMobileNav } from "@/modules/trips/components/trip-mobile-nav";
-import { TripMoreDropdown } from "@/modules/trips/components/trip-more-dropdown";
 import { TripLiveUpdater } from "@/modules/trips/components/trip-live-updater";
 import { GalleryView } from "@/modules/gallery/components/gallery-view";
 import { ItemList } from "@/modules/proposals/components/item-list";
@@ -45,15 +44,30 @@ import type { ParticipantSummary } from "@/modules/trips/types/trip";
 // ─── Tab config ────────────────────────────────────────────────────────────────
 
 type Tab = "home" | "propuestas" | "itinerario" | "checklist" | "gastos" | "listas" | "galería" | "wishlist";
-const TABS: { id: Tab; label: string }[] = [
-  { id: "home", label: "Inicio" },
-  { id: "propuestas", label: "Propuestas" },
-  { id: "itinerario", label: "Itinerario" },
-  { id: "gastos", label: "Gastos" },
-  { id: "checklist", label: "Checklist" },
-  { id: "listas", label: "Listas" },
-  { id: "galería", label: "Galería" },
-  { id: "wishlist", label: "Wishlist" },
+
+function TabIcon({ id, size = 14 }: { id: Tab; size?: number }) {
+  const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "white", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (id) {
+    case "home":       return <svg {...p}><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>;
+    case "propuestas": return <svg {...p}><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26A7 7 0 0 1 5 9a7 7 0 0 1 7-7z"/></svg>;
+    case "itinerario": return <svg {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+    case "gastos":     return <svg {...p}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
+    case "checklist":  return <svg {...p}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
+    case "listas":     return <svg {...p}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="white" stroke="none"/><circle cx="3" cy="12" r="1.5" fill="white" stroke="none"/><circle cx="3" cy="18" r="1.5" fill="white" stroke="none"/></svg>;
+    case "galería":    return <svg {...p}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>;
+    case "wishlist":   return <svg {...p}><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M21 8H3"/><path d="M8.5 8C7.1 8 6 6.9 6 5.5S7.1 3 8.5 3c2.1 0 3.5 5 3.5 5s-1.4 0-3.5 0z"/><path d="M15.5 8C16.9 8 18 6.9 18 5.5S16.9 3 15.5 3C13.4 3 12 8 12 8s1.4 0 3.5 0z"/></svg>;
+  }
+}
+
+const TABS: { id: Tab; label: string; grad: string }[] = [
+  { id: "home",       label: "Inicio",     grad: "from-blue-500 to-indigo-600" },
+  { id: "propuestas", label: "Propuestas", grad: "from-amber-400 to-orange-500" },
+  { id: "itinerario", label: "Itinerario", grad: "from-indigo-500 to-blue-700" },
+  { id: "gastos",     label: "Gastos",     grad: "from-green-500 to-emerald-600" },
+  { id: "checklist",  label: "Checklist",  grad: "from-teal-400 to-cyan-600" },
+  { id: "listas",     label: "Listas",     grad: "from-violet-500 to-purple-600" },
+  { id: "galería",    label: "Galería",    grad: "from-rose-400 to-pink-600" },
+  { id: "wishlist",   label: "Wishlist",   grad: "from-orange-400 to-red-500" },
 ];
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -239,21 +253,28 @@ export default async function TripPage({
 
         {/* Tab navigation — hidden on mobile, shown on tablet+ */}
         <div className="mx-auto max-w-5xl px-4 pb-3 md:px-6">
-          <nav id="tutorial-trip-tabs" className="hidden md:flex gap-1 items-center" aria-label="Pestañas del viaje">
-            {TABS.filter((t) => !["checklist", "listas", "galería", "wishlist"].includes(t.id)).map((tab) => (
-              <Link
-                key={tab.id}
-                id={`tutorial-tab-${tab.id}`}
-                href={`/trips/${tripId}?tab=${tab.id}`}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab.id
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-700"
+          <nav id="tutorial-trip-tabs" className="hidden md:flex gap-0.5 items-center flex-wrap" aria-label="Pestañas del viaje">
+            {TABS.map((tab) => {
+              const active = activeTab === tab.id;
+              return (
+                <Link
+                  key={tab.id}
+                  id={`tutorial-tab-${tab.id}`}
+                  href={`/trips/${tripId}?tab=${tab.id}`}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+                      : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-700"
                   }`}
-              >
-                {tab.label}
-              </Link>
-            ))}
-            <TripMoreDropdown tripId={tripId} activeTab={activeTab} />
+                >
+                  <span className={`flex items-center justify-center rounded-md bg-linear-to-br ${tab.grad} ${active ? "opacity-100" : "opacity-80"}`}
+                    style={{ width: 22, height: 22 }}>
+                    <TabIcon id={tab.id} size={13} />
+                  </span>
+                  {tab.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
 
