@@ -8,8 +8,8 @@ const LEFT_TABS = [
 ] as const;
 
 const RIGHT_TABS = [
-  { id: "actividades", label: "Actividades", icon: "💡" },
-  { id: "listas", label: "Listas", icon: "📋" },
+  { id: "propuestas", label: "Propuestas", icon: "💡" },
+  { id: "checklist", label: "Checklist", icon: "✅" },
 ] as const;
 
 export function TripBottomNav({

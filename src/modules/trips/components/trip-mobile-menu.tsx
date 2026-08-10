@@ -8,11 +8,11 @@ import { CURRENCIES, CURRENCY_NAMES } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
 
 const TABS = [
-  { id: "home", label: "Resumen del Viaje", icon: "🏠" },
-  { id: "actividades", label: "Actividades", icon: "💡" },
+  { id: "home", label: "Inicio", icon: "🏠" },
+  { id: "propuestas", label: "Propuestas", icon: "💡" },
   { id: "itinerario", label: "Itinerario", icon: "🗓️" },
-  { id: "checklist", label: "Checklist", icon: "✅" },
   { id: "gastos", label: "Gastos", icon: "💰" },
+  { id: "checklist", label: "Checklist", icon: "✅" },
   { id: "listas", label: "Listas", icon: "📋" },
   { id: "galería", label: "Galería", icon: "📸" },
 ] as const;

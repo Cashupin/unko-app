@@ -3,12 +3,12 @@ import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { TripMobileMenu } from "@/modules/trips/components/trip-mobile-menu";
 import { TripHeaderMenu } from "@/modules/trips/components/trip-header-menu";
 import { UserMenu } from "@/components/ui/user-menu";
 import { NotificationsBell } from "@/modules/notifications/components/notifications-bell";
 import { TutorialButton } from "@/components/ui/tutorial-button";
-import { TripBottomNav } from "@/modules/trips/components/trip-bottom-nav";
+import { TripMobileNav } from "@/modules/trips/components/trip-mobile-nav";
+import { TripMoreDropdown } from "@/modules/trips/components/trip-more-dropdown";
 import { TripLiveUpdater } from "@/modules/trips/components/trip-live-updater";
 import { GalleryView } from "@/modules/gallery/components/gallery-view";
 import { ItemList } from "@/modules/proposals/components/item-list";
@@ -43,13 +43,13 @@ import type { ParticipantSummary } from "@/modules/trips/types/trip";
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
 
-type Tab = "home" | "actividades" | "itinerario" | "checklist" | "gastos" | "listas" | "galería";
+type Tab = "home" | "propuestas" | "itinerario" | "checklist" | "gastos" | "listas" | "galería";
 const TABS: { id: Tab; label: string }[] = [
-  { id: "home", label: "Resumen del Viaje" },
-  { id: "actividades", label: "Actividades" },
+  { id: "home", label: "Inicio" },
+  { id: "propuestas", label: "Propuestas" },
   { id: "itinerario", label: "Itinerario" },
-  { id: "checklist", label: "Checklist" },
   { id: "gastos", label: "Gastos" },
+  { id: "checklist", label: "Checklist" },
   { id: "listas", label: "Listas" },
   { id: "galería", label: "Galería" },
 ];
@@ -165,6 +165,20 @@ export default async function TripPage({
     />
   ) : null;
 
+  const adminIconsSlot = isAdmin ? (
+    <div className="flex gap-3">
+      <EditTripForm trip={trip} variant="icon" />
+      <ManageParticipantsPanel
+        tripId={tripId}
+        participants={participants}
+        currentUserId={session.user.id}
+        isAdmin={isAdmin}
+        variant="icon"
+      />
+      <DeleteTripButton tripId={tripId} tripName={trip.name} variant="icon" />
+    </div>
+  ) : null;
+
   return (
     <PersonalModeProvider>
     <DayCollapseProvider>
@@ -194,11 +208,11 @@ export default async function TripPage({
             )}
           </div>
 
-          {/* Right side: bell + desktop menus + mobile hamburger */}
+          {/* Right side: bell + desktop menus */}
           <div className="flex items-center gap-1">
             <TutorialButton
               tutorialId={
-                activeTab === "actividades" ? "trip-actividades"
+                activeTab === "propuestas" ? "trip-actividades"
                   : activeTab === "itinerario" ? "trip-itinerario"
                     : activeTab === "gastos" ? "trip-gastos"
                       : "trip-home"
@@ -218,23 +232,13 @@ export default async function TripPage({
                 signOutSlot={signOutSlot}
               />
             </div>
-            <TripMobileMenu
-              tripId={tripId}
-              activeTab={activeTab}
-              tripName={trip.name}
-              isAdmin={isAdmin}
-              signOutSlot={signOutSlot}
-              editSlot={editSlot}
-              deleteSlot={deleteSlot}
-              manageParticipantsSlot={manageParticipantsSlot}
-            />
           </div>
         </div>
 
         {/* Tab navigation — hidden on mobile, shown on tablet+ */}
         <div className="mx-auto max-w-5xl px-4 pb-3 md:px-6">
-          <nav id="tutorial-trip-tabs" className="hidden md:flex gap-1" aria-label="Pestañas del viaje">
-            {TABS.map((tab) => (
+          <nav id="tutorial-trip-tabs" className="hidden md:flex gap-1 items-center" aria-label="Pestañas del viaje">
+            {TABS.filter((t) => !["checklist", "listas", "galería"].includes(t.id)).map((tab) => (
               <Link
                 key={tab.id}
                 id={`tutorial-tab-${tab.id}`}
@@ -247,6 +251,7 @@ export default async function TripPage({
                 {tab.label}
               </Link>
             ))}
+            <TripMoreDropdown tripId={tripId} activeTab={activeTab} />
           </nav>
         </div>
 
@@ -302,8 +307,8 @@ export default async function TripPage({
           </Suspense>
         )}
 
-        {/* ── Actividades ──────────────────────────────────────────────────── */}
-        {activeTab === "actividades" && (
+        {/* ── Propuestas ──────────────────────────────────────────────────── */}
+        {activeTab === "propuestas" && (
           <div className="flex flex-col gap-6">
             <HashHighlight />
             {/* Nearby activities */}
@@ -317,7 +322,7 @@ export default async function TripPage({
             <div id="tutorial-item-list">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                  Actividades del grupo
+                  Propuestas del grupo
                 </h2>
                 <div className="flex items-center gap-2">
                   {isAdmin && <KmlImport tripId={tripId} />}
@@ -527,7 +532,14 @@ export default async function TripPage({
 
       </main>
 
-      <TripBottomNav tripId={tripId} activeTab={activeTab} />
+      <TripMobileNav
+        tripId={tripId}
+        activeTab={activeTab}
+        activeSubtab={activeSubtab}
+        isAdmin={isAdmin}
+        adminIconsSlot={adminIconsSlot}
+        signOutSlot={signOutSlot}
+      />
       <TripLiveUpdater tripId={tripId} />
     </div>
     </DayCollapseProvider>

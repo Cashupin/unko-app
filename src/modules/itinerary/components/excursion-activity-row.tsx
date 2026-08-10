@@ -94,7 +94,7 @@ export function ExcursionActivityRow({
           )}
           {act.item && (
             <a
-              href={`/trips/${tripId}?tab=actividades#item-${act.item.id}`}
+              href={`/trips/${tripId}?tab=propuestas#item-${act.item.id}`}
               className="inline-flex items-center gap-1 rounded-full bg-violet-500/12 border border-violet-500/20 px-2 py-0.5 text-[10.5px] font-semibold text-violet-400 hover:bg-violet-500/20 transition-colors"
             >
               ↗ Ver propuesta

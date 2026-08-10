@@ -302,8 +302,8 @@ export function ManageParticipantsPanel({
   participants: Participant[];
   currentUserId: string;
   isAdmin: boolean;
-  /** "menu" = menu item style (default); "inline" = plain text link style */
-  variant?: "menu" | "inline";
+  /** "menu" = menu item style (default); "inline" = plain text link style; "icon" = compact icon tile */
+  variant?: "menu" | "inline" | "icon";
 }) {
   const [open, setOpen] = useState(false);
 
@@ -314,10 +314,22 @@ export function ManageParticipantsPanel({
         className={
           variant === "menu"
             ? "w-full rounded-lg px-4 py-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            : variant === "icon"
+            ? "flex w-full flex-col items-center gap-1.5 rounded-2xl bg-zinc-100 py-3.5 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"
             : "text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors"
         }
       >
-        {variant === "menu" ? "Gestionar participantes" : "Gestionar →"}
+        {variant === "icon" ? (
+          <>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-600 dark:text-zinc-300">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">Participantes</span>
+          </>
+        ) : variant === "menu" ? "Gestionar participantes" : "Gestionar →"}
       </button>
 
       {open && createPortal(

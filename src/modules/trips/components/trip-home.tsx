@@ -654,8 +654,8 @@ export async function TripHome({
             })),
           ]}
           tripId={tripId}
-          itemsHref={`/trips/${tripId}?tab=actividades`}
-          viewAllHref={`/trips/${tripId}?tab=actividades`}
+          itemsHref={`/trips/${tripId}?tab=propuestas`}
+          viewAllHref={`/trips/${tripId}?tab=propuestas`}
           alwaysOpen
         />
       </div>
