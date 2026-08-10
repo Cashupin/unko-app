@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSheetHistoryOpen } from "@/lib/use-sheet-history";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useCurrency } from "@/providers/currency-provider";
@@ -82,6 +83,7 @@ export function TripMobileNav({
   signOutSlot: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  useSheetHistoryOpen(menuOpen, () => setMenuOpen(false));
   const [optionsOpen, setOptionsOpen] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("menu-options-open") === "1";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSheetHistoryOpen } from "@/lib/use-sheet-history";
 import Image from "next/image";
 import { getMapsUrl } from "@/lib/maps-url";
 import { CheckInButton } from "@/modules/proposals/components/check-in-button";
@@ -119,6 +120,7 @@ function Avatar({
 export function ItemCardWithModal({ item }: { item: ItemCardData }) {
   const [open, setOpen] = useState(false);
   const [votesOpen, setVotesOpen] = useState(false);
+  useSheetHistoryOpen(open, () => setOpen(false));
   const [locallySeen, setLocallySeen] = useState(false);
 
   useEffect(() => {

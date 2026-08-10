@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSheetHistory } from "@/lib/use-sheet-history";
 import { toast } from "sonner";
 import { CURRENCY_SYMBOLS, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
@@ -110,6 +111,8 @@ export function ExpenseDrawer({
     setShow(false);
     setTimeout(onClose, 300);
   }
+
+  useSheetHistory(handleClose);
 
   async function togglePaid(participantId: string) {
     setTogglingPaid(participantId);

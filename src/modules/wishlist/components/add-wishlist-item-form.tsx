@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { UploadPhoto } from "@/components/ui/upload-photo";
+import { useSheetHistory } from "@/lib/use-sheet-history";
 
 type Props = {
   tripId: string;
@@ -14,6 +15,8 @@ export function AddWishlistItemForm({ tripId, onClose, onSave }: Props) {
   const [notes, setNotes] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useSheetHistory(onClose);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -40,7 +43,7 @@ export function AddWishlistItemForm({ tripId, onClose, onSave }: Props) {
       />
 
       {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[92dvh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-900 md:bottom-auto md:left-1/2 md:top-1/2 md:right-auto md:w-[440px] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl">
+      <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[92dvh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-900 md:bottom-auto md:left-1/2 md:top-1/2 md:right-auto md:w-110 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl">
 
         {/* Handle — mobile only */}
         <div className="flex justify-center pt-3 pb-2 md:hidden">

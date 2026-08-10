@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useSheetHistory } from "@/lib/use-sheet-history";
 
 export type GalleryPhoto = {
   id: string;
@@ -24,6 +25,8 @@ export function GalleryLightbox({
 }) {
   const photo = photos[index];
   const touchStartX = useRef<number | null>(null);
+
+  useSheetHistory(onClose);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
