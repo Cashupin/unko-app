@@ -159,7 +159,7 @@ export function WishlistDetailSheet({ item, participants, isOwner, onClose, onTo
             ) : (
               <div className="mb-4">
                 <UploadPhoto
-                  subfolder="wishlist"
+                  subfolder={`${item.tripId}/wishlist`}
                   label="Subir foto del producto"
                   onUpload={(url) => setEditImageUrl(url)}
                 />

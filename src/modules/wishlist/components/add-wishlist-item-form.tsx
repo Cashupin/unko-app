@@ -9,7 +9,7 @@ type Props = {
   onSave: (data: { name: string; notes: string; imageUrl: string }) => Promise<void>;
 };
 
-export function AddWishlistItemForm({ onClose, onSave }: Props) {
+export function AddWishlistItemForm({ tripId, onClose, onSave }: Props) {
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -72,7 +72,7 @@ export function AddWishlistItemForm({ onClose, onSave }: Props) {
           ) : (
             <div className="mb-4">
               <UploadPhoto
-                subfolder="wishlist"
+                subfolder={`${tripId}/wishlist`}
                 label="Subir foto del producto"
                 onUpload={(url) => setImageUrl(url)}
               />
