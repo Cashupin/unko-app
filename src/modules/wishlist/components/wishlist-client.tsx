@@ -129,6 +129,7 @@ export function WishlistClient({ tripId, myParticipantId, canEdit, initialItems,
   const [personFilter, setPersonFilter] = useState<string>(() => readStorage(PERSON_KEY(tripId), "all"));
   const [selectedGroup, setSelectedGroup] = useState<WishlistGroup | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   function changeStatusFilter(val: StatusFilter) { setStatusFilter(val); localStorage.setItem(STATUS_KEY(tripId), val); }
   function changePersonFilter(val: string) { setPersonFilter(val); localStorage.setItem(PERSON_KEY(tripId), val); }
@@ -136,12 +137,16 @@ export function WishlistClient({ tripId, myParticipantId, canEdit, initialItems,
   // Agrupar y filtrar
   const allGroups = useMemo(() => buildGroups(items), [items]);
 
-  const filteredGroups = useMemo(() => allGroups.filter((g) => {
-    const relevantItems = personFilter === "all" ? g.all : g.all.filter((i) => i.ownedByParticipantId === personFilter);
-    if (relevantItems.length === 0) return false;
-    if (statusFilter === "all") return true;
-    return relevantItems.some((i) => statusFilter === "bought" ? i.bought : !i.bought);
-  }), [allGroups, personFilter, statusFilter]);
+  const filteredGroups = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return allGroups.filter((g) => {
+      if (q && !g.root.name.toLowerCase().includes(q) && !(g.root.notes ?? "").toLowerCase().includes(q)) return false;
+      const relevantItems = personFilter === "all" ? g.all : g.all.filter((i) => i.ownedByParticipantId === personFilter);
+      if (relevantItems.length === 0) return false;
+      if (statusFilter === "all") return true;
+      return relevantItems.some((i) => statusFilter === "bought" ? i.bought : !i.bought);
+    });
+  }, [allGroups, personFilter, statusFilter, search]);
 
   // ── API helpers ──────────────────────────────────────────────────────────
 
@@ -230,6 +235,26 @@ export function WishlistClient({ tripId, myParticipantId, canEdit, initialItems,
 
       {/* Filtros */}
       <div className="flex flex-col gap-2 mb-4">
+        {/* Buscador */}
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar en wishlist..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2 pl-8 pr-8 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
         <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
           <Chip active={statusFilter === "all"} onClick={() => changeStatusFilter("all")}>Todos</Chip>
           <Chip active={statusFilter === "pending"} onClick={() => changeStatusFilter("pending")}>
@@ -258,7 +283,7 @@ export function WishlistClient({ tripId, myParticipantId, canEdit, initialItems,
       {/* Contador + botón agregar */}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs text-zinc-400 dark:text-zinc-500">
-          {filteredGroups.length} {filteredGroups.length === 1 ? "item" : "items"}
+          {search.trim() ? `${filteredGroups.length} resultado${filteredGroups.length !== 1 ? "s" : ""}` : `${filteredGroups.length} ${filteredGroups.length === 1 ? "item" : "items"}`}
         </span>
         {canEdit && (
           <button onClick={() => setAddOpen(true)}
@@ -276,7 +301,7 @@ export function WishlistClient({ tripId, myParticipantId, canEdit, initialItems,
         <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
           <span className="text-4xl">🛍️</span>
           <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-            {items.length === 0 ? "La wishlist está vacía" : "Sin items para este filtro"}
+            {items.length === 0 ? "La wishlist está vacía" : search.trim() ? `Sin resultados para "${search.trim()}"` : "Sin items para este filtro"}
           </p>
           {items.length === 0 && canEdit && (
             <button onClick={() => setAddOpen(true)}
