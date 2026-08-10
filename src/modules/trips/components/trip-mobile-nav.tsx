@@ -27,6 +27,8 @@ function Icon({ id, size = 26 }: { id: string; size?: number }) {
       return <svg {...p}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="white" stroke="none"/><circle cx="3" cy="12" r="1" fill="white" stroke="none"/><circle cx="3" cy="18" r="1" fill="white" stroke="none"/></svg>;
     case "galería":
       return <svg {...p}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>;
+    case "wishlist":
+      return <svg {...p}><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M21 8H3"/><path d="M12 8v13"/><path d="M8.5 8C7.1 8 6 6.9 6 5.5S7.1 3 8.5 3c2.1 0 3.5 5 3.5 5s-1.4 0-3.5 0z"/><path d="M15.5 8C16.9 8 18 6.9 18 5.5S16.9 3 15.5 3C13.4 3 12 8 12 8s1.4 0 3.5 0z"/></svg>;
     case "itinerario":
       return <svg {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
     case "alojamiento":
@@ -50,6 +52,7 @@ const MAIN_SECTIONS = [
   { id: "checklist",  label: "Checklist",  grad: "from-teal-400 to-cyan-600" },
   { id: "listas",     label: "Listas",     grad: "from-violet-500 to-purple-600" },
   { id: "galería",    label: "Galería",    grad: "from-rose-400 to-pink-600" },
+  { id: "wishlist",   label: "Wishlist",   grad: "from-orange-400 to-red-500" },
 ] as const;
 
 const ITINERARY_SUBTABS = [
@@ -60,7 +63,7 @@ const ITINERARY_SUBTABS = [
   { id: "excursiones", label: "Excursiones", grad: "from-emerald-400 to-green-600" },
 ] as const;
 
-const SECONDARY_TABS = new Set(["checklist", "listas", "galería"]);
+const SECONDARY_TABS = new Set(["checklist", "listas", "galería", "wishlist"]);
 
 // ── Component ───────────────────────────────────────────────────────────────
 export function TripMobileNav({

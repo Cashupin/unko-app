@@ -7,6 +7,7 @@ const MORE_TABS = [
   { id: "checklist", label: "Checklist", icon: "✅" },
   { id: "listas", label: "Listas", icon: "📋" },
   { id: "galería", label: "Galería", icon: "📸" },
+  { id: "wishlist", label: "Wishlist", icon: "🎁" },
 ] as const;
 
 export function TripMoreDropdown({

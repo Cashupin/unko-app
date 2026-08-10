@@ -213,6 +213,7 @@ model Trip {
   tickets            Ticket[]
   excursions         Excursion[]
   shoppingLists      ShoppingList[]
+  wishlistItems      WishlistItem[]
 
   @@index([createdById])
   @@index([startDate, endDate])
@@ -239,6 +240,7 @@ model TripParticipant {
   purchasedTickets        Ticket[]             @relation("TicketPurchasedBy")
   createdLists            ShoppingList[]       @relation("ListCreatedBy")
   checkedItems            ShoppingListItem[]   @relation("ItemCheckedBy")
+  wishlistItems           WishlistItem[]       @relation("WishlistOwner")
 
   @@unique([tripId, userId])
   @@index([tripId])
@@ -750,4 +752,26 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
+}
+
+// ─── Wishlist ─────────────────────────────────────────────────────────────────
+
+model WishlistItem {
+  id        String    @id @default(cuid())
+  tripId    String
+  name      String
+  notes     String?
+  imageUrl  String?
+  bought    Boolean   @default(false)
+  boughtAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  ownedByParticipantId String
+  ownedByParticipant   TripParticipant @relation("WishlistOwner", fields: [ownedByParticipantId], references: [id], onDelete: Cascade)
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([ownedByParticipantId])
 }

@@ -39,11 +39,12 @@ import { HashHighlight } from "@/modules/proposals/components/hash-highlight";
 import { KmlImport } from "@/modules/proposals/components/kml-import";
 import { ChecklistPanel } from "@/modules/checklist/components/checklist-panel";
 import { ListsView } from "@/modules/lists/components/lists-view";
+import { WishlistView } from "@/modules/wishlist/components/wishlist-view";
 import type { ParticipantSummary } from "@/modules/trips/types/trip";
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
 
-type Tab = "home" | "propuestas" | "itinerario" | "checklist" | "gastos" | "listas" | "galería";
+type Tab = "home" | "propuestas" | "itinerario" | "checklist" | "gastos" | "listas" | "galería" | "wishlist";
 const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Inicio" },
   { id: "propuestas", label: "Propuestas" },
@@ -52,6 +53,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "checklist", label: "Checklist" },
   { id: "listas", label: "Listas" },
   { id: "galería", label: "Galería" },
+  { id: "wishlist", label: "Wishlist" },
 ];
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -238,7 +240,7 @@ export default async function TripPage({
         {/* Tab navigation — hidden on mobile, shown on tablet+ */}
         <div className="mx-auto max-w-5xl px-4 pb-3 md:px-6">
           <nav id="tutorial-trip-tabs" className="hidden md:flex gap-1 items-center" aria-label="Pestañas del viaje">
-            {TABS.filter((t) => !["checklist", "listas", "galería"].includes(t.id)).map((tab) => (
+            {TABS.filter((t) => !["checklist", "listas", "galería", "wishlist"].includes(t.id)).map((tab) => (
               <Link
                 key={tab.id}
                 id={`tutorial-tab-${tab.id}`}
@@ -527,6 +529,17 @@ export default async function TripPage({
         {activeTab === "galería" && (
           <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando galería...</div>}>
             <GalleryView tripId={tripId} tripName={trip.name} />
+          </Suspense>
+        )}
+
+        {/* ── Wishlist ─────────────────────────────────────────────────────── */}
+        {activeTab === "wishlist" && (
+          <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando wishlist...</div>}>
+            <WishlistView
+              tripId={tripId}
+              myParticipantId={myParticipant.id}
+              canEdit={canEdit}
+            />
           </Suspense>
         )}
 
