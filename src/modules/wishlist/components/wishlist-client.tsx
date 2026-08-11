@@ -39,7 +39,7 @@ function buildGroups(items: WishlistItem[]): WishlistGroup[] {
     groups.push({ rootId, root, all: members });
   }
   // Orden: por createdAt del root
-  return groups.sort((a, b) => a.root.createdAt.localeCompare(b.root.createdAt));
+  return groups.sort((a, b) => b.root.createdAt.localeCompare(a.root.createdAt));
 }
 
 // ── Placeholder ──────────────────────────────────────────────────────────────
@@ -154,6 +154,7 @@ type Props = {
 export function WishlistClient({ tripId, myParticipantId, canEdit, initialItems, participants }: Props) {
   const router = useRouter();
   const [items, setItems] = useState<WishlistItem[]>(initialItems);
+  useEffect(() => { setItems(initialItems); }, [initialItems]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => readStorage(STATUS_KEY(tripId), "all") as StatusFilter);
   const [personFilter, setPersonFilter] = useState<string>(() => readStorage(PERSON_KEY(tripId), "all"));
   const [selectedGroup, setSelectedGroup] = useState<WishlistGroup | null>(null);

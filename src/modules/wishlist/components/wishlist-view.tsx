@@ -25,7 +25,7 @@ export async function WishlistView({ tripId, myParticipantId, canEdit }: Props) 
         ownedByParticipantId: true,
         ownedByParticipant: { select: { id: true, name: true } },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.tripParticipant.findMany({
       where: { tripId },
