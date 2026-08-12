@@ -39,6 +39,7 @@ import { KmlImport } from "@/modules/proposals/components/kml-import";
 import { ChecklistPanel } from "@/modules/checklist/components/checklist-panel";
 import { ListsView } from "@/modules/lists/components/lists-view";
 import { WishlistView } from "@/modules/wishlist/components/wishlist-view";
+import { ItineraryTabDropdown } from "@/modules/trips/components/itinerary-tab-dropdown";
 import type { ParticipantSummary } from "@/modules/trips/types/trip";
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
@@ -256,6 +257,23 @@ export default async function TripPage({
           <nav id="tutorial-trip-tabs" className="hidden md:flex gap-0.5 items-center flex-wrap" aria-label="Pestañas del viaje">
             {TABS.map((tab) => {
               const active = activeTab === tab.id;
+              const iconEl = (
+                <span className={`flex items-center justify-center rounded-md bg-linear-to-br ${tab.grad} ${active ? "opacity-100" : "opacity-80"}`}
+                  style={{ width: 22, height: 22 }}>
+                  <TabIcon id={tab.id} size={13} />
+                </span>
+              );
+              if (tab.id === "itinerario") {
+                return (
+                  <ItineraryTabDropdown
+                    key={tab.id}
+                    tripId={tripId}
+                    activeTab={activeTab}
+                    activeSubtab={activeSubtab}
+                    tabIcon={iconEl}
+                  />
+                );
+              }
               return (
                 <Link
                   key={tab.id}
@@ -267,10 +285,7 @@ export default async function TripPage({
                       : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-700"
                   }`}
                 >
-                  <span className={`flex items-center justify-center rounded-md bg-linear-to-br ${tab.grad} ${active ? "opacity-100" : "opacity-80"}`}
-                    style={{ width: 22, height: 22 }}>
-                    <TabIcon id={tab.id} size={13} />
-                  </span>
+                  {iconEl}
                   {tab.label}
                 </Link>
               );
