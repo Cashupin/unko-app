@@ -13,7 +13,7 @@ async function requireOwner(itemId: string, participantId: string) {
 
 const ITEM_SELECT = {
   id: true, tripId: true, name: true, notes: true, imageUrl: true,
-  bought: true, boughtAt: true, createdAt: true,
+  bought: true, boughtAt: true, cost: true, originItemId: true, createdAt: true,
   ownedByParticipantId: true,
   ownedByParticipant: { select: { id: true, name: true } },
 } as const;
@@ -23,6 +23,7 @@ const updateSchema = z.object({
   notes: z.string().trim().max(1000).optional().nullable(),
   imageUrl: z.string().url().optional().nullable().or(z.literal("")),
   toggleBought: z.boolean().optional(),
+  cost: z.number().nonnegative().optional().nullable(),
 });
 
 // ─── PATCH /api/trips/[id]/wishlist/[itemId] ─────────────────────────────────
@@ -43,9 +44,6 @@ export async function PATCH(
   });
   if (!participant) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const item = await requireOwner(itemId, participant.id);
-  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   let body: unknown = {};
   try { body = await req.json(); } catch { /* body vacío = toggle bought */ }
 
@@ -56,13 +54,22 @@ export async function PATCH(
 
   const { toggleBought, name, notes, imageUrl } = result.data;
 
+  // toggleBought: cualquier participante puede marcar comprado (encargos incluidos)
+  // editar nombre/notas/imagen: solo el owner del item
+  const item = toggleBought
+    ? await prisma.wishlistItem.findFirst({ where: { id: itemId, tripId }, select: { id: true, tripId: true, name: true } })
+    : await requireOwner(itemId, participant.id);
+  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   let data: Record<string, unknown> = {};
 
   if (toggleBought !== undefined) {
     const current = await prisma.wishlistItem.findUnique({ where: { id: itemId }, select: { bought: true } });
+    const markingBought = !current?.bought;
     data = {
-      bought: !current?.bought,
-      boughtAt: !current?.bought ? new Date() : null,
+      bought: markingBought,
+      boughtAt: markingBought ? new Date() : null,
+      cost: markingBought ? (result.data.cost ?? null) : null,
     };
   } else {
     if (name !== undefined) data.name = name;

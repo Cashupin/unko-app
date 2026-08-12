@@ -113,7 +113,8 @@ export function WishlistDetailSheet({ group, participants, myParticipantId, canE
                 <div className="flex flex-col gap-1.5">
                   {group.all.map((item) => {
                     const c = participantColor(item.ownedByParticipantId, participants);
-                    const init = participantInitial(item.ownedByParticipant.name);
+                    const displayName = item.ownedByParticipant.name;
+                    const init = participantInitial(displayName);
                     const isMe = item.ownedByParticipantId === myParticipantId;
                     return (
                       <div key={item.id} className="flex items-center gap-2.5 rounded-xl px-3 py-2 bg-zinc-50 dark:bg-zinc-800">
@@ -121,7 +122,7 @@ export function WishlistDetailSheet({ group, participants, myParticipantId, canE
                           {init}
                         </span>
                         <span className="flex-1 text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                          {item.ownedByParticipant.name}{isMe && " (tú)"}
+                          {displayName}{isMe && " (tú)"}
                         </span>
                         <span className={`text-xs font-semibold ${item.bought ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"}`}>
                           {item.bought ? "✓ Comprado" : "Pendiente"}

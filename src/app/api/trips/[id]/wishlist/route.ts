@@ -19,6 +19,7 @@ const ITEM_SELECT = {
   imageUrl: true,
   bought: true,
   boughtAt: true,
+  originItemId: true,
   createdAt: true,
   ownedByParticipantId: true,
   ownedByParticipant: { select: { id: true, name: true } },

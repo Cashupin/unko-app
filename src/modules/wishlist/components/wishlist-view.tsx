@@ -1,17 +1,34 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { WishlistClient } from "./wishlist-client";
+import { EncargosSubtab } from "./encargos-subtab";
+import { WishlistSubNav } from "./wishlist-sub-nav";
 import type { WishlistItem } from "../types";
 
 type Props = {
   tripId: string;
   myParticipantId: string;
   canEdit: boolean;
+  subtab?: string;
 };
 
-export async function WishlistView({ tripId, myParticipantId, canEdit }: Props) {
+export async function WishlistView({ tripId, myParticipantId, canEdit, subtab }: Props) {
+  const activeSubtab = subtab === "encargos" ? "encargos" : "wishlist";
+
+  if (activeSubtab === "encargos") {
+    return (
+      <div>
+        <WishlistSubNav tripId={tripId} activeSubtab={activeSubtab} />
+        <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando encargos...</div>}>
+          <EncargosSubtab tripId={tripId} />
+        </Suspense>
+      </div>
+    );
+  }
+
   const [rawItems, participants] = await Promise.all([
     prisma.wishlistItem.findMany({
-      where: { tripId },
+      where: { tripId, requestStatus: null },
       select: {
         id: true,
         tripId: true,
@@ -44,17 +61,20 @@ export async function WishlistView({ tripId, myParticipantId, canEdit }: Props) 
     boughtAt: i.boughtAt?.toISOString() ?? null,
     originItemId: i.originItemId,
     createdAt: i.createdAt.toISOString(),
-    ownedByParticipantId: i.ownedByParticipantId,
-    ownedByParticipant: i.ownedByParticipant,
+    ownedByParticipantId: i.ownedByParticipantId!,
+    ownedByParticipant: i.ownedByParticipant!,
   }));
 
   return (
-    <WishlistClient
-      tripId={tripId}
-      myParticipantId={myParticipantId}
-      canEdit={canEdit}
-      initialItems={items}
-      participants={participants}
-    />
+    <div>
+      <WishlistSubNav tripId={tripId} activeSubtab={activeSubtab} />
+      <WishlistClient
+        tripId={tripId}
+        myParticipantId={myParticipantId}
+        canEdit={canEdit}
+        initialItems={items}
+        participants={participants}
+      />
+    </div>
   );
 }

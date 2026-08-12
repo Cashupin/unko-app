@@ -67,13 +67,14 @@ function Facepile({ group, participants }: { group: WishlistGroup; participants:
     <div className="absolute right-1.5 top-1.5 flex">
       {visible.map((item, i) => {
         const color = participantColor(item.ownedByParticipantId, participants);
-        const initial = participantInitial(item.ownedByParticipant.name);
+        const name = item.ownedByParticipant.name;
+        const initial = participantInitial(name);
         return (
           <div
             key={item.id}
             className="flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] border-white text-[9px] font-bold text-white shadow-sm"
             style={{ background: color, marginLeft: i === 0 ? 0 : -6, zIndex: visible.length - i }}
-            title={item.bought ? `${item.ownedByParticipant.name} ✓` : item.ownedByParticipant.name}
+            title={item.bought ? `${name} ✓` : name}
           >
             {item.bought ? "✓" : initial}
           </div>
@@ -107,7 +108,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 // ── Persistence ───────────────────────────────────────────────────────────────
 
 const STATUS_KEY = (id: string) => `wishlist-status-${id}`;
-const PERSON_KEY  = (id: string) => `wishlist-person-${id}`;
+const PERSON_KEY = (id: string) => `wishlist-person-${id}`;
 function readStorage(key: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
   return localStorage.getItem(key) ?? fallback;
@@ -172,9 +173,10 @@ export function WishlistClient({ tripId, myParticipantId, canEdit, initialItems,
     return allGroups.filter((g) => {
       if (q && !g.root.name.toLowerCase().includes(q) && !(g.root.notes ?? "").toLowerCase().includes(q)) return false;
       const relevantItems = personFilter === "all" ? g.all : g.all.filter((i) => i.ownedByParticipantId === personFilter);
-      if (relevantItems.length === 0) return false;
+      if (relevantItems.length === 0 && personFilter !== "all") return false;
       if (statusFilter === "all") return true;
-      return relevantItems.some((i) => statusFilter === "bought" ? i.bought : !i.bought);
+      const checkItems = relevantItems.length > 0 ? relevantItems : g.all;
+      return checkItems.some((i) => statusFilter === "bought" ? i.bought : !i.bought);
     });
   }, [allGroups, personFilter, statusFilter, search]);
 

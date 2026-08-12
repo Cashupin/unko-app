@@ -79,6 +79,13 @@ enum NotificationType {
   TRIP_ADDED        // Te agregaron a un viaje
   EXPENSE_CREATED   // Te asociaron a un gasto
   PAYMENT_RECEIVED  // Alguien marcó un pago como pagado
+  WISHLIST_REQUEST  // Un amigo externo mandó un encargo
+}
+
+enum WishlistRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum ListVisibility {
@@ -214,6 +221,7 @@ model Trip {
   excursions         Excursion[]
   shoppingLists      ShoppingList[]
   wishlistItems      WishlistItem[]
+  wishlistFriendLinks WishlistFriendLink[]
 
   @@index([createdById])
   @@index([startDate, endDate])
@@ -241,6 +249,7 @@ model TripParticipant {
   createdLists            ShoppingList[]       @relation("ListCreatedBy")
   checkedItems            ShoppingListItem[]   @relation("ItemCheckedBy")
   wishlistItems           WishlistItem[]       @relation("WishlistOwner")
+  createdFriendLinks      WishlistFriendLink[] @relation("FriendLinkCreatedBy")
 
   @@unique([tripId, userId])
   @@index([tripId])
@@ -756,6 +765,23 @@ model Notification {
 
 // ─── Wishlist ─────────────────────────────────────────────────────────────────
 
+model WishlistFriendLink {
+  id                     String    @id @default(cuid())
+  tripId                 String
+  friendName             String
+  token                  String    @unique @default(cuid())
+  createdByParticipantId String
+  createdAt              DateTime  @default(now())
+  revokedAt              DateTime?
+
+  trip                 Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  createdByParticipant TripParticipant @relation("FriendLinkCreatedBy", fields: [createdByParticipantId], references: [id])
+  requests             WishlistItem[]
+
+  @@index([tripId])
+  @@index([token])
+}
+
 model WishlistItem {
   id           String    @id @default(cuid())
   tripId       String
@@ -764,12 +790,17 @@ model WishlistItem {
   imageUrl     String?
   bought       Boolean   @default(false)
   boughtAt     DateTime?
+  cost         Float?
   originItemId String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  ownedByParticipantId String
-  ownedByParticipant   TripParticipant @relation("WishlistOwner", fields: [ownedByParticipantId], references: [id], onDelete: Cascade)
+  ownedByParticipantId String?
+  ownedByParticipant   TripParticipant? @relation("WishlistOwner", fields: [ownedByParticipantId], references: [id], onDelete: SetNull)
+
+  requestStatus WishlistRequestStatus?
+  friendLinkId  String?
+  friendLink    WishlistFriendLink?    @relation(fields: [friendLinkId], references: [id], onDelete: SetNull)
 
   trip       Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
   originItem WishlistItem?  @relation("WishlistCopies", fields: [originItemId], references: [id], onDelete: SetNull)
@@ -778,4 +809,5 @@ model WishlistItem {
   @@index([tripId])
   @@index([ownedByParticipantId])
   @@index([originItemId])
+  @@index([friendLinkId])
 }
