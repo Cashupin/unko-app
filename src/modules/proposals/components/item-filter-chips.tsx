@@ -24,6 +24,7 @@ export function ItemFilterChips({
   const currentType = searchParams.get("itemType") ?? "";
   const currentProposer = searchParams.get("proposer") ?? "";
   const currentCity = searchParams.get("city") ?? "";
+  const notInItinerary = searchParams.get("notInItinerary") === "1";
   const [searchValue, setSearchValue] = useState(searchParams.get("search") ?? "");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -100,6 +101,17 @@ export function ItemFilterChips({
               {chip.label}
             </button>
           ))}
+          <div className="h-4 w-px shrink-0 bg-[#3f3f46]" />
+          <button
+            onClick={() => setFilter("notInItinerary", notInItinerary ? "" : "1")}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              notInItinerary
+                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                : "border border-[#3f3f46] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+            }`}
+          >
+            Sin itinerario
+          </button>
         </div>
       </div>
 

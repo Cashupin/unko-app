@@ -78,13 +78,13 @@ export default async function TripPage({
   searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ tab?: string; subtab?: string; itemType?: string; search?: string; hotelId?: string; proposer?: string; view?: string; city?: string; wishlistSubtab?: string }>;
+  searchParams: Promise<{ tab?: string; subtab?: string; itemType?: string; search?: string; hotelId?: string; proposer?: string; view?: string; city?: string; wishlistSubtab?: string; notInItinerary?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
   const { tripId } = await params;
-  const { tab: tabParam, subtab: subtabParam, itemType, search, hotelId, proposer, view, city, wishlistSubtab } = await searchParams;
+  const { tab: tabParam, subtab: subtabParam, itemType, search, hotelId, proposer, view, city, wishlistSubtab, notInItinerary } = await searchParams;
 
   type SubTab = "itinerario" | "alojamiento" | "transporte" | "entradas" | "excursiones";
   const SUBTABS: SubTab[] = ["itinerario", "alojamiento", "transporte", "entradas", "excursiones"];
@@ -411,6 +411,7 @@ export default async function TripPage({
                   search={search}
                   proposerFilter={proposer}
                   cityFilter={city}
+                  notInItinerary={notInItinerary === "1"}
                 />
               </Suspense>
             </div>

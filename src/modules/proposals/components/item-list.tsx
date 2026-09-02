@@ -14,6 +14,7 @@ export async function ItemList({
   search,
   proposerFilter,
   cityFilter,
+  notInItinerary,
 }: {
   currentUserId: string;
   tripId: string;
@@ -25,6 +26,7 @@ export async function ItemList({
   search?: string;
   proposerFilter?: string;
   cityFilter?: string;
+  notInItinerary?: boolean;
 }) {
   const createdByIdFilter = proposerFilter === "none"
     ? null
@@ -39,6 +41,7 @@ export async function ItemList({
         type: typeFilter ? (typeFilter as ItemType) : undefined,
         createdById: createdByIdFilter,
         city: cityFilter ? { equals: cityFilter } : undefined,
+        ...(notInItinerary && { activities: { none: { isDraft: false } } }),
         OR: search
           ? [
               { title: { contains: search, mode: "insensitive" } },
