@@ -19,12 +19,11 @@ import { DeleteTripButton } from "@/modules/trips/components/delete-trip-button"
 import { ActivityList } from "@/modules/itinerary/components/activity-list";
 import { ItineraryCalendarServer } from "@/modules/itinerary/components/itinerary-calendar-server";
 import { ItineraryViewToggle } from "@/modules/itinerary/components/itinerary-view-toggle";
-import { CreateActivityForm } from "@/modules/itinerary/components/create-activity-form";
 import { HotelList } from "@/modules/itinerary/components/hotel-list";
 import { HotelCollapsible } from "@/modules/itinerary/components/hotel-collapsible";
 import { CreateHotelForm } from "@/modules/itinerary/components/create-hotel-form";
 import { ItinerarySubNav } from "@/modules/itinerary/components/itinerary-sub-nav";
-import { PersonalModeProvider, PersonalModeToggle } from "@/modules/itinerary/components/personal-mode-provider";
+import { PersonalModeProvider, PersonalModeToggle, SmartCreateButton } from "@/modules/itinerary/components/personal-mode-provider";
 import { PdfExportButton } from "@/modules/itinerary/components/pdf-export-button";
 import { DayCollapseProvider, CollapseAllButton } from "@/modules/itinerary/components/day-collapse-provider";
 import { TransportPanel } from "@/modules/itinerary/components/transport-panel";
@@ -305,13 +304,14 @@ export default async function TripPage({
               <div className="mx-auto max-w-5xl flex items-center justify-between gap-2 px-4 py-2 md:px-6">
                 <ItineraryViewToggle tripId={tripId} view={view} />
                 <div className="flex items-center gap-1.5">
-                  {view !== "calendar" && <PersonalModeToggle />}
+                  <PersonalModeToggle />
                   {view !== "calendar" && <CollapseAllButton />}
                   <PdfExportButton tripId={tripId} isAdmin={isAdmin} />
-                  {canEdit && view !== "calendar" && (
+                  {canEdit && (
                     <div className="hidden md:block">
-                      <CreateActivityForm
+                      <SmartCreateButton
                         tripId={tripId}
+                        compact={false}
                         isAdmin={isAdmin}
                         tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined}
                       />

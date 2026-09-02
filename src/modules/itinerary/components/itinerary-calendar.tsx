@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { usePersonalMode } from "@/modules/itinerary/components/personal-mode-provider";
 import { createPortal } from "react-dom";
 import { ExportButtons } from "@/modules/itinerary/components/export-buttons";
 import { DraftActivityActions } from "@/modules/itinerary/components/draft-activity-actions";
@@ -301,22 +302,22 @@ function DayDetailModal({
         {personalMode && (
           <div className="border-t border-[#27272a] px-5 py-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-widest text-violet-400">🔒 Mi plan</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-sky-400">· Mi plan</p>
               {!addingPersonal && (
                 <button
                   type="button"
                   onClick={() => setAddingPersonal(true)}
-                  className="rounded-lg border border-violet-700/40 bg-violet-900/20 px-2.5 py-1 text-xs font-semibold text-violet-400 transition-colors hover:bg-violet-900/40"
+                  className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-2.5 py-1 text-xs font-semibold text-sky-400 transition-colors hover:bg-sky-500/20"
                 >
                   + Añadir
                 </button>
               )}
             </div>
             {personalActivities.length === 0 && !addingPersonal && (
-              <p className="mt-1.5 text-xs text-violet-400/60">Sin plan personal para este día.</p>
+              <p className="mt-1.5 text-xs text-sky-400/60">Sin plan personal para este día.</p>
             )}
             {addingPersonal && (
-              <div className="mt-3 flex flex-col gap-2 rounded-xl border border-violet-700/40 bg-violet-900/20 p-3">
+              <div className="mt-3 flex flex-col gap-2 rounded-xl border border-sky-500/30 bg-sky-500/5 p-3">
                 <input
                   autoFocus
                   type="text"
@@ -324,20 +325,20 @@ function DayDetailModal({
                   value={personalTitle}
                   onChange={(e) => setPersonalTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddPersonal()}
-                  className="w-full rounded-lg border border-violet-700/40 bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-violet-500"
+                  className="w-full rounded-lg border border-zinc-700 bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-zinc-500"
                 />
                 <input
                   type="time"
                   value={personalTime}
                   onChange={(e) => setPersonalTime(e.target.value)}
-                  className="w-32 rounded-lg border border-violet-700/40 bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 outline-none focus:border-violet-500"
+                  className="w-32 rounded-lg border border-zinc-700 bg-[#0f1419] px-3 py-1.5 text-sm text-zinc-100 outline-none focus:border-zinc-500"
                 />
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleAddPersonal}
                     disabled={savingPersonal || !personalTitle.trim()}
-                    className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+                    className="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 disabled:opacity-50"
                   >
                     {savingPersonal ? "Guardando…" : "Guardar"}
                   </button>
@@ -365,34 +366,33 @@ function DayDetailModal({
               item.kind === "personal" ? (
                 <div
                   key={item.pa.id}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-dashed border-violet-700/30 bg-violet-950/30 p-4"
+                  className="relative flex items-start justify-between gap-3 rounded-xl border border-[#27272a] bg-[#1f2023] p-4 pl-5"
                 >
+                  <div className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-sky-500/50" />
                   <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
                       {item.pa.time && (
-                        <span className="shrink-0 rounded-md bg-violet-900/50 px-2 py-0.5 text-xs font-bold tabular-nums text-violet-300">
+                        <span className="shrink-0 rounded-md bg-[#27272a] px-2 py-0.5 text-xs font-bold tabular-nums text-zinc-300">
                           {item.pa.time}
                         </span>
                       )}
-                      <span className="rounded-md border border-violet-700/40 bg-violet-900/30 px-2 py-0.5 text-[10px] font-semibold text-violet-400">
-                        🔒 Solo yo
-                      </span>
+                      <span className="text-[10px] font-medium text-zinc-500">· Personal</span>
                     </div>
-                    <h3 className="font-semibold text-violet-100">{item.pa.title}</h3>
+                    <h3 className="font-semibold text-zinc-100">{item.pa.title}</h3>
                     {item.pa.location && (
-                      <p className="mt-2 flex items-center gap-1.5 text-sm text-violet-400/70">
+                      <p className="mt-1.5 flex items-center gap-1 text-xs text-zinc-500">
                         <span>📍</span> {item.pa.location}
                       </p>
                     )}
                     {item.pa.notes && (
-                      <p className="mt-1.5 text-xs italic text-violet-400/50">{item.pa.notes}</p>
+                      <p className="mt-1 text-xs italic text-zinc-600">{item.pa.notes}</p>
                     )}
                   </div>
                   <button
                     type="button"
                     onClick={() => handleDeletePersonal(item.pa.id)}
                     disabled={deletingId === item.pa.id}
-                    className="mt-0.5 shrink-0 rounded-lg p-1.5 text-violet-600 transition-colors hover:bg-violet-900/40 hover:text-violet-400 disabled:opacity-40"
+                    className="mt-0.5 shrink-0 rounded-lg p-1.5 text-zinc-600 transition-colors hover:bg-[#27272a] hover:text-red-400 disabled:opacity-40"
                   >
                     {deletingId === item.pa.id ? "…" : "✕"}
                   </button>
@@ -563,32 +563,32 @@ export function ItineraryCalendar({
   const [year, setYear] = useState(parseInt(initialStr.slice(0, 4)));
   const [month, setMonth] = useState(parseInt(initialStr.slice(5, 7)) - 1); // 0-indexed
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [personalMode, setPersonalMode] = useState(false);
+  const { mode: personalModeNum } = usePersonalMode();
+  const personalMode = personalModeNum > 0;
   const [personalActs, setPersonalActs] = useState<PersonalActivity[]>([]);
-  const [loadingPersonal, setLoadingPersonal] = useState(false);
 
   const today = todayStr();
   const tripStart = startDate;
   const tripEnd   = endDate;
 
   async function fetchPersonalActs() {
-    setLoadingPersonal(true);
     try {
       const res = await fetch(`/api/trips/${tripId}/personal-activities`);
       if (res.ok) {
         const data = (await res.json()) as { activities: PersonalActivity[] };
         setPersonalActs(data.activities);
       }
-    } finally {
-      setLoadingPersonal(false);
+    } catch {
+      // silently ignore fetch errors in calendar
     }
   }
 
-  async function togglePersonalMode() {
-    const next = !personalMode;
-    setPersonalMode(next);
-    if (next && personalActs.length === 0) await fetchPersonalActs();
-  }
+  useEffect(() => {
+    if (personalMode && personalActs.length === 0) {
+      void fetchPersonalActs();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personalMode]);
 
   // Group activities by date
   const actsByDate = new Map<string, CalendarActivity[]>();
@@ -645,19 +645,7 @@ export function ItineraryCalendar({
   return (
     <>
       {/* Toolbar — fuera del área capturada */}
-      <div className="no-export mb-3 flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={togglePersonalMode}
-          disabled={loadingPersonal}
-          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
-            personalMode
-              ? "border-violet-700/60 bg-violet-900/30 text-violet-300 hover:bg-violet-900/50"
-              : "border-[#27272a] bg-[#18191c]/60 text-zinc-400 hover:bg-[#27272a] hover:text-zinc-200"
-          }`}
-        >
-          🔒 {loadingPersonal ? "Cargando…" : personalMode ? "Vista grupal" : "Mi plan"}
-        </button>
+      <div className="no-export mb-3 flex items-center justify-end gap-2">
         <ExportButtons captureRef={exportRef} />
       </div>
 
@@ -904,7 +892,7 @@ export function ItineraryCalendar({
                 <div className="flex flex-col gap-0.5 lg:gap-1">
                   {allItems.length === 0 && myActs.length === 0 ? (
                     <div className="truncate rounded border border-amber-700/50 bg-amber-900/40 px-1 py-0.5 text-[10px] font-medium text-amber-300 lg:px-2 lg:py-1 lg:text-xs">
-                      {personalMode ? "Sin plan" : "Libre"}
+                      Libre
                     </div>
                   ) : (
                     <>
@@ -949,10 +937,10 @@ export function ItineraryCalendar({
                       {myActs.map((pa) => (
                         <div
                           key={pa.id}
-                          className="truncate rounded border border-violet-700/50 bg-violet-900/40 px-1 py-0.5 text-[10px] font-medium text-violet-300 lg:px-2 lg:py-1 lg:text-xs"
+                          className="truncate rounded border border-sky-700/50 bg-sky-900/40 px-1 py-0.5 text-[10px] font-medium text-sky-300 lg:px-2 lg:py-1 lg:text-xs"
                           title={pa.title}
                         >
-                          🔒 {pa.title}
+                          {pa.title}
                         </div>
                       ))}
                     </>

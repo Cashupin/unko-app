@@ -283,7 +283,8 @@ model Item {
   checks       Check[]
   comments     Comment[]
   commentViews ItemCommentView[]
-  activities   Activity[] // Items aprobados pueden ser referenciados desde el itinerario
+  activities         Activity[]         // Items aprobados pueden ser referenciados desde el itinerario
+  personalActivities PersonalActivity[] // Actividades personales creadas junto a esta propuesta
 
   @@index([tripId])
 }
@@ -461,20 +462,23 @@ model PersonalActivity {
   id          String   @id @default(cuid())
   tripId      String
   userId      String
-  date        String   // YYYY-MM-DD
+  date        String?  // YYYY-MM-DD, null = sin fecha asignada
   title       String
   description String?
   time        String?
   location    String?
   notes       String?
   photoUrl    String?
+  itemId      String?  // propuesta grupal creada simultáneamente con esta actividad
   createdAt   DateTime @default(now())
 
-  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item? @relation(fields: [itemId], references: [id], onDelete: SetNull)
 
   @@index([tripId, userId])
   @@index([date])
+  @@index([itemId])
 }
 
 // ─── Hotels ───────────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -78,7 +79,7 @@ type TransportRow = {
 };
 
 type PersonalActivityRow = {
-  id: string; date: string; title: string;
+  id: string; date: string | null; title: string;
   time: string | null; location: string | null; notes: string | null;
 };
 
@@ -263,13 +264,13 @@ export default async function PrintPage({
   searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ drafts?: string }>;
+  searchParams: Promise<{ drafts?: string; personal?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
   const { tripId } = await params;
-  const { drafts } = await searchParams;
+  const { drafts, personal } = await searchParams;
 
   const [trip, myParticipant] = await Promise.all([
     prisma.trip.findUnique({
@@ -287,6 +288,7 @@ export default async function PrintPage({
 
   const isAdmin = myParticipant.role === "ADMIN";
   const includeDrafts = drafts === "1" && isAdmin;
+  const includePersonal = personal !== "0";
 
   const [rawHotels, rawActivities, rawTransports, rawPasses, rawPersonal, rawDayNotes, rawExcursions] = await Promise.all([
     prisma.hotel.findMany({
@@ -370,13 +372,14 @@ export default async function PrintPage({
     currency: t.currency as string,
   }));
 
-  const personalActivities: PersonalActivityRow[] = rawPersonal.map((p) => ({
-    ...p,
-    date: toStr(new Date(p.date)),
-  }));
+  const personalActivities: PersonalActivityRow[] = includePersonal
+    ? rawPersonal.map((p) => ({ ...p, date: p.date ?? null }))
+    : [];
 
   const personalByDate = new Map<string, PersonalActivityRow[]>();
+  const personalNoDate: PersonalActivityRow[] = [];
   for (const p of personalActivities) {
+    if (!p.date) { personalNoDate.push(p); continue; }
     if (!personalByDate.has(p.date)) personalByDate.set(p.date, []);
     personalByDate.get(p.date)!.push(p);
   }
@@ -448,7 +451,9 @@ export default async function PrintPage({
         }
       `}</style>
 
-      <PrintButton />
+      <Suspense>
+        <PrintButton isAdmin={isAdmin} includePersonal={includePersonal} />
+      </Suspense>
 
       <div className="mx-auto max-w-4xl bg-white px-8 py-10 text-zinc-900 print:p-0">
 
@@ -749,18 +754,19 @@ export default async function PrintPage({
                               {item.a.notes && <p className="mt-1 text-xs italic text-zinc-400">{item.a.notes}</p>}
                             </div>
                           ) : (
-                            <div key={item.p.id} className="rounded-lg border border-violet-200 bg-violet-50/60 p-3">
+                            <div key={item.p.id} className="relative rounded-lg border border-zinc-100 bg-zinc-50/60 p-3 pl-4">
+                              <div className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-sky-500/70" />
                               <div className="flex items-center gap-2">
                                 {item.p.time && (
-                                  <span className="shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-xs font-bold text-violet-600 tabular-nums">
+                                  <span className="shrink-0 rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-bold text-zinc-600 tabular-nums">
                                     {item.p.time}
                                   </span>
                                 )}
-                                <span className="rounded border border-violet-200 px-1.5 py-0.5 text-[10px] font-semibold text-violet-500">🔒 Solo yo</span>
-                                <p className="font-semibold text-violet-800">{item.p.title}</p>
+                                <p className="font-semibold text-zinc-800">{item.p.title}</p>
+                                <span className="text-xs text-zinc-400">· Personal</span>
                               </div>
-                              {item.p.location && <p className="mt-1 text-xs text-violet-500">📍 {item.p.location}</p>}
-                              {item.p.notes && <p className="mt-1 text-xs italic text-violet-400">{item.p.notes}</p>}
+                              {item.p.location && <p className="mt-1 text-xs text-zinc-500">📍 {item.p.location}</p>}
+                              {item.p.notes && <p className="mt-1 text-xs italic text-zinc-400">{item.p.notes}</p>}
                             </div>
                           )
                         )}
@@ -782,6 +788,31 @@ export default async function PrintPage({
                         <p className="font-semibold text-zinc-800">{a.title}</p>
                         {a.location && <p className="mt-1 text-xs text-zinc-500">📍 {a.location}</p>}
                         {a.description && <p className="mt-1 text-sm text-zinc-600">{a.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {personalNoDate.length > 0 && (
+                <div className="break-inside-avoid">
+                  <div className="flex items-center gap-3 border-b border-zinc-100 pb-1 mb-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-bold text-zinc-500">?</div>
+                    <div>
+                      <p className="font-semibold text-zinc-500">Sin fecha asignada</p>
+                      <p className="text-xs text-zinc-400">· Personal</p>
+                    </div>
+                  </div>
+                  <div className="ml-11 flex flex-col gap-2">
+                    {personalNoDate.map((p) => (
+                      <div key={p.id} className="relative rounded-lg border border-zinc-100 bg-zinc-50/60 p-3 pl-4">
+                        <div className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-sky-500/70" />
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-zinc-800">{p.title}</p>
+                          <span className="text-xs text-zinc-400">· Personal</span>
+                        </div>
+                        {p.location && <p className="mt-1 text-xs text-zinc-500">📍 {p.location}</p>}
+                        {p.notes && <p className="mt-1 text-xs italic text-zinc-400">{p.notes}</p>}
                       </div>
                     ))}
                   </div>

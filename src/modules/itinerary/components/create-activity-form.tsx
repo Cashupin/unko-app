@@ -227,37 +227,39 @@ export function CreateActivityForm({
                 />
               </div>
 
-              {!excursionId && (
+              <div className={!excursionId ? "grid grid-cols-1 md:grid-cols-2 gap-4" : undefined}>
+                {!excursionId && (
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="ca-date"
+                      className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      Fecha
+                    </label>
+                    <DatePicker
+                      id="ca-date"
+                      name="activityDate"
+                      defaultValue={defaultDate}
+                      placeholder="Seleccionar fecha"
+                      initialMonth={tripStartDate}
+                    />
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-1">
                   <label
-                    htmlFor="ca-date"
+                    htmlFor="ca-time"
                     className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
                   >
-                    Fecha
+                    Hora
                   </label>
-                  <DatePicker
-                    id="ca-date"
-                    name="activityDate"
-                    defaultValue={defaultDate}
-                    placeholder="Seleccionar fecha"
-                    initialMonth={tripStartDate}
+                  <input
+                    id="ca-time"
+                    name="activityTime"
+                    type="time"
+                    className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
                   />
                 </div>
-              )}
-
-              <div className="flex flex-col gap-1">
-                <label
-                  htmlFor="ca-time"
-                  className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                >
-                  Hora
-                </label>
-                <input
-                  id="ca-time"
-                  name="activityTime"
-                  type="time"
-                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:focus:ring-zinc-500"
-                />
               </div>
 
               <div className="flex flex-col gap-1">

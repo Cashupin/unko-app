@@ -14,6 +14,9 @@ import { DayNoteEditor } from "@/modules/itinerary/components/day-note-editor";
 import {
   PersonalActivitySection,
   PersonalRowConditional,
+  PersonalUnscheduledSection,
+  GroupActivityInMode2,
+  SmartCreateButton,
 } from "@/modules/itinerary/components/personal-mode-provider";
 import {
   DayBadgeCollapseButton,
@@ -100,7 +103,7 @@ type Activity = {
 
 type PersonalActivityItem = {
   id: string;
-  date: string;
+  date: string | null;
   title: string;
   description: string | null;
   time: string | null;
@@ -259,9 +262,14 @@ export async function ActivityList({
   const noDateActivities: typeof activities = [];
 
   const personalByDate = new Map<string, PersonalActivityItem[]>();
+  const personalNoDate: PersonalActivityItem[] = [];
   for (const pa of personalActivities) {
-    if (!personalByDate.has(pa.date)) personalByDate.set(pa.date, []);
-    personalByDate.get(pa.date)!.push(pa);
+    if (!pa.date) {
+      personalNoDate.push(pa);
+    } else {
+      if (!personalByDate.has(pa.date)) personalByDate.set(pa.date, []);
+      personalByDate.get(pa.date)!.push(pa);
+    }
   }
 
   const noteByDate = new Map<string, string>();
@@ -314,17 +322,21 @@ export async function ActivityList({
       {/* Unscheduled activities — confirmed but no date yet */}
       <UnscheduledCollapsible tripId={tripId} count={noDateActivities.length}>
         {noDateActivities.map((act) => (
-          <ActivityRow
-            key={act.id}
-            act={act}
-            tripId={tripId}
-            canEdit={canEdit}
-            isAdmin={isAdmin}
-            participants={participants}
-            tripStartDate={tripStartYMD}
-          />
+          <GroupActivityInMode2 key={act.id} time={act.activityTime} title={act.title}>
+            <ActivityRow
+              act={act}
+              tripId={tripId}
+              canEdit={canEdit}
+              isAdmin={isAdmin}
+              participants={participants}
+              tripStartDate={tripStartYMD}
+            />
+          </GroupActivityInMode2>
         ))}
       </UnscheduledCollapsible>
+
+      {/* Unscheduled personal activities — Mi Plan sin fecha */}
+      <PersonalUnscheduledSection activities={personalNoDate} tripId={tripId} />
 
       {/* Past days — collapsed by default */}
       <PastDaysCollapsible count={pastDates.length}>
@@ -502,7 +514,7 @@ function DayCard({
             </div>
           )}
           {canEdit && (
-            <CreateActivityForm tripId={tripId} defaultDate={dateStr} tripStartDate={tripStartDate} isAdmin={isAdmin} compact />
+            <SmartCreateButton tripId={tripId} date={dateStr} tripStartDate={tripStartDate} isAdmin={isAdmin} />
           )}
         </div>
       </div>
@@ -520,22 +532,24 @@ function DayCard({
           <div className="flex flex-col gap-2 p-3">
             {merged.map((entry) =>
               entry.kind === "activity" ? (
-                <ActivityRow
-                  key={entry.item.id}
-                  act={entry.item}
-                  tripId={tripId}
-                  canEdit={canEdit}
-                  isAdmin={isAdmin}
-                  participants={participants}
-                  tripStartDate={tripStartDate}
-                />
+                <GroupActivityInMode2 key={entry.item.id} time={entry.item.activityTime} title={entry.item.title}>
+                  <ActivityRow
+                    act={entry.item}
+                    tripId={tripId}
+                    canEdit={canEdit}
+                    isAdmin={isAdmin}
+                    participants={participants}
+                    tripStartDate={tripStartDate}
+                  />
+                </GroupActivityInMode2>
               ) : entry.kind === "transport" ? (
-                <TransportBlock key={entry.item.id} transport={entry.item} tripId={tripId} />
+                <GroupActivityInMode2 key={entry.item.id} time={entry.item.isArrival ? entry.item.arrivalTime : entry.item.departureTime} title={`${entry.item.origin} → ${entry.item.destination}`}>
+                  <TransportBlock transport={entry.item} tripId={tripId} />
+                </GroupActivityInMode2>
               ) : (
                 <PersonalRowConditional key={entry.item.id} activity={entry.item} tripId={tripId} />
               )
             )}
-            <PersonalActivitySection activities={[]} tripId={tripId} date={dateStr} />
           </div>
         )}
       </CollapsibleDayBody>

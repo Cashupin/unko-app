@@ -10,6 +10,8 @@ const patchSchema = z.object({
   time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
   photoUrl: z.string().url().nullable().optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  itemId: z.string().cuid().nullable().optional(),
 });
 
 // ─── PATCH /api/trips/[id]/personal-activities/[activityId] ───────────────────

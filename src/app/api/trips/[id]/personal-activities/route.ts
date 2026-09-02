@@ -11,13 +11,14 @@ async function requireMember(tripId: string, userId: string) {
 }
 
 const createSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   title: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   location: z.string().max(300).optional(),
   notes: z.string().max(1000).optional(),
   photoUrl: z.string().url().optional(),
+  itemId: z.string().cuid().optional(),
 });
 
 // ─── GET /api/trips/[id]/personal-activities ──────────────────────────────────
@@ -70,7 +71,18 @@ export async function POST(
   }
 
   const activity = await prisma.personalActivity.create({
-    data: { tripId, userId: session.user.id, ...result.data },
+    data: {
+      tripId,
+      userId: session.user.id,
+      date: result.data.date ?? null,
+      title: result.data.title,
+      description: result.data.description,
+      time: result.data.time,
+      location: result.data.location,
+      notes: result.data.notes,
+      photoUrl: result.data.photoUrl,
+      itemId: result.data.itemId ?? null,
+    },
     select: { id: true, date: true, title: true, description: true, time: true, location: true, notes: true, photoUrl: true },
   });
 

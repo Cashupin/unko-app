@@ -5,26 +5,34 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { UploadPhoto } from "@/components/ui/upload-photo";
 import { LocationInput } from "@/components/ui/location-input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
 
 export function CreatePersonalActivityForm({
   tripId,
   date,
   tripStartDate,
+  tripEndDate,
+  compact = true,
 }: {
   tripId: string;
-  date: string;
+  date: string | null;
   tripStartDate?: string;
+  tripEndDate?: string;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-
-  void tripStartDate;
+  const [selectedDate, setSelectedDate] = useState(date ?? "");
+  const [createProposal, setCreateProposal] = useState(false);
+  const [proposalType, setProposalType] = useState<"PLACE" | "FOOD" | "ACTIVITY">("PLACE");
 
   function openModal() {
     setPhotoUrl(null);
+    setSelectedDate(date ?? "");
+    setCreateProposal(false);
     setOpen(true);
   }
 
@@ -38,17 +46,16 @@ export function CreatePersonalActivityForm({
     setLoading(true);
 
     const fd = new FormData(e.currentTarget);
-
-    const body: Record<string, string | null | undefined> = {
-      date,
-      title: (fd.get("title") as string).trim(),
-    };
-
+    const title = (fd.get("title") as string).trim();
     const description = (fd.get("description") as string).trim();
     const location = (fd.get("location") as string).trim();
     const time = fd.get("activityTime") as string;
     const notes = (fd.get("notes") as string).trim();
 
+    const body: Record<string, string | null | undefined> = {
+      title,
+      date: selectedDate || null,
+    };
     if (description) body.description = description;
     if (location) body.location = location;
     if (time) body.time = time;
@@ -68,9 +75,35 @@ export function CreatePersonalActivityForm({
         return;
       }
 
+      const created = (await res.json()) as { id: string };
+
+      // Si el checkbox de propuesta está activo, crear Item y linkar
+      if (createProposal && created.id) {
+        const itemBody: Record<string, unknown> = { title, type: proposalType, tripId };
+        if (description) itemBody.description = description;
+        if (location) itemBody.location = location;
+
+        const itemRes = await fetch("/api/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(itemBody),
+        });
+
+        if (itemRes.ok) {
+          const itemData = (await itemRes.json()) as { id?: string };
+          if (itemData.id) {
+            await fetch(`/api/trips/${tripId}/personal-activities/${created.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ itemId: itemData.id }),
+            });
+          }
+        }
+      }
+
       closeModal();
       router.refresh();
-      toast.success("Añadido a tu plan");
+      toast.success(createProposal ? "Añadido a tu plan y creado como propuesta" : "Añadido a tu plan");
     } catch {
       toast.error("Error de red. Intenta de nuevo.");
     } finally {
@@ -78,30 +111,44 @@ export function CreatePersonalActivityForm({
     }
   }
 
+  const inputCls =
+    "rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500";
+
   return (
     <>
-      <button
-        type="button"
-        onClick={openModal}
-        className="flex items-center gap-1.5 rounded-lg border border-violet-700/40 bg-violet-900/20 px-2.5 py-1.5 text-xs font-semibold text-violet-400 transition-colors hover:bg-violet-900/40"
-      >
-        🔒 + Añadir a mi plan
-      </button>
+      {compact ? (
+        <button
+          type="button"
+          onClick={openModal}
+          className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-600 dark:border-zinc-700 dark:text-zinc-500 dark:hover:border-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+        >
+          <span className="text-sm font-light leading-none">+</span>
+          Agregar actividad
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={openModal}
+          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        >
+          + Nueva actividad
+        </button>
+      )}
 
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div className="w-full max-w-md rounded-2xl bg-[#0f1419] p-6 shadow-2xl ring-1 ring-violet-700/30 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-md rounded-2xl bg-zinc-900 p-6 shadow-2xl ring-1 ring-zinc-700 max-h-[90vh] overflow-y-auto">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-violet-100">🔒 Mi plan</h2>
-                <p className="mt-0.5 text-xs text-violet-400/70">Solo visible para ti</p>
+                <h2 className="text-base font-semibold text-zinc-100">Mi Plan</h2>
+                <p className="mt-0.5 text-xs text-zinc-500">Solo visible para ti</p>
               </div>
               <button
                 onClick={closeModal}
-                className="rounded-lg p-1.5 text-violet-500 transition-colors hover:bg-violet-900/40 hover:text-violet-300"
+                className="rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
                 aria-label="Cerrar"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -111,9 +158,9 @@ export function CreatePersonalActivityForm({
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {/* Title */}
+              {/* Título */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="pa-title" className="text-xs font-medium text-violet-300">
+                <label htmlFor="pa-title" className="text-xs font-medium text-zinc-300">
                   Título <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -125,13 +172,13 @@ export function CreatePersonalActivityForm({
                   maxLength={200}
                   autoFocus
                   placeholder="Ej: Visitar el mercado de Nishiki"
-                  className="rounded-lg border border-violet-700/40 bg-[#18191c] px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-violet-500"
+                  className={inputCls}
                 />
               </div>
 
-              {/* Description */}
+              {/* Descripción */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="pa-description" className="text-xs font-medium text-violet-300">
+                <label htmlFor="pa-description" className="text-xs font-medium text-zinc-300">
                   Descripción
                 </label>
                 <textarea
@@ -140,13 +187,13 @@ export function CreatePersonalActivityForm({
                   rows={2}
                   maxLength={1000}
                   placeholder="Descripción breve (opcional)"
-                  className="resize-none rounded-lg border border-violet-700/40 bg-[#18191c] px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-violet-500"
+                  className={`${inputCls} resize-none`}
                 />
               </div>
 
-              {/* Location */}
+              {/* Ubicación */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="pa-location" className="text-xs font-medium text-violet-300">
+                <label htmlFor="pa-location" className="text-xs font-medium text-zinc-300">
                   Ubicación
                 </label>
                 <LocationInput
@@ -158,22 +205,39 @@ export function CreatePersonalActivityForm({
                 />
               </div>
 
-              {/* Time */}
-              <div className="flex flex-col gap-1">
-                <label htmlFor="pa-time" className="text-xs font-medium text-violet-300">
-                  Hora
-                </label>
-                <input
-                  id="pa-time"
-                  name="activityTime"
-                  type="time"
-                  className="rounded-lg border border-violet-700/40 bg-[#18191c] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-violet-500"
-                />
+              {/* Fecha | Hora en 2 columnas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="pa-date" className="text-xs font-medium text-zinc-300">
+                    Fecha
+                  </label>
+                  <DatePicker
+                    id="pa-date"
+                    name="activityDate"
+                    value={selectedDate}
+                    onChange={setSelectedDate}
+                    min={tripStartDate}
+                    max={tripEndDate}
+                    placeholder="Sin fecha (opcional)"
+                    initialMonth={tripStartDate}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="pa-time" className="text-xs font-medium text-zinc-300">
+                    Hora
+                  </label>
+                  <input
+                    id="pa-time"
+                    name="activityTime"
+                    type="time"
+                    className={inputCls}
+                  />
+                </div>
               </div>
 
-              {/* Notes */}
+              {/* Notas */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="pa-notes" className="text-xs font-medium text-violet-300">
+                <label htmlFor="pa-notes" className="text-xs font-medium text-zinc-300">
                   Notas
                 </label>
                 <textarea
@@ -182,13 +246,13 @@ export function CreatePersonalActivityForm({
                   rows={2}
                   maxLength={1000}
                   placeholder="Notas adicionales (opcional)"
-                  className="resize-none rounded-lg border border-violet-700/40 bg-[#18191c] px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-violet-500"
+                  className={`${inputCls} resize-none`}
                 />
               </div>
 
-              {/* Photo */}
+              {/* Foto */}
               <div className="flex flex-col gap-2">
-                <p className="text-xs font-medium text-violet-300">Foto</p>
+                <p className="text-xs font-medium text-zinc-300">Foto</p>
                 {photoUrl ? (
                   <div className="relative">
                     <div className="relative h-36 w-full overflow-hidden rounded-xl">
@@ -212,19 +276,52 @@ export function CreatePersonalActivityForm({
                 )}
               </div>
 
+              {/* Checkbox: crear también como propuesta grupal */}
+              <div className="rounded-xl border border-zinc-800 px-3 py-2.5">
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={createProposal}
+                    onChange={(e) => setCreateProposal(e.target.checked)}
+                    className="rounded accent-zinc-500"
+                  />
+                  <span className="text-xs font-medium text-zinc-400">
+                    Crear también como propuesta del grupo
+                  </span>
+                </label>
+                {createProposal && (
+                  <div className="mt-2 flex gap-2 pl-6">
+                    {(["PLACE", "FOOD", "ACTIVITY"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setProposalType(t)}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                          proposalType === t
+                            ? "bg-zinc-100 text-zinc-900"
+                            : "border border-zinc-700 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                        }`}
+                      >
+                        {t === "PLACE" ? "📍 Lugar" : t === "FOOD" ? "🍜 Comida" : "🎯 Actividad"}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-2 pt-1">
                 <button
                   type="button"
                   onClick={closeModal}
                   disabled={loading}
-                  className="rounded-lg border border-[#27272a] px-4 py-2 text-sm text-zinc-400 transition-colors hover:bg-[#27272a] disabled:opacity-50"
+                  className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+                  className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 disabled:opacity-50"
                 >
                   {loading ? "Guardando…" : "Guardar"}
                 </button>
