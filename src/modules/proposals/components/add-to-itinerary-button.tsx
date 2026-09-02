@@ -133,12 +133,12 @@ export function AddToItineraryButton({
             </p>
 
             {(() => {
-              const canSubmit = !!date || !!excursionId;
+              const canSubmit = true;
               return (
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Fecha {excursions.length === 0 && <span className="text-red-500">*</span>}
+                  Fecha
                 </label>
                 <DatePicker
                   value={date}
@@ -181,11 +181,6 @@ export function AddToItineraryButton({
                       ))}
                     </select>
                   </div>
-                  {!canSubmit && (
-                    <p className="text-[11px] text-amber-500 dark:text-amber-400">
-                      Elige una fecha o una excursión para continuar
-                    </p>
-                  )}
                 </>
               )}
 
