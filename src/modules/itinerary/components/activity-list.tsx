@@ -7,6 +7,7 @@ import { EditActivityForm } from "@/modules/itinerary/components/edit-activity-f
 import { PhotoThumbnail } from "@/components/ui/photo-thumbnail";
 import { getMapsUrl } from "@/lib/maps-url";
 import { PastDaysCollapsible } from "@/modules/itinerary/components/past-days-collapsible";
+import { UnscheduledCollapsible } from "@/modules/itinerary/components/unscheduled-collapsible";
 import { CreateItemFromActivityButton } from "@/modules/proposals/components/create-item-from-activity-button";
 import { DraftActivityActions } from "@/modules/itinerary/components/draft-activity-actions";
 import { DayNoteEditor } from "@/modules/itinerary/components/day-note-editor";
@@ -310,6 +311,21 @@ export async function ActivityList({
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Unscheduled activities — confirmed but no date yet */}
+      <UnscheduledCollapsible tripId={tripId} count={noDateActivities.length}>
+        {noDateActivities.map((act) => (
+          <ActivityRow
+            key={act.id}
+            act={act}
+            tripId={tripId}
+            canEdit={canEdit}
+            isAdmin={isAdmin}
+            participants={participants}
+            tripStartDate={tripStartYMD}
+          />
+        ))}
+      </UnscheduledCollapsible>
+
       {/* Past days — collapsed by default */}
       <PastDaysCollapsible count={pastDates.length}>
         {pastDates.map((dateStr) => (
@@ -352,33 +368,6 @@ export async function ActivityList({
           />
         </div>
       ))}
-
-      {/* No-date activities */}
-      {noDateActivities.length > 0 && (
-        <div className="rounded-2xl border border-[#27272a] bg-[#18191c] overflow-hidden">
-          <div className="flex items-center justify-between gap-3 px-4 py-3.5 border-b border-[#27272a] md:px-5 md:py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-[#27272a]">
-                <span className="text-xs font-bold text-zinc-500">—</span>
-              </div>
-              <p className="text-sm font-semibold text-zinc-300">Sin fecha</p>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 p-3">
-            {noDateActivities.map((act) => (
-              <ActivityRow
-                key={act.id}
-                act={act}
-                tripId={tripId}
-                canEdit={canEdit}
-                isAdmin={isAdmin}
-                participants={participants}
-                tripStartDate={tripStartYMD}
-              />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
