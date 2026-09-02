@@ -271,7 +271,7 @@ export async function ActivityList({
       const key = toDateStr(new Date(act.activityDate));
       if (!byDate.has(key)) byDate.set(key, []);
       byDate.get(key)!.push(act);
-    } else {
+    } else if (!act.excursion) {
       noDateActivities.push(act);
     }
   }
