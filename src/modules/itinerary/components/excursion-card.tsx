@@ -188,7 +188,7 @@ export function ExcursionCard({
   return (
     <>
       <div className={`rounded-2xl border transition-colors ${
-        hasDate ? "border-blue-800/40 bg-blue-950/20" : "border-[#27272a] bg-[#18191c]"
+        hasDate ? "border-teal-800/40 bg-teal-950/[0.01]" : "border-[#27272a] bg-[#18191c]"
       }`}>
         {/* ── Header ─────────────────────────────────────────────────────────── */}
         <div className="p-4">
@@ -204,8 +204,8 @@ export function ExcursionCard({
                   title={hasDate ? "Cambiar fecha" : "Asignar fecha"}
                   className={`rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors ${
                     hasDate
-                      ? "border-blue-700/50 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40"
-                      : "border-emerald-700/50 bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40"
+                      ? "border-teal-700/50 bg-teal-900/20 text-teal-400 hover:bg-teal-900/40"
+                      : "border-teal-700/50 bg-teal-900/20 text-teal-400 hover:bg-teal-900/40"
                   }`}
                 >
                   <span>📅</span>
@@ -270,7 +270,7 @@ export function ExcursionCard({
           {/* Fila 2: badges + descripción + notas (ancho completo) */}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {hasDate ? (
-              <span className="rounded-full border border-blue-700/50 bg-blue-900/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
+              <span className="rounded-full border border-teal-700/50 bg-teal-900/30 px-2 py-0.5 text-[10px] font-bold text-teal-300">
                 📅 {fmtDate(excursion.date!)}
               </span>
             ) : (
@@ -340,8 +340,8 @@ export function ExcursionCard({
             </div>
             <div className="flex flex-col gap-4 px-5 py-4">
               {activityCount > 0 && (
-                <div className="rounded-xl bg-blue-950/30 border border-blue-800/30 px-4 py-3">
-                  <p className="text-xs text-blue-300">
+                <div className="rounded-xl bg-teal-950/30 border border-teal-800/30 px-4 py-3">
+                  <p className="text-xs text-teal-300">
                     Se actualizarán <strong>{activityCount}</strong> actividad{activityCount !== 1 ? "es" : ""} a esta fecha automáticamente.
                   </p>
                 </div>
