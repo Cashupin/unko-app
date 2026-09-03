@@ -24,7 +24,7 @@ export async function ItinerarySubNav({
     { id: "alojamiento", label: "Alojamiento", icon: "🏨", count: hotelCount },
     { id: "transporte", label: "Transporte", icon: "🚌", count: transportCount + passCount },
     { id: "entradas", label: "Entradas", icon: "🎟️", count: ticketCount },
-    { id: "excursiones", label: "Excursiones", icon: "🗺️", count: excursionCount },
+    { id: "excursiones", label: "Jornadas", icon: "🗺️", count: excursionCount },
   ];
 
   return (

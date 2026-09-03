@@ -61,7 +61,7 @@ const ITINERARY_SUBTABS = [
   { id: "alojamiento", label: "Alojamiento", grad: "from-orange-400 to-red-500" },
   { id: "transporte",  label: "Transporte",  grad: "from-cyan-400 to-blue-600" },
   { id: "entradas",    label: "Entradas",    grad: "from-red-500 to-rose-700" },
-  { id: "excursiones", label: "Excursiones", grad: "from-emerald-400 to-green-600" },
+  { id: "excursiones", label: "Jornadas", grad: "from-emerald-400 to-green-600" },
 ] as const;
 
 const SECONDARY_TABS = new Set(["checklist", "listas", "galería", "wishlist"]);

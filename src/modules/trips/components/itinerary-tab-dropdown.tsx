@@ -46,7 +46,7 @@ const SUBTABS = [
   },
   {
     id: "excursiones",
-    label: "Excursiones",
+    label: "Jornadas",
     grad: "from-emerald-400 to-green-600",
     icon: (
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

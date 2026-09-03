@@ -151,7 +151,7 @@ export function ExcursionCard({
       if (!res.ok) { toast.error("Error al guardar"); return; }
       setEditOpen(false);
       router.refresh();
-      toast.success("Excursión actualizada");
+      toast.success("Jornada actualizada");
     } catch {
       toast.error("Error de red");
     } finally {
@@ -165,7 +165,7 @@ export function ExcursionCard({
     try {
       await fetch(`/api/trips/${tripId}/excursions/${excursion.id}`, { method: "DELETE" });
       router.refresh();
-      toast.success("Excursión eliminada");
+      toast.success("Jornada eliminada");
     } catch {
       toast.error("Error al eliminar");
     } finally {
@@ -367,7 +367,7 @@ export function ExcursionCard({
           onClick={(e) => { if (e.target === e.currentTarget) setEditOpen(false); }}>
           <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl dark:bg-zinc-900 dark:border dark:border-[#27272a]">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-[#27272a]">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Editar excursión</h2>
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Editar jornada</h2>
               <button onClick={() => setEditOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">✕</button>
             </div>
             <form onSubmit={handleEdit} className="flex flex-col gap-4 px-5 py-4">

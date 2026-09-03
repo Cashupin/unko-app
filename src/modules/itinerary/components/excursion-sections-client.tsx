@@ -76,7 +76,7 @@ export function ExcursionSectionsClient({
           {totalSinFecha > 0 && totalScheduled > 0 && " · "}
           {totalScheduled > 0 &&
             `${totalScheduled} programada${totalScheduled !== 1 ? "s" : ""}`}
-          {total === 0 && "Sin excursiones todavía"}
+          {total === 0 && "Sin jornadas todavía"}
         </p>
         <div className="flex items-center gap-2">
           {sections.length > 0 && (
@@ -111,9 +111,9 @@ export function ExcursionSectionsClient({
       {sections.length === 0 && (
         <div className="rounded-2xl border-2 border-dashed border-zinc-800 p-12 text-center">
           <p className="mb-2 text-3xl">🗺️</p>
-          <p className="text-sm font-medium text-zinc-400">Sin excursiones todavía</p>
+          <p className="text-sm font-medium text-zinc-400">Sin jornadas todavía</p>
           <p className="mt-1 text-xs text-zinc-600">
-            Añade salidas de día (Kamakura, Fuji…) y asígnales fecha cuando tengas las entradas
+            Agrupa actividades de un día (Kamakura, Barrio Shibuya…) y asígnales fecha cuando lo tengas claro
           </p>
         </div>
       )}

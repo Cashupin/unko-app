@@ -85,7 +85,7 @@ type PersonalActivityRow = {
 
 type ExcursionRow = {
   id: string; title: string; description: string | null;
-  notes: string | null; date: string | null;
+  notes: string | null; date: string | null; category: string | null;
   activities: { id: string; title: string; activityTime: string | null; location: string | null; description: string | null; notes: string | null; isDraft: boolean }[];
 };
 
@@ -341,7 +341,7 @@ export default async function PrintPage({
     prisma.excursion.findMany({
       where: { tripId },
       select: {
-        id: true, title: true, description: true, notes: true, date: true,
+        id: true, title: true, description: true, notes: true, date: true, category: true,
         activities: {
           where: !includeDrafts ? { isDraft: false } : undefined,
           select: { id: true, title: true, activityTime: true, location: true, description: true, notes: true, isDraft: true },
@@ -822,14 +822,37 @@ export default async function PrintPage({
           )}
         </section>
 
-        {/* ── Sección 5: Excursiones ──────────────────────────────────────────── */}
-        {excursions.length > 0 && (
+        {/* ── Sección 5: Jornadas ─────────────────────────────────────────────── */}
+        {excursions.length > 0 && (() => {
+          // Agrupar por categoría: nombradas primero (alfabético), sin categoría al final
+          const categoryMap = new Map<string | null, ExcursionRow[]>();
+          for (const e of excursions) {
+            const cat = e.category || null;
+            if (!categoryMap.has(cat)) categoryMap.set(cat, []);
+            categoryMap.get(cat)!.push(e);
+          }
+          const namedCats = [...categoryMap.keys()].filter((c): c is string => c !== null).sort();
+          const orderedCats: (string | null)[] = [...namedCats, ...(categoryMap.has(null) ? [null] : [])];
+          const hasAnySections = namedCats.length > 0 || categoryMap.has(null);
+
+          return (
           <section className="print-section-break mt-10 mb-10">
             <h2 className="mb-4 text-lg font-bold uppercase tracking-wider text-zinc-400">
-              5. Excursiones
+              5. Jornadas
             </h2>
-            <div className="flex flex-col gap-6">
-              {excursions.map((exc) => (
+            <div className="flex flex-col gap-8">
+              {orderedCats.map((cat) => (
+                <div key={cat ?? "__none__"}>
+                  {hasAnySections && namedCats.length > 0 && (
+                    <div className="mb-3 flex items-center gap-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                        {cat ?? "Sin sección"}
+                      </p>
+                      <div className="h-px flex-1 bg-zinc-200" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-4">
+              {categoryMap.get(cat)!.map((exc) => (
                 <div key={exc.id} className="break-inside-avoid rounded-xl border border-zinc-200 overflow-hidden">
                   {/* Excursion header */}
                   <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-3">
@@ -881,9 +904,13 @@ export default async function PrintPage({
                   )}
                 </div>
               ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
-        )}
+          );
+        })()}
 
         <div className="mt-12 border-t border-zinc-100 pt-4 text-center text-xs text-zinc-300 print:block">
           Generado con UnkoTrip · {new Date().toLocaleDateString("es-CL")}
