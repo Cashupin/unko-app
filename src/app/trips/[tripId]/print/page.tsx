@@ -393,6 +393,7 @@ export default async function PrintPage({
     description: e.description,
     notes: e.notes,
     date: e.date ?? null,
+    category: e.category ?? null,
     activities: e.activities,
   }));
 
