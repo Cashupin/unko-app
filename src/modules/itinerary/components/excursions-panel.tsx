@@ -8,7 +8,15 @@ function toDateStr(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-export async function ExcursionsPanel({ tripId }: { tripId: string }) {
+export async function ExcursionsPanel({
+  tripId,
+  tripStartDate,
+  tripEndDate,
+}: {
+  tripId: string;
+  tripStartDate?: string;
+  tripEndDate?: string;
+}) {
   const session = await auth();
   if (!session?.user) return null;
 
@@ -113,6 +121,8 @@ export async function ExcursionsPanel({ tripId }: { tripId: string }) {
               canEdit={canEdit}
               isAdmin={isAdmin}
               existingCategories={existingCategories}
+              tripStartDate={tripStartDate}
+              tripEndDate={tripEndDate}
             />
           ))}
         </>

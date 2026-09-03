@@ -512,7 +512,11 @@ export default async function TripPage({
             {activeSubtab === "excursiones" && (
               <div className="mt-5">
                 <Suspense fallback={<div className="text-sm text-zinc-400 dark:text-zinc-500">Cargando excursiones...</div>}>
-                  <ExcursionsPanel tripId={tripId} />
+                  <ExcursionsPanel
+                    tripId={tripId}
+                    tripStartDate={trip.startDate ? trip.startDate.toISOString().slice(0, 10) : undefined}
+                    tripEndDate={trip.endDate ? trip.endDate.toISOString().slice(0, 10) : undefined}
+                  />
                 </Suspense>
               </div>
             )}

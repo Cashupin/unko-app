@@ -590,12 +590,20 @@ function ActivityRow({
   const checkedUserIds = new Set(act.item?.checks.map((c) => c.userId) ?? []);
   const showCheckins = !!act.item && participants.length > 0;
 
+  const isJornada = !!act.excursion;
+
   return (
-    <div className={`group flex items-start gap-3 rounded-xl px-4 py-3.5 border border-dashed transition-colors ${
+    <div className={`group relative flex items-start gap-3 rounded-xl px-4 py-3.5 border border-dashed transition-colors overflow-hidden ${
       act.isDraft
         ? "bg-indigo-950/20 border-indigo-500/25 hover:border-indigo-500/45"
+        : isJornada
+        ? "bg-[#1f2023] border-transparent hover:border-[#3f3f46]"
         : "bg-[#1f2023] border-transparent hover:border-[#3f3f46]"
     }`}>
+      {/* Barra lateral jornada */}
+      {isJornada && (
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-teal-500/50" />
+      )}
       {/* Time badge */}
       <div className="w-12 shrink-0 pt-0.5">
         {act.activityTime && (
@@ -633,7 +641,7 @@ function ActivityRow({
           {act.excursion && (
             <a
               href={`/trips/${tripId}?tab=itinerario&subtab=excursiones`}
-              className="inline-flex items-center gap-1 rounded-full border border-blue-700/50 bg-blue-900/20 px-2 py-0.5 text-[10px] font-semibold text-blue-400 transition-colors hover:bg-blue-900/40"
+              className="inline-flex items-center gap-1 rounded-full border border-teal-700/50 bg-teal-900/20 px-2 py-0.5 text-[10px] font-semibold text-teal-400 transition-colors hover:bg-teal-900/40"
             >
               🗺️ {act.excursion.title}
             </a>

@@ -38,6 +38,8 @@ export function ExcursionCard({
   canEdit: boolean;
   isAdmin: boolean;
   existingCategories?: string[];
+  tripStartDate?: string;
+  tripEndDate?: string;
 }) {
   const router = useRouter();
 
@@ -344,7 +346,14 @@ export function ExcursionCard({
               )}
               <div className="flex flex-col gap-1">
                 <label className={labelCls}>Fecha</label>
-                <DatePicker value={dateValue} onChange={setDateValue} placeholder="Sin fecha" />
+                <DatePicker
+                  value={dateValue}
+                  onChange={setDateValue}
+                  placeholder="Sin fecha"
+                  min={tripStartDate}
+                  max={tripEndDate}
+                  initialMonth={tripStartDate}
+                />
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={() => setDateOpen(false)} disabled={dateLoading}
