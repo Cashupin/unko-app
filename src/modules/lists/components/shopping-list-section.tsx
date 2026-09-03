@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ShoppingListItem } from "./shopping-list-item";
@@ -100,8 +101,11 @@ export function ShoppingListSection({
 
         {canEdit && (
           <button
-            onClick={() => onDeleteSection(section.id)}
-            className="shrink-0 text-zinc-300 opacity-0 group-hover/section:opacity-100 hover:text-red-400 transition-colors dark:text-zinc-600 dark:hover:text-red-400"
+            onClick={() => toast(`¿Eliminar la sección "${section.title}"?`, {
+              action: { label: "Eliminar", onClick: () => onDeleteSection(section.id) },
+              cancel: { label: "Cancelar", onClick: () => {} },
+            })}
+            className="shrink-0 text-zinc-300 md:opacity-0 md:group-hover/section:opacity-100 hover:text-red-400 transition-colors dark:text-zinc-600 dark:hover:text-red-400"
             aria-label="Eliminar sección"
           >
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">

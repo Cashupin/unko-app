@@ -65,7 +65,7 @@ export function PersonalModeToggle() {
   const styles: Record<PersonalMode, string> = {
     0: "border-[#27272a] bg-[#18191c]/60 text-zinc-400 hover:bg-[#27272a] hover:text-zinc-200",
     1: "border-sky-500/40 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 hover:text-sky-300",
-    2: "border-sky-500/60 bg-sky-500/20 text-sky-300 hover:bg-sky-500/30",
+    2: "border-sky-400/80 bg-sky-500/40 text-sky-100 hover:bg-sky-500/50",
   };
 
   return (
@@ -73,13 +73,23 @@ export function PersonalModeToggle() {
       type="button"
       onClick={cycle}
       title={mode === 0 ? "Activar Mi Plan" : mode === 1 ? "Ver solo Mi Plan" : "Desactivar Mi Plan"}
-      className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors ${styles[mode]}`}
+      className={`relative flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors ${styles[mode]}`}
     >
+      {/* Mobile: solo icono persona */}
+      <svg className="h-3.5 w-3.5 md:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+      {mode === 1 && (
+        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full border border-sky-400/60 bg-sky-500/40 md:hidden" />
+      )}
+      {mode === 2 && (
+        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-sky-400 md:hidden" />
+      )}
+      {/* Desktop: punto + texto */}
       {TOGGLE_DOTS[mode] && (
-        <span className="text-[8px] leading-none">{TOGGLE_DOTS[mode]}</span>
+        <span className="hidden md:inline text-[8px] leading-none">{TOGGLE_DOTS[mode]}</span>
       )}
       <span className="hidden md:inline">{TOGGLE_LABELS[mode]}</span>
-      <span className="md:hidden">Mi Plan</span>
     </button>
   );
 }
@@ -217,7 +227,7 @@ function PersonalRow({
         )}
 
         {/* Edit + delete on hover — mismos iconos que actividades grupales */}
-        <div className="flex shrink-0 items-center gap-0.5 mt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 mt-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
           <button
             type="button"
             onClick={() => {
@@ -228,12 +238,10 @@ function PersonalRow({
               setEditNotes(activity.notes ?? "");
               setEditOpen(true);
             }}
-            className="rounded-lg p-1.5 text-zinc-500 hover:bg-[#27272a] hover:text-zinc-300 transition-colors"
+            className="rounded-md px-2 py-1 text-xs text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-300"
             aria-label="Editar"
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+            ✏️
           </button>
           <button
             type="button"

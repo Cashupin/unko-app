@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ListItem } from "../types";
@@ -37,9 +38,11 @@ export function ShoppingListItem({ item, canEdit, myParticipantId, showCheckedBy
     setToggling(false);
   }
 
-  async function handleDelete() {
-    setDeleting(true);
-    await onDelete(item.id);
+  function handleDelete() {
+    toast(`¿Eliminar "${item.text}"?`, {
+      action: { label: "Eliminar", onClick: async () => { setDeleting(true); await onDelete(item.id); } },
+      cancel: { label: "Cancelar", onClick: () => {} },
+    });
   }
 
   async function handleNotesBlur() {
