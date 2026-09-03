@@ -30,6 +30,8 @@ export function ExcursionCard({
   canEdit,
   isAdmin,
   existingCategories = [],
+  tripStartDate,
+  tripEndDate,
 }: {
   excursion: ExcursionData;
   tripId: string;
