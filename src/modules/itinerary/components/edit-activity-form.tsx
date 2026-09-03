@@ -25,11 +25,13 @@ export function EditActivityForm({
   tripId,
   activity,
   tripStartDate,
+  tripEndDate,
   overlayZIndex = "z-50",
 }: {
   tripId: string;
   activity: ActivityData;
   tripStartDate?: string;
+  tripEndDate?: string;
   overlayZIndex?: string;
 }) {
   const router = useRouter();
@@ -194,6 +196,8 @@ export function EditActivityForm({
                   name="activityDate"
                   defaultValue={activity.activityDate ?? ""}
                   placeholder="Seleccionar fecha"
+                  min={tripStartDate}
+                  max={tripEndDate}
                   initialMonth={tripStartDate}
                 />
               </div>

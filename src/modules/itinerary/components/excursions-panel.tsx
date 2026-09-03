@@ -93,6 +93,8 @@ export async function ExcursionsPanel({
         tripId={tripId}
         canEdit={canEdit}
         isAdmin={isAdmin}
+        tripStartDate={tripStartDate}
+        tripEndDate={tripEndDate}
       />
     ));
   }

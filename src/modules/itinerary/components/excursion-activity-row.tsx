@@ -30,11 +30,15 @@ export function ExcursionActivityRow({
   tripId,
   canEdit,
   isAdmin,
+  tripStartDate,
+  tripEndDate,
 }: {
   act: ExcursionActivityItem;
   tripId: string;
   canEdit: boolean;
   isAdmin: boolean;
+  tripStartDate?: string;
+  tripEndDate?: string;
 }) {
   const activityForEdit = {
     id: act.id,
@@ -146,6 +150,8 @@ export function ExcursionActivityRow({
               <EditActivityForm
                 tripId={tripId}
                 activity={activityForEdit}
+                tripStartDate={tripStartDate}
+                tripEndDate={tripEndDate}
                 overlayZIndex="z-[70]"
               />
               {!act.isDraft && isAdmin && (
@@ -162,6 +168,8 @@ export function ExcursionActivityRow({
               <EditActivityForm
                 tripId={tripId}
                 activity={activityForEdit}
+                tripStartDate={tripStartDate}
+                tripEndDate={tripEndDate}
                 overlayZIndex="z-[70]"
               />
               {!act.isDraft && isAdmin && (
@@ -183,6 +191,8 @@ export function ExcursionActivityRow({
           <EditActivityForm
             tripId={tripId}
             activity={activityForEdit}
+            tripStartDate={tripStartDate}
+            tripEndDate={tripEndDate}
             overlayZIndex="z-[70]"
           />
           {!act.isDraft && isAdmin && (
