@@ -8,7 +8,7 @@ const patchSchema = z.object({
   description: z.string().max(500).nullable().optional(),
   notes: z.string().max(500).nullable().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  // Para gestión de actividades vinculadas
+  category: z.string().max(100).nullable().optional(),
   activityIds: z.array(z.string()).optional(),
 });
 

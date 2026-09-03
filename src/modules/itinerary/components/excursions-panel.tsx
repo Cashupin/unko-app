@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ExcursionCard } from "@/modules/itinerary/components/excursion-card";
-import { CreateExcursionForm } from "@/modules/itinerary/components/create-excursion-form";
 import { ExcursionActivityRow } from "@/modules/itinerary/components/excursion-activity-row";
+import { ExcursionSectionsClient } from "@/modules/itinerary/components/excursion-sections-client";
 
 function toDateStr(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -49,10 +49,32 @@ export async function ExcursionsPanel({ tripId }: { tripId: string }) {
   const canEdit = role === "ADMIN" || role === "EDITOR";
   const isAdmin = role === "ADMIN";
 
-  const floating = excursions.filter((e) => !e.date);
-  const scheduled = excursions.filter((e) => !!e.date);
+  // Categorías únicas existentes (para alimentar el selector del form)
+  const existingCategories = [
+    ...new Set(
+      excursions.map((e) => e.category).filter((c): c is string => !!c)
+    ),
+  ].sort();
 
-  function buildSlot(activities: typeof excursions[0]["activities"]) {
+  // Agrupar excursiones por categoría — categorías nombradas primero (orden alfabético), sin categoría al final
+  const categoryMap = new Map<string | null, typeof excursions>();
+
+  for (const e of excursions) {
+    const cat = e.category || null;
+    if (!categoryMap.has(cat)) categoryMap.set(cat, []);
+    categoryMap.get(cat)!.push(e);
+  }
+
+  const sortedCategoryKeys: (string | null)[] = [
+    ...existingCategories, // ya están ordenadas
+    ...(categoryMap.has(null) ? [null] : []),
+  ];
+
+  // Totales para el contador del toolbar
+  const totalSinFecha = excursions.filter((e) => !e.date).length;
+  const totalScheduled = excursions.filter((e) => !!e.date).length;
+
+  function buildActivitiesSlot(activities: typeof excursions[0]["activities"]) {
     return activities.map((a) => (
       <ExcursionActivityRow
         key={a.id}
@@ -67,72 +89,45 @@ export async function ExcursionsPanel({ tripId }: { tripId: string }) {
     ));
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-zinc-500">
-          {floating.length > 0 && `${floating.length} sin fecha`}
-          {floating.length > 0 && scheduled.length > 0 && " · "}
-          {scheduled.length > 0 &&
-            `${scheduled.length} programada${scheduled.length !== 1 ? "s" : ""}`}
-          {excursions.length === 0 && "Sin excursiones todavía"}
-        </p>
-        {canEdit && <CreateExcursionForm tripId={tripId} />}
-      </div>
-
-      {excursions.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-zinc-800 p-12 text-center">
-          <p className="text-3xl mb-2">🗺️</p>
-          <p className="text-sm font-medium text-zinc-400">Sin excursiones todavía</p>
-          <p className="mt-1 text-xs text-zinc-600">
-            Añade salidas de día (Kamakura, Fuji…) y asígnales fecha cuando tengas las
-            entradas
-          </p>
-        </div>
-      ) : (
+  const sections = sortedCategoryKeys.map((cat) => {
+    const items = categoryMap.get(cat)!;
+    return {
+      name: cat,
+      count: items.length,
+      slot: (
         <>
-          {/* Sin fecha */}
-          {floating.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-600">
-                Sin fecha asignada
-              </p>
-              {floating.map((e) => (
-                <ExcursionCard
-                  key={e.id}
-                  excursion={{ id: e.id, title: e.title, description: e.description, notes: e.notes, date: e.date }}
-                  tripId={tripId}
-                  activityCount={e.activities.length}
-                  activitiesSlot={buildSlot(e.activities)}
-                  canEdit={canEdit}
-                  isAdmin={isAdmin}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Programadas */}
-          {scheduled.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-600">
-                Programadas
-              </p>
-              {scheduled.map((e) => (
-                <ExcursionCard
-                  key={e.id}
-                  excursion={{ id: e.id, title: e.title, description: e.description, notes: e.notes, date: e.date }}
-                  tripId={tripId}
-                  activityCount={e.activities.length}
-                  activitiesSlot={buildSlot(e.activities)}
-                  canEdit={canEdit}
-                  isAdmin={isAdmin}
-                />
-              ))}
-            </div>
-          )}
+          {items.map((e) => (
+            <ExcursionCard
+              key={e.id}
+              excursion={{
+                id: e.id,
+                title: e.title,
+                description: e.description,
+                notes: e.notes,
+                date: e.date,
+                category: e.category,
+              }}
+              tripId={tripId}
+              activityCount={e.activities.length}
+              activitiesSlot={buildActivitiesSlot(e.activities)}
+              canEdit={canEdit}
+              isAdmin={isAdmin}
+              existingCategories={existingCategories}
+            />
+          ))}
         </>
-      )}
-    </div>
+      ),
+    };
+  });
+
+  return (
+    <ExcursionSectionsClient
+      sections={sections}
+      canEdit={canEdit}
+      tripId={tripId}
+      existingCategories={existingCategories}
+      totalSinFecha={totalSinFecha}
+      totalScheduled={totalScheduled}
+    />
   );
 }

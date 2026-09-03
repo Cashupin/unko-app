@@ -410,6 +410,7 @@ model Excursion {
   description String?
   notes       String? // Restricciones o advertencias (ej: "No sábados — templo cerrado")
   date        String? // "YYYY-MM-DD" — null = sin fecha asignada
+  category    String? @db.VarChar(100) // Agrupación libre (ej: "Excursiones", "Barrios")
 
   createdAt   DateTime @default(now())
   createdById String

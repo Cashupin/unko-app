@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -12,6 +12,7 @@ type ExcursionData = {
   description: string | null;
   notes: string | null;
   date: string | null;
+  category: string | null;
 };
 
 function fmtDate(ymd: string) {
@@ -28,6 +29,7 @@ export function ExcursionCard({
   activitiesSlot,
   canEdit,
   isAdmin,
+  existingCategories = [],
 }: {
   excursion: ExcursionData;
   tripId: string;
@@ -35,6 +37,7 @@ export function ExcursionCard({
   activitiesSlot: React.ReactNode;
   canEdit: boolean;
   isAdmin: boolean;
+  existingCategories?: string[];
 }) {
   const router = useRouter();
 
@@ -48,7 +51,29 @@ export function ExcursionCard({
   const [editTitle, setEditTitle] = useState(excursion.title);
   const [editDescription, setEditDescription] = useState(excursion.description ?? "");
   const [editNotes, setEditNotes] = useState(excursion.notes ?? "");
+  const [editCategory, setEditCategory] = useState(excursion.category ?? "");
+  const [editNewCatMode, setEditNewCatMode] = useState(false);
+  const [editNewCatValue, setEditNewCatValue] = useState("");
+  const [localCategories, setLocalCategories] = useState(existingCategories);
+  const editNewCatInputRef = useRef<HTMLInputElement>(null);
   const [editLoading, setEditLoading] = useState(false);
+
+  function handleEditToggleNewCat() {
+    if (editNewCatMode) {
+      const val = editNewCatValue.trim();
+      if (val) {
+        setEditCategory(val);
+        if (!localCategories.includes(val)) {
+          setLocalCategories((prev) => [...prev, val].sort());
+        }
+      }
+      setEditNewCatMode(false);
+    } else {
+      setEditNewCatMode(true);
+      setEditNewCatValue("");
+      setTimeout(() => editNewCatInputRef.current?.focus(), 50);
+    }
+  }
 
   // ── Collapse (persiste en localStorage por excursión) ────────────────────────
   const collapseKey = `itin-exc-${excursion.id}`;
@@ -108,12 +133,20 @@ export function ExcursionCard({
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editTitle.trim()) return;
+    const resolvedCategory = editNewCatMode
+      ? editNewCatValue.trim() || null
+      : editCategory || null;
     setEditLoading(true);
     try {
       const res = await fetch(`/api/trips/${tripId}/excursions/${excursion.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editTitle.trim(), description: editDescription.trim() || null, notes: editNotes.trim() || null }),
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          description: editDescription.trim() || null,
+          notes: editNotes.trim() || null,
+          category: resolvedCategory,
+        }),
       });
       if (!res.ok) { toast.error("Error al guardar"); return; }
       setEditOpen(false);
@@ -174,7 +207,7 @@ export function ExcursionCard({
                   <span>📅</span>
                   <span className="hidden md:inline ml-1">{hasDate ? "Cambiar fecha" : "Asignar fecha"}</span>
                 </button>
-                <button type="button" onClick={() => { setEditTitle(excursion.title); setEditDescription(excursion.description ?? ""); setEditNotes(excursion.notes ?? ""); setEditOpen(true); }}
+                <button type="button" onClick={() => { setEditTitle(excursion.title); setEditDescription(excursion.description ?? ""); setEditNotes(excursion.notes ?? ""); setEditCategory(excursion.category ?? ""); setEditNewCatMode(false); setEditNewCatValue(""); setEditOpen(true); }}
                   className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
                   aria-label="Editar">
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -341,6 +374,41 @@ export function ExcursionCard({
               <div className="flex flex-col gap-1">
                 <label className={labelCls}>Destino / nombre <span className="text-red-500">*</span></label>
                 <input autoFocus type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>Sección</label>
+                <div className="flex gap-2">
+                  {editNewCatMode ? (
+                    <input
+                      ref={editNewCatInputRef}
+                      type="text"
+                      placeholder="Nombre de la sección…"
+                      value={editNewCatValue}
+                      onChange={(e) => setEditNewCatValue(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleEditToggleNewCat(); } }}
+                      className={inputCls}
+                    />
+                  ) : (
+                    <select
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value)}
+                      className={`${inputCls} cursor-pointer`}
+                    >
+                      <option value="">Sin sección</option>
+                      {localCategories.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleEditToggleNewCat}
+                    title={editNewCatMode ? "Confirmar sección" : "Nueva sección"}
+                    className="shrink-0 rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-700 dark:border-[#3f3f46] dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-200"
+                  >
+                    {editNewCatMode ? "✓ Usar" : "+ Nueva"}
+                  </button>
+                </div>
               </div>
               <div className="flex flex-col gap-1">
                 <label className={labelCls}>Descripción</label>

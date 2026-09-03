@@ -1,12 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { UploadPhoto } from "@/components/ui/upload-photo";
 import { DatePicker } from "@/components/ui/date-picker";
 import { LocationInput } from "@/components/ui/location-input";
 import { toast } from "sonner";
+
+type ItemOption = {
+  id: string;
+  title: string;
+  type: "PLACE" | "FOOD" | "ACTIVITY";
+  imageUrl: string | null;
+  location: string | null;
+  description: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
+};
+
+const TYPE_ICON: Record<string, string> = { PLACE: "📍", FOOD: "🍜", ACTIVITY: "🎯" };
 
 export function CreateActivityForm({
   tripId,
@@ -35,11 +48,77 @@ export function CreateActivityForm({
   const [createProposal, setCreateProposal] = useState(false);
   const [proposalType, setProposalType] = useState<"PLACE" | "FOOD" | "ACTIVITY">("PLACE");
 
+  // ── Campos controlados (para pre-llenado desde propuesta) ───────────────────
+  const [titleValue, setTitleValue] = useState("");
+  const [descriptionValue, setDescriptionValue] = useState("");
+  const [locationKey, setLocationKey] = useState(0);
+  const [defaultLocation, setDefaultLocation] = useState<{ value: string; lat: number | null; lng: number | null }>({ value: "", lat: null, lng: null });
+
+  // ── Item/proposal search (solo en contexto de excursión) ─────────────────────
+  const [availableItems, setAvailableItems] = useState<ItemOption[]>([]);
+  const [selectedItem, setSelectedItem] = useState<ItemOption | null>(null);
+  const [itemSearch, setItemSearch] = useState("");
+  const [showItemDropdown, setShowItemDropdown] = useState(false);
+  const itemSearchRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredItems = availableItems.filter((item) =>
+    item.title.toLowerCase().includes(itemSearch.toLowerCase()) ||
+    (item.location ?? "").toLowerCase().includes(itemSearch.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (!open || !excursionId) return;
+    fetch(`/api/trips/${tripId}/items`)
+      .then((r) => r.json())
+      .then((data: { items?: ItemOption[] }) => {
+        if (data.items) setAvailableItems(data.items);
+      })
+      .catch(() => {});
+  }, [open, excursionId, tripId]);
+
+  useEffect(() => {
+    if (!showItemDropdown) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        !itemSearchRef.current?.contains(e.target as Node)
+      ) {
+        setShowItemDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showItemDropdown]);
+
   function openModal() {
     setPhotoUrl(null);
     setCreateProposal(false);
     setIsDraft(false);
+    setSelectedItem(null);
+    setItemSearch("");
+    setShowItemDropdown(false);
+    setTitleValue("");
+    setDescriptionValue("");
+    setDefaultLocation({ value: "", lat: null, lng: null });
+    setLocationKey((k) => k + 1);
     setOpen(true);
+  }
+
+  function handleSelectItem(item: ItemOption) {
+    setSelectedItem(item);
+    setItemSearch("");
+    setShowItemDropdown(false);
+    setTitleValue(item.title);
+    setDescriptionValue(item.description ?? "");
+    setDefaultLocation({
+      value: item.location ?? "",
+      lat: item.locationLat,
+      lng: item.locationLng,
+    });
+    setLocationKey((k) => k + 1);
+    if (item.imageUrl) setPhotoUrl(item.imageUrl);
   }
 
   function closeModal() {
@@ -77,6 +156,7 @@ export function CreateActivityForm({
     if (photoUrl) body.photoUrl = photoUrl;
     if (isDraft) body.isDraft = true;
     if (excursionId) body.excursionId = excursionId;
+    if (selectedItem) body.itemId = selectedItem.id;
 
     try {
       const res = await fetch(`/api/trips/${tripId}/activities`, {
@@ -175,6 +255,93 @@ export function CreateActivityForm({
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+              {/* ── Vincular a propuesta (solo en excursión) ───────────────── */}
+              {excursionId && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    Vincular a propuesta
+                  </label>
+
+                  {selectedItem ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-violet-500/30 bg-violet-950/20 px-3 py-2">
+                      {selectedItem.imageUrl ? (
+                        <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded">
+                          <Image src={selectedItem.imageUrl} alt="" fill className="object-cover" />
+                        </div>
+                      ) : (
+                        <span className="text-base leading-none">{TYPE_ICON[selectedItem.type]}</span>
+                      )}
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium text-violet-200">
+                        {selectedItem.title}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                        setSelectedItem(null);
+                        setItemSearch("");
+                        setTitleValue("");
+                        setDescriptionValue("");
+                        setDefaultLocation({ value: "", lat: null, lng: null });
+                        setLocationKey((k) => k + 1);
+                        setPhotoUrl(null);
+                      }}
+                        className="shrink-0 text-zinc-500 hover:text-zinc-300"
+                        aria-label="Quitar propuesta"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        ref={itemSearchRef}
+                        type="text"
+                        value={itemSearch}
+                        onChange={(e) => { setItemSearch(e.target.value); setShowItemDropdown(true); }}
+                        onFocus={() => setShowItemDropdown(true)}
+                        placeholder="Buscar propuesta… (opcional)"
+                        className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
+                      />
+                      {showItemDropdown && filteredItems.length > 0 && (
+                        <div
+                          ref={dropdownRef}
+                          className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-800 shadow-xl"
+                        >
+                          {filteredItems.map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => handleSelectItem(item)}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-zinc-700"
+                            >
+                              {item.imageUrl ? (
+                                <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded">
+                                  <Image src={item.imageUrl} alt="" fill className="object-cover" />
+                                </div>
+                              ) : (
+                                <span className="text-sm leading-none">{TYPE_ICON[item.type]}</span>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs font-medium text-zinc-100">{item.title}</p>
+                                {item.location && (
+                                  <p className="truncate text-[10px] text-zinc-500">{item.location}</p>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {showItemDropdown && itemSearch.length > 0 && filteredItems.length === 0 && (
+                        <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-center text-xs text-zinc-500 shadow-xl">
+                          Sin resultados
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex flex-col gap-1">
                 <label
                   htmlFor="ca-title"
@@ -190,6 +357,8 @@ export function CreateActivityForm({
                   minLength={1}
                   maxLength={200}
                   placeholder="Ej: Visita al Templo Sensoji"
+                  value={titleValue}
+                  onChange={(e) => setTitleValue(e.target.value)}
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />
               </div>
@@ -207,6 +376,8 @@ export function CreateActivityForm({
                   rows={2}
                   maxLength={1000}
                   placeholder="Descripción breve (opcional)"
+                  value={descriptionValue}
+                  onChange={(e) => setDescriptionValue(e.target.value)}
                   className="resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-zinc-500"
                 />
               </div>
@@ -219,11 +390,15 @@ export function CreateActivityForm({
                   Ubicación
                 </label>
                 <LocationInput
+                  key={locationKey}
                   id="ca-location"
                   name="location"
                   nameLat="locationLat"
                   nameLng="locationLng"
                   placeholder="Ej: Asakusa, Tokyo"
+                  defaultValue={defaultLocation.value}
+                  defaultLat={defaultLocation.lat}
+                  defaultLng={defaultLocation.lng}
                 />
               </div>
 
