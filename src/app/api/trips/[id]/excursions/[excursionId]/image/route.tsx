@@ -5,6 +5,20 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+const S = 2; // render at 2× for HD output
+
+async function fetchDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const mime = res.headers.get("content-type") ?? "image/jpeg";
+    return `data:${mime};base64,${Buffer.from(buf).toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 function fmtDate(s: string) {
   const [y, m, d] = s.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString("es-CL", {
@@ -15,16 +29,16 @@ function fmtDate(s: string) {
   });
 }
 
-const WIDTH = 1080;
-const HEADER_H = 220;
-const FOOTER_H = 72;
+const WIDTH = 1080 * S;
+const HEADER_H = 220 * S;
+const FOOTER_H = 72 * S;
 
 function activityHeight(a: { location: string | null; description: string | null; notes: string | null }) {
-  let h = 56; // título + padding top/bottom
+  let h = 56;
   if (a.location) h += 22;
   if (a.description) h += 26;
   if (a.notes) h += 22;
-  return h + 24; // gap extra
+  return (h + 24) * S;
 }
 
 export async function GET(
@@ -63,14 +77,24 @@ export async function GET(
 
   if (!excursion) return new NextResponse("Not found", { status: 404 });
 
+  // Pre-fetch photos — if any fail, they simply won't appear in the image
+  const photoUrls = excursion.activities.map((a) => a.photoUrl).filter((u): u is string => !!u);
+  const photoDataMap = new Map<string, string>();
+  await Promise.all(
+    photoUrls.map(async (url) => {
+      const dataUrl = await fetchDataUrl(url);
+      if (dataUrl) photoDataMap.set(url, dataUrl);
+    })
+  );
+
   const actCount = excursion.activities.length;
-  const descExtra = excursion.description ? 28 : 0;
-  const notesExtra = excursion.notes ? 28 : 0;
+  const descExtra = excursion.description ? 28 * S : 0;
+  const notesExtra = excursion.notes ? 28 * S : 0;
   const activitiesH = actCount === 0
-    ? 80
+    ? 80 * S
     : excursion.activities.reduce((sum, a) => sum + activityHeight(a), 0);
 
-  const HEIGHT = Math.max(480, HEADER_H + descExtra + notesExtra + activitiesH + FOOTER_H + 48);
+  const HEIGHT = Math.max(480 * S, HEADER_H + descExtra + notesExtra + activitiesH + FOOTER_H + 48 * S);
 
   return new ImageResponse(
     (
@@ -87,37 +111,37 @@ export async function GET(
         {/* Header */}
         <div
           style={{
-            padding: "44px 52px 32px",
-            borderBottom: "1px solid #27272a",
+            padding: `${44 * S}px ${52 * S}px ${32 * S}px`,
+            borderBottom: `${S}px solid #27272a`,
             display: "flex",
             flexDirection: "column",
-            gap: 8,
+            gap: 8 * S,
           }}
         >
-          <div style={{ color: "#52525b", fontSize: 14, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", display: "flex" }}>
+          <div style={{ color: "#52525b", fontSize: 14 * S, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", display: "flex" }}>
             {excursion.trip.name}
           </div>
 
-          <div style={{ color: "#f4f4f5", fontSize: 34, fontWeight: 700, display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 30 }}>🗺️</span>
+          <div style={{ color: "#f4f4f5", fontSize: 34 * S, fontWeight: 700, display: "flex", alignItems: "center", gap: 12 * S }}>
+            <span style={{ fontSize: 30 * S }}>🗺️</span>
             <span>{excursion.title}</span>
           </div>
 
           {excursion.date && (
-            <div style={{ color: "#5eead4", fontSize: 17, fontWeight: 500, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ color: "#5eead4", fontSize: 17 * S, fontWeight: 500, display: "flex", alignItems: "center", gap: 8 * S }}>
               <span>📅</span>
               <span style={{ textTransform: "capitalize" }}>{fmtDate(excursion.date)}</span>
             </div>
           )}
 
           {excursion.description && (
-            <div style={{ color: "#a1a1aa", fontSize: 15, display: "flex" }}>
+            <div style={{ color: "#a1a1aa", fontSize: 15 * S, display: "flex" }}>
               {excursion.description}
             </div>
           )}
 
           {excursion.notes && (
-            <div style={{ color: "#fbbf24", fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ color: "#fbbf24", fontSize: 14 * S, display: "flex", alignItems: "center", gap: 6 * S }}>
               <span>⚠️</span>
               <span>{excursion.notes}</span>
             </div>
@@ -125,9 +149,9 @@ export async function GET(
         </div>
 
         {/* Activities */}
-        <div style={{ flex: 1, padding: "20px 52px 0", display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ flex: 1, padding: `${20 * S}px ${52 * S}px 0`, display: "flex", flexDirection: "column", gap: 10 * S }}>
           {actCount === 0 ? (
-            <div style={{ color: "#3f3f46", fontSize: 15, display: "flex", paddingTop: 16 }}>
+            <div style={{ color: "#3f3f46", fontSize: 15 * S, display: "flex", paddingTop: 16 * S }}>
               Sin actividades registradas
             </div>
           ) : (
@@ -136,12 +160,12 @@ export async function GET(
                 key={a.id}
                 style={{
                   background: "#1c1d20",
-                  borderRadius: 14,
-                  padding: "14px 18px",
+                  borderRadius: 14 * S,
+                  padding: `${14 * S}px ${18 * S}px`,
                   display: "flex",
                   alignItems: "flex-start",
-                  gap: 14,
-                  border: "1px solid #27272a",
+                  gap: 14 * S,
+                  border: `${S}px solid #27272a`,
                 }}
               >
                 {/* Time badge */}
@@ -149,12 +173,12 @@ export async function GET(
                   <div
                     style={{
                       background: "#27272a",
-                      borderRadius: 8,
-                      padding: "5px 10px",
+                      borderRadius: 8 * S,
+                      padding: `${5 * S}px ${10 * S}px`,
                       color: "#d4d4d8",
-                      fontSize: 13,
+                      fontSize: 13 * S,
                       fontWeight: 700,
-                      minWidth: 52,
+                      minWidth: 52 * S,
                       textAlign: "center",
                       display: "flex",
                       justifyContent: "center",
@@ -164,43 +188,43 @@ export async function GET(
                     {a.activityTime}
                   </div>
                 ) : (
-                  <div style={{ width: 52, flexShrink: 0, display: "flex" }} />
+                  <div style={{ width: 52 * S, flexShrink: 0, display: "flex" }} />
                 )}
 
                 {/* Content */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 0 }}>
-                  <div style={{ color: "#f4f4f5", fontSize: 16, fontWeight: 600, display: "flex" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 * S, flex: 1, minWidth: 0 }}>
+                  <div style={{ color: "#f4f4f5", fontSize: 16 * S, fontWeight: 600, display: "flex" }}>
                     {a.title}
                   </div>
                   {a.description && (
-                    <div style={{ color: "#a1a1aa", fontSize: 13, display: "flex" }}>
+                    <div style={{ color: "#a1a1aa", fontSize: 13 * S, display: "flex" }}>
                       {a.description}
                     </div>
                   )}
                   {a.location && (
-                    <div style={{ color: "#71717a", fontSize: 13, display: "flex", gap: 4 }}>
+                    <div style={{ color: "#71717a", fontSize: 13 * S, display: "flex", gap: 4 * S }}>
                       <span>📍</span>
                       <span>{a.location}</span>
                     </div>
                   )}
                   {a.notes && (
-                    <div style={{ color: "#854d0e", fontSize: 12, fontStyle: "italic", display: "flex", gap: 4 }}>
+                    <div style={{ color: "#a16207", fontSize: 12 * S, fontStyle: "italic", display: "flex", gap: 4 * S }}>
                       <span>💬</span>
                       <span>{a.notes}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Photo thumbnail */}
-                {a.photoUrl && (
+                {/* Photo thumbnail — only rendered if fetch succeeded */}
+                {a.photoUrl && photoDataMap.has(a.photoUrl) && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={a.photoUrl}
+                    src={photoDataMap.get(a.photoUrl)!}
                     alt=""
                     style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 10,
+                      width: 80 * S,
+                      height: 80 * S,
+                      borderRadius: 10 * S,
                       objectFit: "cover",
                       flexShrink: 0,
                     }}
@@ -214,16 +238,16 @@ export async function GET(
         {/* Footer */}
         <div
           style={{
-            padding: "16px 52px",
-            marginTop: 20,
-            borderTop: "1px solid #1c1d20",
+            padding: `${16 * S}px ${52 * S}px`,
+            marginTop: 20 * S,
+            borderTop: `${S}px solid #1c1d20`,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
           }}
         >
-          <div style={{ color: "#3f3f46", fontSize: 13, display: "flex" }}>UnkoTrip</div>
-          <div style={{ color: "#3f3f46", fontSize: 13, display: "flex" }}>
+          <div style={{ color: "#3f3f46", fontSize: 13 * S, display: "flex" }}>UnkoTrip</div>
+          <div style={{ color: "#3f3f46", fontSize: 13 * S, display: "flex" }}>
             {actCount} actividad{actCount !== 1 ? "es" : ""}
           </div>
         </div>
