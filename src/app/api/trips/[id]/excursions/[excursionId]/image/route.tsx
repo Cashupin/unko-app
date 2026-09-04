@@ -102,7 +102,7 @@ export async function GET(
 
   const HEIGHT = Math.max(480 * S, HEADER_H + descExtra + notesExtra + activitiesH + FOOTER_H + 48 * S);
 
-  const imgResponse = new ImageResponse(
+  return new ImageResponse(
     (
       <div
         style={{
@@ -259,14 +259,6 @@ export async function GET(
         </div>
       </div>
     ),
-    { width: WIDTH, height: HEIGHT },
+    { width: WIDTH, height: HEIGHT, headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" } },
   );
-
-  const buf = await imgResponse.arrayBuffer();
-  return new NextResponse(buf, {
-    headers: {
-      "Content-Type": "image/png",
-      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
-    },
-  });
 }
