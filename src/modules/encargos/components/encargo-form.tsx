@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import type { WishlistRequestStatus } from "@/modules/wishlist/types";
 
@@ -125,7 +126,7 @@ export function EncargoForm({ token, onAdded }: Props) {
         </label>
         {imageUrl ? (
           <div className="relative w-20 h-20">
-            <img src={imageUrl} alt="preview" className="h-20 w-20 rounded-lg object-cover border border-zinc-700" />
+            <Image fill src={imageUrl} alt="preview" className="rounded-lg object-cover border border-zinc-700" />
             <button
               type="button"
               onClick={() => { setImageUrl(null); if (fileRef.current) fileRef.current.value = ""; }}

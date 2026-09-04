@@ -97,11 +97,12 @@ function Avatar({
 
   if (image) {
     return (
-      <img
+      <Image
         src={image}
         alt={name ?? ""}
+        width={size ?? 32}
+        height={size ?? 32}
         className="rounded-full object-cover shrink-0"
-        style={{ width: size, height: size }}
       />
     );
   }

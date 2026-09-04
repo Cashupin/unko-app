@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import { usePersonalMode } from "@/modules/itinerary/components/personal-mode-provider";
 import { createPortal } from "react-dom";
 import { ExportButtons } from "@/modules/itinerary/components/export-buttons";
@@ -498,12 +499,12 @@ function DayDetailModal({
                         />
                       )}
                       {(item.a.photoUrl ?? item.a.itemImageUrl) && (
-                        <div className="h-16 w-16 overflow-hidden rounded-xl border border-[#27272a]">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                        <div className="relative h-16 w-16 overflow-hidden rounded-xl border border-[#27272a]">
+                          <Image
+                            fill
                             src={item.a.photoUrl ?? item.a.itemImageUrl!}
                             alt={item.a.title}
-                            className="h-full w-full object-cover"
+                            className="object-cover"
                           />
                         </div>
                       )}

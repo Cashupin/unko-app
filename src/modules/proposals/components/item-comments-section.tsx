@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -92,11 +93,12 @@ export function ItemCommentsSection({
             return (
               <div key={c.id} className="flex items-start gap-2.5 rounded-xl bg-[#27272a] px-3 py-2">
                 {c.userImage ? (
-                  <img
+                  <Image
                     src={c.userImage}
                     alt={c.userName ?? ""}
+                    width={28}
+                    height={28}
                     className="rounded-full object-cover shrink-0"
-                    style={{ width: 28, height: 28 }}
                   />
                 ) : (
                   <div

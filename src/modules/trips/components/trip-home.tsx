@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { calculateSettlement } from "@/modules/expenses/lib/settlement";
 import { MySettlementBanner } from "@/modules/expenses/components/my-settlement-banner";
@@ -445,8 +446,7 @@ export async function TripHome({
                 className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white dark:bg-[#18191c] dark:border-[#27272a] py-1.5 pr-3 pl-1.5"
               >
                 {p.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.image} alt={p.name} referrerPolicy="no-referrer" className="h-5.5 w-5.5 rounded-full object-cover shrink-0" />
+                  <Image src={p.image} alt={p.name} width={22} height={22} className="rounded-full object-cover shrink-0" />
                 ) : (
                   <div
                     className="h-[22px] w-[22px] rounded-full flex items-center justify-center shrink-0"

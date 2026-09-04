@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CreatePersonalActivityForm } from "@/modules/itinerary/components/create-personal-activity-form";
 import { CreateActivityForm } from "@/modules/itinerary/components/create-activity-form";
@@ -221,8 +222,7 @@ function PersonalRow({
         {/* Photo */}
         {activity.photoUrl && (
           <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[#3f3f46]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={activity.photoUrl} alt={activity.title} className="h-full w-full object-cover" />
+            <Image fill src={activity.photoUrl} alt={activity.title} className="object-cover" />
           </div>
         )}
 

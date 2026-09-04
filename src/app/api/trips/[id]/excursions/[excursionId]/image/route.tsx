@@ -7,13 +7,19 @@ export const runtime = "nodejs";
 
 const S = 2; // render at 2× for HD output
 
+// Module-level cache: survives across hot requests within the same process instance
+const imageBufferCache = new Map<string, string>();
+
 async function fetchDataUrl(url: string): Promise<string | null> {
+  if (imageBufferCache.has(url)) return imageBufferCache.get(url)!;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const buf = await res.arrayBuffer();
     const mime = res.headers.get("content-type") ?? "image/jpeg";
-    return `data:${mime};base64,${Buffer.from(buf).toString("base64")}`;
+    const dataUrl = `data:${mime};base64,${Buffer.from(buf).toString("base64")}`;
+    imageBufferCache.set(url, dataUrl);
+    return dataUrl;
   } catch {
     return null;
   }
@@ -96,7 +102,7 @@ export async function GET(
 
   const HEIGHT = Math.max(480 * S, HEADER_H + descExtra + notesExtra + activitiesH + FOOTER_H + 48 * S);
 
-  return new ImageResponse(
+  const imgResponse = new ImageResponse(
     (
       <div
         style={{
@@ -255,4 +261,12 @@ export async function GET(
     ),
     { width: WIDTH, height: HEIGHT },
   );
+
+  const buf = await imgResponse.arrayBuffer();
+  return new NextResponse(buf, {
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+    },
+  });
 }

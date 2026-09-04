@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import Image from "next/image";
 import type { WishlistRequestStatus } from "@/modules/wishlist/types";
 
 type Request = {
@@ -52,7 +53,7 @@ export function EncargoList({ requests, onCancel }: Props) {
             className={`flex gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-3 transition-opacity ${isRejected || isBought ? "opacity-60" : ""}`}
           >
             {req.imageUrl && (
-              <img src={req.imageUrl} alt={req.name} className="h-14 w-14 shrink-0 rounded-lg object-cover" />
+              <Image src={req.imageUrl} alt={req.name} width={56} height={56} className="shrink-0 rounded-lg object-cover" />
             )}
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
