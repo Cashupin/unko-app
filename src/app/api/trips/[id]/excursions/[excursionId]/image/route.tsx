@@ -17,8 +17,15 @@ function fmtDate(s: string) {
 
 const WIDTH = 1080;
 const HEADER_H = 220;
-const ACTIVITY_H = 96;
 const FOOTER_H = 72;
+
+function activityHeight(a: { location: string | null; description: string | null; notes: string | null }) {
+  let h = 56; // título + padding top/bottom
+  if (a.location) h += 22;
+  if (a.description) h += 26;
+  if (a.notes) h += 22;
+  return h + 24; // gap extra
+}
 
 export async function GET(
   _req: Request,
@@ -46,6 +53,8 @@ export async function GET(
           activityTime: true,
           location: true,
           description: true,
+          notes: true,
+          photoUrl: true,
         },
         orderBy: [{ activityTime: "asc" }],
       },
@@ -57,10 +66,11 @@ export async function GET(
   const actCount = excursion.activities.length;
   const descExtra = excursion.description ? 28 : 0;
   const notesExtra = excursion.notes ? 28 : 0;
-  const HEIGHT = Math.max(
-    480,
-    HEADER_H + descExtra + notesExtra + Math.max(actCount, 1) * ACTIVITY_H + FOOTER_H + 48,
-  );
+  const activitiesH = actCount === 0
+    ? 80
+    : excursion.activities.reduce((sum, a) => sum + activityHeight(a), 0);
+
+  const HEIGHT = Math.max(480, HEADER_H + descExtra + notesExtra + activitiesH + FOOTER_H + 48);
 
   return new ImageResponse(
     (
@@ -94,7 +104,7 @@ export async function GET(
           </div>
 
           {excursion.date && (
-            <div style={{ color: "#93c5fd", fontSize: 17, fontWeight: 500, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ color: "#5eead4", fontSize: 17, fontWeight: 500, display: "flex", alignItems: "center", gap: 8 }}>
               <span>📅</span>
               <span style={{ textTransform: "capitalize" }}>{fmtDate(excursion.date)}</span>
             </div>
@@ -134,6 +144,7 @@ export async function GET(
                   border: "1px solid #27272a",
                 }}
               >
+                {/* Time badge */}
                 {a.activityTime ? (
                   <div
                     style={{
@@ -155,17 +166,46 @@ export async function GET(
                 ) : (
                   <div style={{ width: 52, flexShrink: 0, display: "flex" }} />
                 )}
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+
+                {/* Content */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 0 }}>
                   <div style={{ color: "#f4f4f5", fontSize: 16, fontWeight: 600, display: "flex" }}>
                     {a.title}
                   </div>
+                  {a.description && (
+                    <div style={{ color: "#a1a1aa", fontSize: 13, display: "flex" }}>
+                      {a.description}
+                    </div>
+                  )}
                   {a.location && (
                     <div style={{ color: "#71717a", fontSize: 13, display: "flex", gap: 4 }}>
                       <span>📍</span>
                       <span>{a.location}</span>
                     </div>
                   )}
+                  {a.notes && (
+                    <div style={{ color: "#854d0e", fontSize: 12, fontStyle: "italic", display: "flex", gap: 4 }}>
+                      <span>💬</span>
+                      <span>{a.notes}</span>
+                    </div>
+                  )}
                 </div>
+
+                {/* Photo thumbnail */}
+                {a.photoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={a.photoUrl}
+                    alt=""
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 10,
+                      objectFit: "cover",
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
               </div>
             ))
           )}
