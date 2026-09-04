@@ -10,15 +10,27 @@ const S = 2; // render at 2× for HD output
 // Module-level cache: survives across hot requests within the same process instance
 const imageBufferCache = new Map<string, string>();
 
+// For Cloudinary URLs: request only the exact thumbnail size to reduce memory usage
+function optimizeImageUrl(url: string): string {
+  if (url.includes("res.cloudinary.com") && url.includes("/upload/")) {
+    return url.replace("/upload/", "/upload/c_fill,w_160,h_160,q_auto,f_auto/");
+  }
+  return url;
+}
+
 async function fetchDataUrl(url: string): Promise<string | null> {
-  if (imageBufferCache.has(url)) return imageBufferCache.get(url)!;
+  const fetchUrl = optimizeImageUrl(url);
+  if (imageBufferCache.has(fetchUrl)) return imageBufferCache.get(fetchUrl)!;
   try {
-    const res = await fetch(url);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(fetchUrl, { signal: controller.signal });
+    clearTimeout(timeout);
     if (!res.ok) return null;
     const buf = await res.arrayBuffer();
     const mime = res.headers.get("content-type") ?? "image/jpeg";
     const dataUrl = `data:${mime};base64,${Buffer.from(buf).toString("base64")}`;
-    imageBufferCache.set(url, dataUrl);
+    imageBufferCache.set(fetchUrl, dataUrl);
     return dataUrl;
   } catch {
     return null;
