@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { ItemContextMenu } from "./item-context-menu";
 import type { ListItem } from "../types";
 
 type Props = {
@@ -38,6 +39,52 @@ export function ShoppingListItem({
   const [textValue, setTextValue] = useState(item.text);
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Long-press state for mobile
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  function showMenu(x: number, y: number) {
+    setMenuPos({ x, y });
+  }
+
+  function handleContextMenu(e: React.MouseEvent) {
+    if (!canEdit || editingText) return;
+    e.preventDefault();
+    showMenu(e.clientX, e.clientY);
+  }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    if (!canEdit || editingText) return;
+    const touch = e.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+    longPressTriggered.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      showMenu(touch.clientX, touch.clientY - 10);
+    }, 450);
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!touchStart.current || !longPressTimer.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStart.current.x);
+    const dy = Math.abs(touch.clientY - touchStart.current.y);
+    if (dx > 10 || dy > 10) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
+  function handleTouchEnd() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    touchStart.current = null;
+  }
 
   async function handleToggle() {
     setToggling(true);
@@ -68,37 +115,25 @@ export function ShoppingListItem({
     }
   }
 
+  function handleTextClick() {
+    if (longPressTriggered.current) {
+      longPressTriggered.current = false;
+      return;
+    }
+    if (canEdit && !item.checked) setEditingText(true);
+  }
+
   const hasNotes = !!item.notes;
 
   return (
-    <div className={`group transition-opacity duration-150 ${deleting ? "opacity-40" : ""}`}>
+    <div
+      className={`group transition-opacity duration-150 ${deleting ? "opacity-40" : ""}`}
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className={`flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 ${item.checked ? "opacity-55" : ""}`}>
-
-        {/* ↑↓ item reorder */}
-        {canEdit && (
-          <div className="flex flex-col shrink-0">
-            <button
-              onClick={onMoveUp}
-              className={`h-4 w-4 flex items-center justify-center transition-colors ${isFirst ? "opacity-0 pointer-events-none" : "text-zinc-300 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-300"}`}
-              aria-label="Subir"
-              tabIndex={isFirst ? -1 : 0}
-            >
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="2 8 6 4 10 8" />
-              </svg>
-            </button>
-            <button
-              onClick={onMoveDown}
-              className={`h-4 w-4 flex items-center justify-center transition-colors ${isLast ? "opacity-0 pointer-events-none" : "text-zinc-300 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-300"}`}
-              aria-label="Bajar"
-              tabIndex={isLast ? -1 : 0}
-            >
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="2 4 6 8 10 4" />
-              </svg>
-            </button>
-          </div>
-        )}
 
         {/* Checkbox */}
         <button
@@ -118,7 +153,7 @@ export function ShoppingListItem({
           )}
         </button>
 
-        {/* Text — click to edit (only when not checked) */}
+        {/* Text */}
         <div className="flex-1 min-w-0">
           {editingText && canEdit ? (
             <input
@@ -129,16 +164,17 @@ export function ShoppingListItem({
                 if (e.key === "Enter") e.currentTarget.blur();
                 if (e.key === "Escape") { setTextValue(item.text); setEditingText(false); }
               }}
+              onContextMenu={(e) => e.stopPropagation()}
               autoFocus
               className="w-full rounded border-b border-zinc-300 bg-transparent py-0.5 text-sm text-zinc-800 focus:outline-none dark:border-zinc-600 dark:text-zinc-200"
             />
           ) : (
             <button
-              onClick={() => { if (canEdit && !item.checked) setEditingText(true); }}
-              className={`block w-full text-left text-sm leading-snug wrap-break-word transition-colors ${
+              onClick={handleTextClick}
+              className={`block w-full text-left text-sm leading-snug wrap-break-word transition-colors select-none ${
                 item.checked
                   ? "line-through text-zinc-400 dark:text-zinc-500 cursor-default"
-                  : `text-zinc-800 dark:text-zinc-200 ${canEdit ? "hover:text-zinc-600 dark:hover:text-zinc-300 cursor-text" : ""}`
+                  : `text-zinc-800 dark:text-zinc-200 ${canEdit ? "cursor-text" : ""}`
               }`}
             >
               {item.text}
@@ -151,31 +187,31 @@ export function ShoppingListItem({
           )}
         </div>
 
-        {/* Notes toggle */}
-        <button
-          onClick={() => { setShowNotes(!showNotes); if (!showNotes) setEditingNotes(false); }}
-          className={`shrink-0 rounded p-1 transition-all ${
-            hasNotes
-              ? "text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
-              : "text-zinc-300 dark:text-zinc-700 opacity-0 group-hover:opacity-100 hover:text-zinc-500 dark:hover:text-zinc-500"
-          }`}
-          title={hasNotes ? "Ver nota" : "Añadir nota"}
-        >
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 2h9v7l-2.5 2.5H2z" /><line x1="4" y1="5" x2="9" y2="5" /><line x1="4" y1="7.5" x2="7" y2="7.5" />
-          </svg>
-        </button>
-
-        {/* Delete */}
-        {canEdit && (
+        {/* Notes indicator */}
+        {hasNotes && (
           <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="shrink-0 rounded p-1 text-zinc-300 dark:text-zinc-600 hover:text-red-400 dark:hover:text-red-400 transition-colors md:opacity-0 md:group-hover:opacity-100"
-            aria-label="Eliminar ítem"
+            onClick={() => { setShowNotes(!showNotes); if (!showNotes) setEditingNotes(false); }}
+            className="shrink-0 rounded p-1 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            title="Ver nota"
           >
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
-              <line x1="1.5" y1="1.5" x2="11.5" y2="11.5" /><line x1="11.5" y1="1.5" x2="1.5" y2="11.5" />
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 2h9v7l-2.5 2.5H2z" /><line x1="4" y1="5" x2="9" y2="5" /><line x1="4" y1="7.5" x2="7" y2="7.5" />
+            </svg>
+          </button>
+        )}
+
+        {/* Context menu hint — desktop only, appears on hover */}
+        {canEdit && !editingText && (
+          <button
+            onClick={(e) => { e.stopPropagation(); showMenu(e.clientX, e.clientY); }}
+            className="shrink-0 rounded p-1 text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors opacity-0 group-hover:opacity-100 md:flex hidden"
+            aria-label="Más opciones"
+            title="Más opciones (o click derecho)"
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor">
+              <circle cx="6.5" cy="2.5" r="1.2" />
+              <circle cx="6.5" cy="6.5" r="1.2" />
+              <circle cx="6.5" cy="10.5" r="1.2" />
             </svg>
           </button>
         )}
@@ -183,7 +219,7 @@ export function ShoppingListItem({
 
       {/* Notes area */}
       {showNotes && (
-        <div className="px-10 pb-1">
+        <div className="px-8 pb-1">
           {editingNotes && canEdit ? (
             <textarea
               value={notesValue}
@@ -219,6 +255,23 @@ export function ShoppingListItem({
             </div>
           )}
         </div>
+      )}
+
+      {/* Context menu */}
+      {menuPos && (
+        <ItemContextMenu
+          x={menuPos.x}
+          y={menuPos.y}
+          isFirst={isFirst}
+          isLast={isLast}
+          hasNotes={hasNotes}
+          onClose={() => setMenuPos(null)}
+          onMoveUp={() => onMoveUp?.()}
+          onMoveDown={() => onMoveDown?.()}
+          onEditText={() => setEditingText(true)}
+          onToggleNotes={() => { setShowNotes(true); setEditingNotes(true); }}
+          onDelete={handleDelete}
+        />
       )}
     </div>
   );

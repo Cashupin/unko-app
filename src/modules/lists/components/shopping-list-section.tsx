@@ -69,6 +69,7 @@ export function ShoppingListSection({
   const [titleValue, setTitleValue] = useState(section.title);
   const [collapsed, toggleCollapsed] = useCollapsedSection(section.id);
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => setMounted(true), []);
 
   async function handleTitleBlur() {
@@ -85,17 +86,23 @@ export function ShoppingListSection({
 
   return (
     <div className="group/section mt-4">
-      {/* Section header */}
-      <div className="flex items-center gap-1.5 mb-1.5 px-2 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/40 border-l-2 border-zinc-200 dark:border-zinc-700">
-
-        {/* ↑↓ section reorder */}
+      {/* Section header — entire row toggles collapse */}
+      <div
+        role="button"
+        onClick={toggleCollapsed}
+        className="flex cursor-pointer items-center gap-1.5 mb-1.5 px-2 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800/40 border-l-2 border-zinc-200 dark:border-zinc-700 select-none"
+      >
+        {/* ↑↓ section reorder — stop propagation so they don't collapse */}
         {canEdit && (
-          <div className="flex flex-col shrink-0">
+          <div
+            className="flex flex-col shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={onMoveUp}
               className={`h-4 w-4 flex items-center justify-center transition-colors ${isFirst ? "opacity-0 pointer-events-none" : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"}`}
-              aria-label="Subir sección"
               tabIndex={isFirst ? -1 : 0}
+              aria-label="Subir sección"
             >
               <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="2 8 6 4 10 8" />
@@ -104,8 +111,8 @@ export function ShoppingListSection({
             <button
               onClick={onMoveDown}
               className={`h-4 w-4 flex items-center justify-center transition-colors ${isLast ? "opacity-0 pointer-events-none" : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"}`}
-              aria-label="Bajar sección"
               tabIndex={isLast ? -1 : 0}
+              aria-label="Bajar sección"
             >
               <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="2 4 6 8 10 4" />
@@ -114,55 +121,66 @@ export function ShoppingListSection({
           </div>
         )}
 
-        {/* Title */}
+        {/* Title — click stops propagation so it starts editing instead of collapsing */}
         {editing && canEdit ? (
           <input
             value={titleValue}
             onChange={(e) => setTitleValue(e.target.value)}
             onBlur={handleTitleBlur}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { setTitleValue(section.title); setEditing(false); } }}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") { setTitleValue(section.title); setEditing(false); }
+            }}
             autoFocus
             className="flex-1 min-w-0 rounded border border-zinc-200 bg-transparent px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:border-zinc-700 dark:text-zinc-400 dark:focus:ring-zinc-600"
           />
         ) : (
-          <button
-            onClick={() => canEdit && setEditing(true)}
-            className={`flex-1 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 ${canEdit ? "hover:text-zinc-700 dark:hover:text-zinc-300" : ""}`}
+          <span
+            onClick={(e) => {
+              if (!canEdit) return;
+              e.stopPropagation();
+              setEditing(true);
+            }}
+            className={`flex-1 min-w-0 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate ${canEdit ? "cursor-text" : "cursor-default"}`}
           >
             {section.title}
-          </button>
+          </span>
         )}
 
-        {/* Item count badge — always visible */}
+        {/* Count badge */}
         {total > 0 && (
           <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500 tabular-nums">
             {done}/{total}
           </span>
         )}
 
-        {/* Collapse toggle */}
-        <button
-          onClick={toggleCollapsed}
-          className="shrink-0 flex h-5 w-5 items-center justify-center rounded text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
-          aria-label={collapsed ? "Expandir sección" : "Colapsar sección"}
+        {/* Chevron — visual indicator only, clicks bubble to parent div */}
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`shrink-0 text-zinc-400 dark:text-zinc-500 transition-transform duration-150 ${mounted && collapsed ? "-rotate-90" : ""}`}
         >
-          <svg
-            width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor"
-            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-            className={`transition-transform duration-150 ${mounted && collapsed ? "" : "rotate-180"}`}
-          >
-            <polyline points="2 4 6 8 10 4" />
-          </svg>
-        </button>
+          <polyline points="2 4 6 8 10 4" />
+        </svg>
 
-        {/* Delete section */}
+        {/* Delete — stop propagation */}
         {canEdit && (
           <button
-            onClick={() => toast(`¿Eliminar la sección "${section.title}"?`, {
-              action: { label: "Eliminar", onClick: () => onDeleteSection(section.id) },
-              cancel: { label: "Cancelar", onClick: () => {} },
-            })}
-            className="shrink-0 text-zinc-300 md:opacity-0 md:group-hover/section:opacity-100 hover:text-red-400 transition-colors dark:text-zinc-600 dark:hover:text-red-400"
+            onClick={(e) => {
+              e.stopPropagation();
+              toast(`¿Eliminar la sección "${section.title}"?`, {
+                action: { label: "Eliminar", onClick: () => onDeleteSection(section.id) },
+                cancel: { label: "Cancelar", onClick: () => {} },
+              });
+            }}
+            className="shrink-0 text-zinc-300 opacity-0 group-hover/section:opacity-100 hover:text-red-400 transition-colors dark:text-zinc-600 dark:hover:text-red-400"
             aria-label="Eliminar sección"
           >
             <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
