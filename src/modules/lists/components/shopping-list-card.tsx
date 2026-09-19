@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { ShoppingListSection } from "./shopping-list-section";
 import { ShoppingListItem } from "./shopping-list-item";
 import { InlineAddItem } from "./inline-add-item";
+import { ListContextMenu } from "./list-context-menu";
 import type { ShoppingList, ListItem } from "../types";
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   tripId: string;
   canEdit: boolean;
   myParticipantId: string;
+  isFirst: boolean;
+  isLast: boolean;
   onAddItem: (listId: string, data: { text: string; sectionId?: string }) => Promise<void>;
   onToggleItem: (listId: string, itemId: string, checked: boolean) => Promise<void>;
   onDeleteItem: (listId: string, itemId: string) => Promise<void>;
@@ -25,6 +28,8 @@ type Props = {
   onEditList: (listId: string, data: { title?: string; emoji?: string | null }) => Promise<void>;
   onMoveItem: (listId: string, itemId: string, direction: "up" | "down") => Promise<void>;
   onMoveSection: (listId: string, sectionId: string, direction: "up" | "down") => Promise<void>;
+  onMoveListUp: () => Promise<void>;
+  onMoveListDown: () => Promise<void>;
 };
 
 function useCollapsed(listId: string) {
@@ -45,9 +50,11 @@ function useCollapsed(listId: string) {
 
 export function ShoppingListCard({
   list,
-  tripId,
+  tripId: _tripId,
   canEdit,
   myParticipantId,
+  isFirst,
+  isLast,
   onAddItem,
   onToggleItem,
   onDeleteItem,
@@ -59,6 +66,8 @@ export function ShoppingListCard({
   onEditList,
   onMoveItem,
   onMoveSection,
+  onMoveListUp,
+  onMoveListDown,
 }: Props) {
   const [collapsed, toggleCollapsed] = useCollapsed(list.id);
   const [addingSection, setAddingSection] = useState(false);
@@ -67,6 +76,12 @@ export function ShoppingListCard({
   const [titleValue, setTitleValue] = useState(list.title);
   const [mounted, setMounted] = useState(false);
   const [activeAddFor, setActiveAddFor] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Long-press for context menu on mobile
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   function openAddFor(id: string) { setActiveAddFor(id); }
   function closeAddFor(id: string) { setActiveAddFor((current) => (current === id ? null : current)); }
@@ -91,6 +106,52 @@ export function ShoppingListCard({
   const isComplete = total > 0 && done === total;
   const progressPct = total > 0 ? (done / total) * 100 : 0;
 
+  function showMenu(x: number, y: number) {
+    setMenuPos({ x, y });
+  }
+
+  function handleHeaderContextMenu(e: React.MouseEvent) {
+    e.preventDefault();
+    showMenu(e.clientX, e.clientY);
+  }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    const touch = e.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+    longPressTriggered.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      showMenu(touch.clientX, touch.clientY - 10);
+    }, 450);
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!touchStart.current || !longPressTimer.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStart.current.x);
+    const dy = Math.abs(touch.clientY - touchStart.current.y);
+    if (dx > 10 || dy > 10) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
+  function handleTouchEnd() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    touchStart.current = null;
+  }
+
+  function handleHeaderClick() {
+    if (longPressTriggered.current) {
+      longPressTriggered.current = false;
+      return;
+    }
+    if (!editingTitle) toggleCollapsed();
+  }
+
   async function handleAddSection(e: React.FormEvent) {
     e.preventDefault();
     if (!sectionTitle.trim()) return;
@@ -108,6 +169,13 @@ export function ShoppingListCard({
     }
   }
 
+  function handleDeleteList() {
+    toast(`¿Eliminar la lista "${list.title}"?`, {
+      action: { label: "Eliminar", onClick: () => onDeleteList(list.id) },
+      cancel: { label: "Cancelar", onClick: () => {} },
+    });
+  }
+
   const visibilityIcon = list.visibility === "PRIVATE" ? "🔒" : "🌍";
   const showCheckedBy = list.visibility !== "PRIVATE";
 
@@ -121,13 +189,26 @@ export function ShoppingListCard({
           : "border-zinc-200 dark:border-zinc-700/80"
       }`}
     >
-      {/* List header */}
-      <div className="flex items-center gap-2 px-4 py-3">
-        {/* Drag handle */}
+      {/* List header — clickeable para colapsar, right-click / long-press para menú */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleHeaderClick}
+        onContextMenu={handleHeaderContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleCollapsed(); }}
+        className="flex cursor-pointer select-none items-center gap-2 px-4 py-3"
+      >
+        {/* Drag handle — stop propagation so it doesn't collapse */}
         {canEdit && (
           <button
             {...attributes}
             {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            onContextMenu={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             className="shrink-0 cursor-grab touch-none text-zinc-300 opacity-0 group-hover/list:opacity-100 dark:text-zinc-600"
             aria-label="Arrastrar lista"
           >
@@ -145,28 +226,36 @@ export function ShoppingListCard({
         )}
 
         {/* Title */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" onClick={(e) => editingTitle && e.stopPropagation()}>
           {editingTitle && canEdit ? (
             <input
               value={titleValue}
               onChange={(e) => setTitleValue(e.target.value)}
               onBlur={handleTitleBlur}
-              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { setTitleValue(list.title); setEditingTitle(false); } }}
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onContextMenu={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Escape") { setTitleValue(list.title); setEditingTitle(false); }
+              }}
               autoFocus
               className="w-full rounded border-b border-zinc-300 bg-transparent py-0.5 text-sm font-semibold text-zinc-900 focus:outline-none dark:border-zinc-600 dark:text-zinc-100"
             />
           ) : (
-            <button
-              onClick={() => canEdit && setEditingTitle(true)}
-              className={`text-left text-sm font-semibold text-zinc-900 dark:text-zinc-100 ${canEdit ? "hover:text-zinc-600 dark:hover:text-zinc-300" : ""} truncate max-w-full block`}
-            >
+            <span className="block truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {list.title}
-            </button>
+            </span>
           )}
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div
+          className="flex items-center gap-2 shrink-0"
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.stopPropagation()}
+        >
           <span className="text-xs text-zinc-400 dark:text-zinc-500" title={list.visibility === "PRIVATE" ? "Solo tú" : "Todos en el viaje"}>
             {visibilityIcon}
           </span>
@@ -181,34 +270,33 @@ export function ShoppingListCard({
             </span>
           ) : null}
 
+          {/* Chevron */}
+          <svg
+            width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            className={`text-zinc-400 dark:text-zinc-500 transition-transform ${mounted && collapsed ? "" : "rotate-180"}`}
+          >
+            <polyline points="2 4 6 8 10 4" />
+          </svg>
+
+          {/* ⋯ context menu button — always visible */}
           {canEdit && (
             <button
-              onClick={() => toast(`¿Eliminar la lista "${list.title}"?`, {
-                action: { label: "Eliminar", onClick: () => onDeleteList(list.id) },
-                cancel: { label: "Cancelar", onClick: () => {} },
-              })}
-              className="text-zinc-300 md:opacity-0 md:group-hover/list:opacity-100 hover:text-red-400 transition-colors dark:text-zinc-600 dark:hover:text-red-400"
-              aria-label="Eliminar lista"
+              onClick={(e) => {
+                e.stopPropagation();
+                showMenu(e.clientX, e.clientY);
+              }}
+              onTouchStart={(e) => e.stopPropagation()}
+              className="shrink-0 rounded p-0.5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+              aria-label="Más opciones de lista"
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
-                <line x1="2" y1="2" x2="12" y2="12" /><line x1="12" y1="2" x2="2" y2="12" />
+              <svg width="14" height="14" viewBox="0 0 13 13" fill="currentColor">
+                <circle cx="6.5" cy="2.5" r="1.2" />
+                <circle cx="6.5" cy="6.5" r="1.2" />
+                <circle cx="6.5" cy="10.5" r="1.2" />
               </svg>
             </button>
           )}
-
-          <button
-            onClick={toggleCollapsed}
-            className="flex h-6 w-6 items-center justify-center rounded text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
-            aria-label={collapsed ? "Expandir" : "Colapsar"}
-          >
-            <svg
-              width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className={`transition-transform ${mounted && collapsed ? "" : "rotate-180"}`}
-            >
-              <polyline points="2 4 6 8 10 4" />
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -327,6 +415,23 @@ export function ShoppingListCard({
             </div>
           )}
         </div>
+      )}
+
+      {/* Context menu */}
+      {menuPos && (
+        <ListContextMenu
+          x={menuPos.x}
+          y={menuPos.y}
+          isFirst={isFirst}
+          isLast={isLast}
+          collapsed={collapsed}
+          onClose={() => setMenuPos(null)}
+          onMoveUp={onMoveListUp}
+          onMoveDown={onMoveListDown}
+          onRename={() => setEditingTitle(true)}
+          onToggleCollapse={toggleCollapsed}
+          onDelete={handleDeleteList}
+        />
       )}
     </div>
   );

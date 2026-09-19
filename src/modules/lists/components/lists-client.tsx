@@ -300,6 +300,22 @@ export function ListsClient({ tripId, myParticipantId, canEdit, initialLists }: 
     }
   }
 
+  async function handleMoveList(listId: string, direction: "up" | "down") {
+    const idx = lists.findIndex((l) => l.id === listId);
+    if (idx === -1) return;
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= lists.length) return;
+
+    const newLists = arrayMove(lists, idx, targetIdx);
+    setLists(newLists);
+    try {
+      await api("/lists/reorder", "PATCH", { ids: newLists.map((l) => l.id) });
+    } catch {
+      toast.error("Error al reordenar");
+      router.refresh();
+    }
+  }
+
   // ── DnD — solo reordena listas ────────────────────────────────────────────────
 
   const handleDragEnd = useCallback(
@@ -345,13 +361,15 @@ export function ListsClient({ tripId, myParticipantId, canEdit, initialLists }: 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={listIds} strategy={verticalListSortingStrategy}>
             <div className="flex flex-col gap-4">
-              {lists.map((list) => (
+              {lists.map((list, idx) => (
                 <ShoppingListCard
                   key={list.id}
                   list={list}
                   tripId={tripId}
                   canEdit={canEdit}
                   myParticipantId={myParticipantId}
+                  isFirst={idx === 0}
+                  isLast={idx === lists.length - 1}
                   onAddItem={handleAddItem}
                   onToggleItem={handleToggleItem}
                   onDeleteItem={handleDeleteItem}
@@ -363,6 +381,8 @@ export function ListsClient({ tripId, myParticipantId, canEdit, initialLists }: 
                   onEditList={handleEditList}
                   onMoveItem={handleMoveItem}
                   onMoveSection={handleMoveSection}
+                  onMoveListUp={() => handleMoveList(list.id, "up")}
+                  onMoveListDown={() => handleMoveList(list.id, "down")}
                 />
               ))}
             </div>
