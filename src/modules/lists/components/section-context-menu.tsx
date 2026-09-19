@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { SECTION_COLORS } from "@/modules/lists/lib/section-colors";
 
 type Props = {
   x: number;
@@ -9,11 +10,13 @@ type Props = {
   isFirst: boolean;
   isLast: boolean;
   collapsed: boolean;
+  colorIndex: number;
   onClose: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onRename: () => void;
   onToggleCollapse: () => void;
+  onSetColor: (index: number) => void;
   onDelete: () => void;
 };
 
@@ -23,11 +26,13 @@ export function SectionContextMenu({
   isFirst,
   isLast,
   collapsed,
+  colorIndex,
   onClose,
   onMoveUp,
   onMoveDown,
   onRename,
   onToggleCollapse,
+  onSetColor,
   onDelete,
 }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -70,7 +75,7 @@ export function SectionContextMenu({
       <div
         ref={menuRef}
         style={{ left: pos.x, top: pos.y, opacity: visible ? 1 : 0 }}
-        className="fixed z-50 min-w-[180px] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl transition-opacity duration-75 dark:border-zinc-700 dark:bg-zinc-800"
+        className="fixed z-50 min-w-45 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl transition-opacity duration-75 dark:border-zinc-700 dark:bg-zinc-800"
       >
         {/* Move */}
         <div className="py-1">
@@ -99,13 +104,36 @@ export function SectionContextMenu({
             Renombrar
           </button>
           <button onClick={() => { onToggleCollapse(); onClose(); }} className={btnClass}>
-            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            <svg
+              width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               className={collapsed ? "rotate-180" : ""}
             >
               <polyline points="2 4 6 8 10 4" />
             </svg>
             {collapsed ? "Expandir" : "Colapsar"}
           </button>
+        </div>
+
+        <div className="border-t border-zinc-100 dark:border-zinc-700" />
+
+        {/* Color swatches */}
+        <div className="px-3 py-2.5">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Color</p>
+          <div className="flex flex-wrap gap-2">
+            {SECTION_COLORS.map((color, i) => (
+              <button
+                key={color.key}
+                onClick={() => { onSetColor(i); onClose(); }}
+                className={`h-5 w-5 rounded-md transition-all ${color.swatch} ${
+                  colorIndex === i
+                    ? "ring-2 ring-offset-2 ring-zinc-500 dark:ring-zinc-400 dark:ring-offset-zinc-800 scale-110"
+                    : "hover:scale-110 opacity-70 hover:opacity-100"
+                }`}
+                aria-label={color.key}
+              />
+            ))}
+          </div>
         </div>
 
         <div className="border-t border-zinc-100 dark:border-zinc-700" />

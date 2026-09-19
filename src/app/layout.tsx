@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { CurrencyProvider } from "@/providers/currency-provider";
 import { NotificationsProvider } from "@/modules/notifications/components/notifications-provider";
+import { UserConfigProvider } from "@/providers/user-config-provider";
 import { auth } from "@/auth";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -46,6 +47,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
+          <UserConfigProvider>
           <CurrencyProvider>
           {userId ? (
             <NotificationsProvider userId={userId}>
@@ -53,6 +55,7 @@ export default async function RootLayout({
             </NotificationsProvider>
           ) : children}
           </CurrencyProvider>
+          </UserConfigProvider>
           <Toaster
             richColors
             position="bottom-center"

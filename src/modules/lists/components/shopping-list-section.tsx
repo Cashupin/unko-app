@@ -5,19 +5,9 @@ import { toast } from "sonner";
 import { ShoppingListItem } from "./shopping-list-item";
 import { InlineAddItem } from "./inline-add-item";
 import { SectionContextMenu } from "./section-context-menu";
+import { SECTION_COLORS } from "@/modules/lists/lib/section-colors";
+import { useUserConfig } from "@/providers/user-config-provider";
 import type { ListSection, ListItem } from "../types";
-
-// Full class strings so Tailwind includes them in the build
-const SECTION_COLORS = [
-  "border-l-blue-400   dark:border-l-blue-500   bg-blue-50/70   dark:bg-blue-950/20",
-  "border-l-violet-400 dark:border-l-violet-500 bg-violet-50/70 dark:bg-violet-950/20",
-  "border-l-amber-400  dark:border-l-amber-500  bg-amber-50/70  dark:bg-amber-950/20",
-  "border-l-emerald-400 dark:border-l-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20",
-  "border-l-rose-400   dark:border-l-rose-500   bg-rose-50/70   dark:bg-rose-950/20",
-  "border-l-cyan-400   dark:border-l-cyan-500   bg-cyan-50/70   dark:bg-cyan-950/20",
-  "border-l-orange-400 dark:border-l-orange-500 bg-orange-50/70 dark:bg-orange-950/20",
-  "border-l-pink-400   dark:border-l-pink-500   bg-pink-50/70   dark:bg-pink-950/20",
-];
 
 function useCollapsedSection(sectionId: string) {
   const key = `section-collapsed-${sectionId}`;
@@ -85,6 +75,11 @@ export function ShoppingListSection({
   const [collapsed, toggleCollapsed] = useCollapsedSection(section.id);
   const [mounted, setMounted] = useState(false);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+
+  const { get, set: setConfig } = useUserConfig();
+  const colorKey = `list:section:${section.id}:color`;
+  const colorIndex = parseInt(get(colorKey) ?? String(index % SECTION_COLORS.length), 10);
+  const color = SECTION_COLORS[colorIndex] ?? SECTION_COLORS[0];
 
   // Long-press state
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -157,6 +152,7 @@ export function ShoppingListSection({
 
   const total = section.items.length;
   const done = section.items.filter((i: ListItem) => i.checked).length;
+  const isExpanded = !mounted || !collapsed;
 
   return (
     <div className="group/section mt-4">
@@ -170,7 +166,7 @@ export function ShoppingListSection({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleCollapsed(); }}
-        className={`flex cursor-pointer items-center gap-1.5 mb-1.5 px-2 py-1.5 rounded-lg border-l-2 select-none ${SECTION_COLORS[index % SECTION_COLORS.length]}`}
+        className={`flex cursor-pointer items-center gap-1.5 mb-0 px-2 py-1.5 select-none border-l-2 transition-colors ${color.headerBorder} ${color.headerBg} ${isExpanded ? "rounded-t-lg" : "rounded-lg mb-1.5"}`}
       >
         {/* Title */}
         {editing && canEdit ? (
@@ -229,10 +225,10 @@ export function ShoppingListSection({
         )}
       </div>
 
-      {/* Items */}
-      {(!mounted || !collapsed) && (
-        <>
-          <div className="flex flex-col gap-0.5 pl-2">
+      {/* Items — bracket encasing when expanded */}
+      {isExpanded && (
+        <div className={`border-l-2 border-b-2 rounded-bl-lg pb-2 mb-1.5 ${color.itemsBorder}`}>
+          <div className="flex flex-col gap-0.5 pl-2 pt-1">
             {section.items.map((item: ListItem, idx: number) => (
               <ShoppingListItem
                 key={item.id}
@@ -262,7 +258,7 @@ export function ShoppingListSection({
               />
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Context menu */}
@@ -273,11 +269,13 @@ export function ShoppingListSection({
           isFirst={isFirst}
           isLast={isLast}
           collapsed={collapsed}
+          colorIndex={colorIndex}
           onClose={() => setMenuPos(null)}
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
           onRename={() => setEditing(true)}
           onToggleCollapse={toggleCollapsed}
+          onSetColor={(i) => setConfig(colorKey, String(i))}
           onDelete={handleDeleteSection}
         />
       )}
