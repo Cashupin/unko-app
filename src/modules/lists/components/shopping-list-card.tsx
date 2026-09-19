@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { ShoppingListSection } from "./shopping-list-section";
@@ -23,6 +23,8 @@ type Props = {
   onRenameSection: (listId: string, sectionId: string, title: string) => Promise<void>;
   onDeleteList: (listId: string) => Promise<void>;
   onEditList: (listId: string, data: { title?: string; emoji?: string | null }) => Promise<void>;
+  onMoveItem: (listId: string, itemId: string, direction: "up" | "down") => Promise<void>;
+  onMoveSection: (listId: string, sectionId: string, direction: "up" | "down") => Promise<void>;
 };
 
 function useCollapsed(listId: string) {
@@ -55,6 +57,8 @@ export function ShoppingListCard({
   onRenameSection,
   onDeleteList,
   onEditList,
+  onMoveItem,
+  onMoveSection,
 }: Props) {
   const [collapsed, toggleCollapsed] = useCollapsed(list.id);
   const [addingSection, setAddingSection] = useState(false);
@@ -62,16 +66,10 @@ export function ShoppingListCard({
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(list.title);
   const [mounted, setMounted] = useState(false);
-  // "direct" = zona sin sección; sectionId = esa sección; null = ninguno
   const [activeAddFor, setActiveAddFor] = useState<string | null>(null);
 
-  function openAddFor(id: string) {
-    setActiveAddFor(id);
-  }
-
-  function closeAddFor(id: string) {
-    setActiveAddFor((current) => (current === id ? null : current));
-  }
+  function openAddFor(id: string) { setActiveAddFor(id); }
+  function closeAddFor(id: string) { setActiveAddFor((current) => (current === id ? null : current)); }
 
   useEffect(() => setMounted(true), []);
 
@@ -84,13 +82,14 @@ export function ShoppingListCard({
     opacity: isDragging ? 0.4 : 1,
   };
 
-  // Progress calculation
   const allItems: ListItem[] = [
     ...list.items,
     ...list.sections.flatMap((s) => s.items),
   ];
   const total = allItems.length;
   const done = allItems.filter((i) => i.checked).length;
+  const isComplete = total > 0 && done === total;
+  const progressPct = total > 0 ? (done / total) * 100 : 0;
 
   async function handleAddSection(e: React.FormEvent) {
     e.preventDefault();
@@ -109,15 +108,19 @@ export function ShoppingListCard({
     }
   }
 
-  // Item IDs in the direct (no-section) zone
-  const directItemIds = list.items.map((i) => i.id);
-  const sectionIds = list.sections.map((s) => s.id);
-
   const visibilityIcon = list.visibility === "PRIVATE" ? "🔒" : "🌍";
   const showCheckedBy = list.visibility !== "PRIVATE";
 
   return (
-    <div ref={setNodeRef} style={style} className="group/list rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700/80 dark:bg-zinc-900">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group/list rounded-2xl border bg-white shadow-sm dark:bg-zinc-900 transition-colors ${
+        isComplete
+          ? "border-emerald-200 dark:border-emerald-800/60"
+          : "border-zinc-200 dark:border-zinc-700/80"
+      }`}
+    >
       {/* List header */}
       <div className="flex items-center gap-2 px-4 py-3">
         {/* Drag handle */}
@@ -162,17 +165,21 @@ export function ShoppingListCard({
           )}
         </div>
 
-        {/* Right side: visibility + progress + collapse + delete */}
+        {/* Right side */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs text-zinc-400 dark:text-zinc-500" title={list.visibility === "PRIVATE" ? "Solo tú" : "Todos en el viaje"}>
             {visibilityIcon}
           </span>
 
-          {total > 0 && (
+          {isComplete ? (
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+              ¡Completa!
+            </span>
+          ) : total > 0 ? (
             <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
               {done}/{total}
             </span>
-          )}
+          ) : null}
 
           {canEdit && (
             <button
@@ -195,14 +202,8 @@ export function ShoppingListCard({
             aria-label={collapsed ? "Expandir" : "Colapsar"}
           >
             <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               className={`transition-transform ${mounted && collapsed ? "" : "rotate-180"}`}
             >
               <polyline points="2 4 6 8 10 4" />
@@ -213,10 +214,10 @@ export function ShoppingListCard({
 
       {/* Progress bar */}
       {total > 0 && (
-        <div className="mx-4 mb-1 h-1 rounded-full bg-zinc-100 dark:bg-zinc-800">
+        <div className="mx-4 mb-1 h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800">
           <div
-            className="h-1 rounded-full bg-zinc-400 transition-all dark:bg-zinc-500"
-            style={{ width: `${(done / total) * 100}%` }}
+            className={`h-1.5 rounded-full transition-all duration-500 ${isComplete ? "bg-emerald-400 dark:bg-emerald-500" : "bg-zinc-400 dark:bg-zinc-500"}`}
+            style={{ width: `${progressPct}%` }}
           />
         </div>
       )}
@@ -225,47 +226,53 @@ export function ShoppingListCard({
       {(!mounted || !collapsed) && (
         <div className="px-4 pb-4 pt-2">
           {/* Sections */}
-          <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
-            {list.sections.map((section) => (
-              <ShoppingListSection
-                key={section.id}
-                section={section}
-                canEdit={canEdit}
-                myParticipantId={myParticipantId}
-                showCheckedBy={showCheckedBy}
-                addItemOpen={activeAddFor === section.id}
-                onOpenAddItem={() => openAddFor(section.id)}
-                onCloseAddItem={() => closeAddFor(section.id)}
-                onAddItem={(data) => onAddItem(list.id, data)}
-                onToggleItem={(itemId, checked) => onToggleItem(list.id, itemId, checked)}
-                onDeleteItem={(itemId) => onDeleteItem(list.id, itemId)}
-                onEditItem={(itemId, text, notes) => onEditItem(list.id, itemId, text, notes)}
-                onDeleteSection={(sectionId) => onDeleteSection(list.id, sectionId)}
-                onRenameSection={(sectionId, title) => onRenameSection(list.id, sectionId, title)}
-              />
-            ))}
-          </SortableContext>
+          {list.sections.map((section, idx) => (
+            <ShoppingListSection
+              key={section.id}
+              section={section}
+              canEdit={canEdit}
+              myParticipantId={myParticipantId}
+              showCheckedBy={showCheckedBy}
+              isFirst={idx === 0}
+              isLast={idx === list.sections.length - 1}
+              addItemOpen={activeAddFor === section.id}
+              onOpenAddItem={() => openAddFor(section.id)}
+              onCloseAddItem={() => closeAddFor(section.id)}
+              onAddItem={(data) => onAddItem(list.id, data)}
+              onToggleItem={(itemId, checked) => onToggleItem(list.id, itemId, checked)}
+              onDeleteItem={(itemId) => onDeleteItem(list.id, itemId)}
+              onEditItem={(itemId, text, notes) => onEditItem(list.id, itemId, text, notes)}
+              onDeleteSection={(sectionId) => onDeleteSection(list.id, sectionId)}
+              onRenameSection={(sectionId, title) => onRenameSection(list.id, sectionId, title)}
+              onMoveUp={() => onMoveSection(list.id, section.id, "up")}
+              onMoveDown={() => onMoveSection(list.id, section.id, "down")}
+              onMoveItemUp={(itemId) => onMoveItem(list.id, itemId, "up")}
+              onMoveItemDown={(itemId) => onMoveItem(list.id, itemId, "down")}
+            />
+          ))}
 
           {/* Direct items (no section) */}
           {list.sections.length > 0 && list.items.length > 0 && (
             <div className="mt-4 border-t border-zinc-100 pt-1 dark:border-zinc-800" />
           )}
-          <SortableContext items={directItemIds} strategy={verticalListSortingStrategy}>
-            <div className="flex flex-col gap-0.5">
-              {list.items.map((item) => (
-                <ShoppingListItem
-                  key={item.id}
-                  item={item}
-                  canEdit={canEdit}
-                  myParticipantId={myParticipantId}
-                  showCheckedBy={showCheckedBy}
-                  onToggle={(itemId, checked) => onToggleItem(list.id, itemId, checked)}
-                  onDelete={(itemId) => onDeleteItem(list.id, itemId)}
-                  onEdit={(itemId, text, notes) => onEditItem(list.id, itemId, text, notes)}
-                />
-              ))}
-            </div>
-          </SortableContext>
+          <div className="flex flex-col gap-0.5">
+            {list.items.map((item, idx) => (
+              <ShoppingListItem
+                key={item.id}
+                item={item}
+                canEdit={canEdit}
+                myParticipantId={myParticipantId}
+                showCheckedBy={showCheckedBy}
+                isFirst={idx === 0}
+                isLast={idx === list.items.length - 1}
+                onToggle={(itemId, checked) => onToggleItem(list.id, itemId, checked)}
+                onDelete={(itemId) => onDeleteItem(list.id, itemId)}
+                onEdit={(itemId, text, notes) => onEditItem(list.id, itemId, text, notes)}
+                onMoveUp={() => onMoveItem(list.id, item.id, "up")}
+                onMoveDown={() => onMoveItem(list.id, item.id, "down")}
+              />
+            ))}
+          </div>
 
           {/* Quick add direct item */}
           {canEdit && (

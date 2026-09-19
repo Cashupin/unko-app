@@ -134,6 +134,29 @@ export function ListsClient({ tripId, myParticipantId, canEdit, initialLists }: 
     }
   }
 
+  async function handleMoveSection(listId: string, sectionId: string, direction: "up" | "down") {
+    const list = lists.find((l) => l.id === listId);
+    if (!list) return;
+
+    const idx = list.sections.findIndex((s) => s.id === sectionId);
+    if (idx === -1) return;
+
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= list.sections.length) return;
+
+    const newSections = [...list.sections];
+    [newSections[idx], newSections[targetIdx]] = [newSections[targetIdx], newSections[idx]];
+
+    setLists((prev) => prev.map((l) => l.id === listId ? { ...l, sections: newSections } : l));
+
+    try {
+      await api(`/lists/${listId}/sections/reorder`, "PATCH", { ids: newSections.map((s) => s.id) });
+    } catch {
+      toast.error("Error al reordenar");
+      router.refresh();
+    }
+  }
+
   // ── Items ─────────────────────────────────────────────────────────────────────
 
   async function handleAddItem(listId: string, data: { text: string; sectionId?: string }) {
@@ -159,7 +182,6 @@ export function ListsClient({ tripId, myParticipantId, canEdit, initialLists }: 
   }
 
   async function handleToggleItem(listId: string, itemId: string, checked: boolean) {
-    // Optimistic update
     setLists((prev) =>
       prev.map((l) => {
         if (l.id !== listId) return l;
@@ -224,154 +246,79 @@ export function ListsClient({ tripId, myParticipantId, canEdit, initialLists }: 
     }
   }
 
-  // ── DnD ──────────────────────────────────────────────────────────────────────
+  async function handleMoveItem(listId: string, itemId: string, direction: "up" | "down") {
+    const list = lists.find((l) => l.id === listId);
+    if (!list) return;
+
+    // Check direct items first
+    const directIdx = list.items.findIndex((i) => i.id === itemId);
+    if (directIdx !== -1) {
+      const targetIdx = direction === "up" ? directIdx - 1 : directIdx + 1;
+      if (targetIdx < 0 || targetIdx >= list.items.length) return;
+
+      const newItems = [...list.items];
+      [newItems[directIdx], newItems[targetIdx]] = [newItems[targetIdx], newItems[directIdx]];
+      setLists((prev) => prev.map((l) => l.id === listId ? { ...l, items: newItems } : l));
+
+      const payload = [
+        ...newItems.map((i, idx) => ({ id: i.id, sectionId: null, order: idx })),
+        ...list.sections.flatMap((s) => s.items.map((i, idx) => ({ id: i.id, sectionId: s.id, order: idx }))),
+      ];
+      try {
+        await api(`/lists/${listId}/items/reorder`, "PATCH", { items: payload });
+      } catch {
+        toast.error("Error al reordenar");
+        router.refresh();
+      }
+      return;
+    }
+
+    // Check sections
+    for (const section of list.sections) {
+      const sectionIdx = section.items.findIndex((i) => i.id === itemId);
+      if (sectionIdx === -1) continue;
+
+      const targetIdx = direction === "up" ? sectionIdx - 1 : sectionIdx + 1;
+      if (targetIdx < 0 || targetIdx >= section.items.length) return;
+
+      const newSectionItems = [...section.items];
+      [newSectionItems[sectionIdx], newSectionItems[targetIdx]] = [newSectionItems[targetIdx], newSectionItems[sectionIdx]];
+      const newSections = list.sections.map((s) => s.id === section.id ? { ...s, items: newSectionItems } : s);
+      setLists((prev) => prev.map((l) => l.id === listId ? { ...l, sections: newSections } : l));
+
+      const payload = [
+        ...list.items.map((i, idx) => ({ id: i.id, sectionId: null, order: idx })),
+        ...newSections.flatMap((s) => s.items.map((i, idx) => ({ id: i.id, sectionId: s.id, order: idx }))),
+      ];
+      try {
+        await api(`/lists/${listId}/items/reorder`, "PATCH", { items: payload });
+      } catch {
+        toast.error("Error al reordenar");
+        router.refresh();
+      }
+      return;
+    }
+  }
+
+  // ── DnD — solo reordena listas ────────────────────────────────────────────────
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
-      const activeId = active.id as string;
-      const overId = over.id as string;
+      const activeIdx = lists.findIndex((l) => l.id === active.id);
+      const overIdx = lists.findIndex((l) => l.id === over.id);
+      if (activeIdx === -1 || overIdx === -1) return;
 
-      // Determine if we're dragging a list
-      const activeListIndex = lists.findIndex((l) => l.id === activeId);
-      if (activeListIndex !== -1) {
-        const overListIndex = lists.findIndex((l) => l.id === overId);
-        if (overListIndex === -1) return;
+      const newLists = arrayMove(lists, activeIdx, overIdx);
+      setLists(newLists);
 
-        const newLists = [...lists];
-        const [moved] = newLists.splice(activeListIndex, 1);
-        newLists.splice(overListIndex, 0, moved);
-        const reordered = newLists.map((l, i) => ({ ...l, order: i }));
-        setLists(reordered);
-
-        try {
-          await api("/lists/reorder", "PATCH", { ids: reordered.map((l) => l.id) });
-        } catch {
-          toast.error("Error al reordenar");
-          router.refresh();
-        }
-        return;
-      }
-
-      // Determine if we're dragging a section
-      for (const list of lists) {
-        const activeSectionIndex = list.sections.findIndex((s) => s.id === activeId);
-        if (activeSectionIndex !== -1) {
-          const overSectionIndex = list.sections.findIndex((s) => s.id === overId);
-          if (overSectionIndex === -1) return;
-
-          const newSections = [...list.sections];
-          const [moved] = newSections.splice(activeSectionIndex, 1);
-          newSections.splice(overSectionIndex, 0, moved);
-          setLists((prev) =>
-            prev.map((l) => (l.id === list.id ? { ...l, sections: newSections } : l))
-          );
-
-          try {
-            await api(`/lists/${list.id}/sections/reorder`, "PATCH", {
-              ids: newSections.map((s) => s.id),
-            });
-          } catch {
-            toast.error("Error al reordenar");
-            router.refresh();
-          }
-          return;
-        }
-      }
-
-      // Dragging an item
-      for (const list of lists) {
-        const allItems = [
-          ...list.items,
-          ...list.sections.flatMap((s) => s.items),
-        ];
-        const activeItem = allItems.find((i) => i.id === activeId);
-        if (!activeItem) continue;
-        const overItem = allItems.find((i) => i.id === overId);
-        if (!overItem) continue;
-
-        let newItems = [...list.items];
-        const newSections = list.sections.map((s) => ({ ...s, items: [...s.items] }));
-
-        // Locate active item: direct list or inside a section
-        const activeDirectIdx = newItems.findIndex((i) => i.id === activeId);
-        let activeSectionId: string | null = null;
-        let activeSectionItemIdx = -1;
-        if (activeDirectIdx === -1) {
-          for (const s of newSections) {
-            const idx = s.items.findIndex((i) => i.id === activeId);
-            if (idx !== -1) { activeSectionId = s.id; activeSectionItemIdx = idx; break; }
-          }
-        }
-
-        // Locate over item: direct list or inside a section
-        const overDirectIdx = newItems.findIndex((i) => i.id === overId);
-        let overSectionId: string | null = null;
-        let overSectionItemIdx = -1;
-        if (overDirectIdx === -1) {
-          for (const s of newSections) {
-            const idx = s.items.findIndex((i) => i.id === overId);
-            if (idx !== -1) { overSectionId = s.id; overSectionItemIdx = idx; break; }
-          }
-        }
-
-        const sameContainer =
-          (activeDirectIdx !== -1 && overDirectIdx !== -1) ||
-          (activeSectionId !== null && activeSectionId === overSectionId);
-
-        if (sameContainer) {
-          // Same container: arrayMove handles both up and down correctly
-          if (activeDirectIdx !== -1) {
-            newItems = arrayMove(newItems, activeDirectIdx, overDirectIdx);
-          } else {
-            const section = newSections.find((s) => s.id === activeSectionId)!;
-            section.items = arrayMove(section.items, activeSectionItemIdx, overSectionItemIdx);
-          }
-        } else {
-          // Cross-container: remove from source, insert at target index
-          let movedItem: typeof activeItem;
-          if (activeDirectIdx !== -1) {
-            movedItem = newItems[activeDirectIdx];
-            newItems.splice(activeDirectIdx, 1);
-          } else {
-            const section = newSections.find((s) => s.id === activeSectionId)!;
-            movedItem = section.items[activeSectionItemIdx];
-            section.items.splice(activeSectionItemIdx, 1);
-          }
-
-          const targetSectionId = overDirectIdx !== -1 ? null : overSectionId;
-          const updatedItem = { ...movedItem, sectionId: targetSectionId };
-
-          if (overDirectIdx !== -1) {
-            newItems.splice(overDirectIdx, 0, updatedItem);
-          } else {
-            const section = newSections.find((s) => s.id === overSectionId)!;
-            section.items.splice(overSectionItemIdx, 0, updatedItem);
-          }
-        }
-
-        setLists((prev) =>
-          prev.map((l) =>
-            l.id === list.id ? { ...l, items: newItems, sections: newSections } : l
-          )
-        );
-
-        const payload = [
-          ...newItems.map((i, idx) => ({ id: i.id, sectionId: null, order: idx })),
-          ...newSections.flatMap((s) =>
-            s.items.map((i, idx) => ({ id: i.id, sectionId: s.id, order: idx }))
-          ),
-        ];
-
-        try {
-          await api(`/lists/${list.id}/items/reorder`, "PATCH", { items: payload });
-        } catch {
-          toast.error("Error al reordenar");
-          router.refresh();
-        }
-        return;
+      try {
+        await api("/lists/reorder", "PATCH", { ids: newLists.map((l) => l.id) });
+      } catch {
+        toast.error("Error al reordenar");
+        router.refresh();
       }
     },
     [lists, tripId, router]
@@ -414,6 +361,8 @@ export function ListsClient({ tripId, myParticipantId, canEdit, initialLists }: 
                   onRenameSection={handleRenameSection}
                   onDeleteList={handleDeleteList}
                   onEditList={handleEditList}
+                  onMoveItem={handleMoveItem}
+                  onMoveSection={handleMoveSection}
                 />
               ))}
             </div>

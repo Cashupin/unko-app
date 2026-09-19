@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import type { ListItem } from "../types";
 
 type Props = {
@@ -11,26 +9,35 @@ type Props = {
   canEdit: boolean;
   myParticipantId: string;
   showCheckedBy?: boolean;
+  isFirst?: boolean;
+  isLast?: boolean;
   onToggle: (itemId: string, checked: boolean) => Promise<void>;
   onDelete: (itemId: string) => Promise<void>;
   onEdit: (itemId: string, text: string, notes: string | null) => Promise<void>;
+  onMoveUp?: () => Promise<void>;
+  onMoveDown?: () => Promise<void>;
 };
 
-export function ShoppingListItem({ item, canEdit, myParticipantId, showCheckedBy = true, onToggle, onDelete, onEdit }: Props) {
+export function ShoppingListItem({
+  item,
+  canEdit,
+  myParticipantId,
+  showCheckedBy = true,
+  isFirst = false,
+  isLast = false,
+  onToggle,
+  onDelete,
+  onEdit,
+  onMoveUp,
+  onMoveDown,
+}: Props) {
   const [showNotes, setShowNotes] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState(item.notes ?? "");
+  const [editingText, setEditingText] = useState(false);
+  const [textValue, setTextValue] = useState(item.text);
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: item.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.35 : 1,
-  };
 
   async function handleToggle() {
     setToggling(true);
@@ -52,27 +59,45 @@ export function ShoppingListItem({ item, canEdit, myParticipantId, showCheckedBy
     }
   }
 
+  async function handleTextBlur() {
+    setEditingText(false);
+    if (textValue.trim() && textValue.trim() !== item.text) {
+      await onEdit(item.id, textValue.trim(), item.notes);
+    } else {
+      setTextValue(item.text);
+    }
+  }
+
   const hasNotes = !!item.notes;
 
   return (
-    <div ref={setNodeRef} style={style} className="group">
-      {/* Row — full hover highlight */}
-      <div className={`flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 ${deleting ? "opacity-40" : ""}`}>
+    <div className={`group transition-opacity duration-150 ${deleting ? "opacity-40" : ""}`}>
+      <div className={`flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 ${item.checked ? "opacity-55" : ""}`}>
 
-        {/* Drag handle — desktop only, shows on row hover */}
+        {/* ↑↓ item reorder */}
         {canEdit && (
-          <button
-            {...attributes}
-            {...listeners}
-            className="hidden md:flex shrink-0 cursor-grab touch-none text-zinc-300 dark:text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity"
-            aria-label="Arrastrar"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-              <circle cx="4" cy="3" r="1.2" /><circle cx="10" cy="3" r="1.2" />
-              <circle cx="4" cy="7" r="1.2" /><circle cx="10" cy="7" r="1.2" />
-              <circle cx="4" cy="11" r="1.2" /><circle cx="10" cy="11" r="1.2" />
-            </svg>
-          </button>
+          <div className="flex flex-col shrink-0">
+            <button
+              onClick={onMoveUp}
+              className={`h-4 w-4 flex items-center justify-center transition-colors ${isFirst ? "opacity-0 pointer-events-none" : "text-zinc-300 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-300"}`}
+              aria-label="Subir"
+              tabIndex={isFirst ? -1 : 0}
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="2 8 6 4 10 8" />
+              </svg>
+            </button>
+            <button
+              onClick={onMoveDown}
+              className={`h-4 w-4 flex items-center justify-center transition-colors ${isLast ? "opacity-0 pointer-events-none" : "text-zinc-300 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-300"}`}
+              aria-label="Bajar"
+              tabIndex={isLast ? -1 : 0}
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="2 4 6 8 10 4" />
+              </svg>
+            </button>
+          </div>
         )}
 
         {/* Checkbox */}
@@ -81,29 +106,44 @@ export function ShoppingListItem({ item, canEdit, myParticipantId, showCheckedBy
           disabled={toggling}
           className={`shrink-0 h-4.5 w-4.5 rounded-md border-2 transition-all flex items-center justify-center ${
             item.checked
-              ? "border-zinc-400 bg-zinc-400 dark:border-zinc-500 dark:bg-zinc-500"
+              ? "border-emerald-400 bg-emerald-400 dark:border-emerald-500 dark:bg-emerald-500"
               : "border-zinc-300 bg-white hover:border-zinc-500 dark:border-zinc-600 dark:bg-transparent dark:hover:border-zinc-400"
           } ${toggling ? "opacity-50" : ""}`}
           aria-label={item.checked ? "Desmarcar" : "Marcar como completado"}
         >
           {item.checked && (
-            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="1 4 3.5 6.5 9 1" />
             </svg>
           )}
         </button>
 
-        {/* Text */}
+        {/* Text — click to edit (only when not checked) */}
         <div className="flex-1 min-w-0">
-          <span
-            className={`block text-sm leading-snug wrap-break-word ${
-              item.checked
-                ? "line-through text-zinc-400 dark:text-zinc-500"
-                : "text-zinc-800 dark:text-zinc-200"
-            }`}
-          >
-            {item.text}
-          </span>
+          {editingText && canEdit ? (
+            <input
+              value={textValue}
+              onChange={(e) => setTextValue(e.target.value)}
+              onBlur={handleTextBlur}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Escape") { setTextValue(item.text); setEditingText(false); }
+              }}
+              autoFocus
+              className="w-full rounded border-b border-zinc-300 bg-transparent py-0.5 text-sm text-zinc-800 focus:outline-none dark:border-zinc-600 dark:text-zinc-200"
+            />
+          ) : (
+            <button
+              onClick={() => { if (canEdit && !item.checked) setEditingText(true); }}
+              className={`block w-full text-left text-sm leading-snug wrap-break-word transition-colors ${
+                item.checked
+                  ? "line-through text-zinc-400 dark:text-zinc-500 cursor-default"
+                  : `text-zinc-800 dark:text-zinc-200 ${canEdit ? "hover:text-zinc-600 dark:hover:text-zinc-300 cursor-text" : ""}`
+              }`}
+            >
+              {item.text}
+            </button>
+          )}
           {showCheckedBy && item.checked && item.checkedByParticipant && (
             <span className="text-xs text-zinc-400 dark:text-zinc-500">
               ✓ {item.checkedByParticipant.id === myParticipantId ? "Tú" : item.checkedByParticipant.name}
@@ -126,7 +166,7 @@ export function ShoppingListItem({ item, canEdit, myParticipantId, showCheckedBy
           </svg>
         </button>
 
-        {/* Delete — always visible (subtle) on mobile, hover-only on desktop */}
+        {/* Delete */}
         {canEdit && (
           <button
             onClick={handleDelete}
@@ -141,9 +181,9 @@ export function ShoppingListItem({ item, canEdit, myParticipantId, showCheckedBy
         )}
       </div>
 
-      {/* Notes area — below the row */}
+      {/* Notes area */}
       {showNotes && (
-        <div className="px-9 pb-1">
+        <div className="px-10 pb-1">
           {editingNotes && canEdit ? (
             <textarea
               value={notesValue}
