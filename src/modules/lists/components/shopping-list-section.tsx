@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ShoppingListItem } from "./shopping-list-item";
 import { InlineAddItem } from "./inline-add-item";
+import { SectionContextMenu } from "./section-context-menu";
 import type { ListSection, ListItem } from "../types";
 
 function useCollapsedSection(sectionId: string) {
@@ -69,8 +70,60 @@ export function ShoppingListSection({
   const [titleValue, setTitleValue] = useState(section.title);
   const [collapsed, toggleCollapsed] = useCollapsedSection(section.id);
   const [mounted, setMounted] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Long-press state
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => setMounted(true), []);
+
+  function showMenu(x: number, y: number) {
+    setMenuPos({ x, y });
+  }
+
+  function handleHeaderContextMenu(e: React.MouseEvent) {
+    e.preventDefault();
+    showMenu(e.clientX, e.clientY);
+  }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    const touch = e.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+    longPressTriggered.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      showMenu(touch.clientX, touch.clientY - 10);
+    }, 450);
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!touchStart.current || !longPressTimer.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStart.current.x);
+    const dy = Math.abs(touch.clientY - touchStart.current.y);
+    if (dx > 10 || dy > 10) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
+  function handleTouchEnd() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    touchStart.current = null;
+  }
+
+  function handleHeaderClick() {
+    if (longPressTriggered.current) {
+      longPressTriggered.current = false;
+      return;
+    }
+    if (!editing) toggleCollapsed();
+  }
 
   async function handleTitleBlur() {
     setEditing(false);
@@ -81,53 +134,38 @@ export function ShoppingListSection({
     }
   }
 
+  function handleDeleteSection() {
+    toast(`¿Eliminar la sección "${section.title}"?`, {
+      action: { label: "Eliminar", onClick: () => onDeleteSection(section.id) },
+      cancel: { label: "Cancelar", onClick: () => {} },
+    });
+  }
+
   const total = section.items.length;
   const done = section.items.filter((i: ListItem) => i.checked).length;
 
   return (
     <div className="group/section mt-4">
-      {/* Section header — entire row toggles collapse */}
+      {/* Section header */}
       <div
         role="button"
-        onClick={toggleCollapsed}
+        tabIndex={0}
+        onClick={handleHeaderClick}
+        onContextMenu={handleHeaderContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleCollapsed(); }}
         className="flex cursor-pointer items-center gap-1.5 mb-1.5 px-2 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800/40 border-l-2 border-zinc-200 dark:border-zinc-700 select-none"
       >
-        {/* ↑↓ section reorder — stop propagation so they don't collapse */}
-        {canEdit && (
-          <div
-            className="flex flex-col shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={onMoveUp}
-              className={`h-4 w-4 flex items-center justify-center transition-colors ${isFirst ? "opacity-0 pointer-events-none" : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"}`}
-              tabIndex={isFirst ? -1 : 0}
-              aria-label="Subir sección"
-            >
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="2 8 6 4 10 8" />
-              </svg>
-            </button>
-            <button
-              onClick={onMoveDown}
-              className={`h-4 w-4 flex items-center justify-center transition-colors ${isLast ? "opacity-0 pointer-events-none" : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"}`}
-              tabIndex={isLast ? -1 : 0}
-              aria-label="Bajar sección"
-            >
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="2 4 6 8 10 4" />
-              </svg>
-            </button>
-          </div>
-        )}
-
-        {/* Title — click stops propagation so it starts editing instead of collapsing */}
+        {/* Title */}
         {editing && canEdit ? (
           <input
             value={titleValue}
             onChange={(e) => setTitleValue(e.target.value)}
             onBlur={handleTitleBlur}
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
               if (e.key === "Enter") e.currentTarget.blur();
               if (e.key === "Escape") { setTitleValue(section.title); setEditing(false); }
@@ -136,55 +174,42 @@ export function ShoppingListSection({
             className="flex-1 min-w-0 rounded border border-zinc-200 bg-transparent px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:border-zinc-700 dark:text-zinc-400 dark:focus:ring-zinc-600"
           />
         ) : (
-          <span
-            onClick={(e) => {
-              if (!canEdit) return;
-              e.stopPropagation();
-              setEditing(true);
-            }}
-            className={`flex-1 min-w-0 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate ${canEdit ? "cursor-text" : "cursor-default"}`}
-          >
+          <span className="flex-1 min-w-0 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">
             {section.title}
           </span>
         )}
 
-        {/* Count badge */}
+        {/* Count */}
         {total > 0 && (
           <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500 tabular-nums">
             {done}/{total}
           </span>
         )}
 
-        {/* Chevron — visual indicator only, clicks bubble to parent div */}
+        {/* Chevron — visual indicator */}
         <svg
-          width="10"
-          height="10"
-          viewBox="0 0 12 12"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
           className={`shrink-0 text-zinc-400 dark:text-zinc-500 transition-transform duration-150 ${mounted && collapsed ? "-rotate-90" : ""}`}
         >
           <polyline points="2 4 6 8 10 4" />
         </svg>
 
-        {/* Delete — stop propagation */}
+        {/* ⋯ menu button — always visible, stop propagation */}
         {canEdit && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toast(`¿Eliminar la sección "${section.title}"?`, {
-                action: { label: "Eliminar", onClick: () => onDeleteSection(section.id) },
-                cancel: { label: "Cancelar", onClick: () => {} },
-              });
+              showMenu(e.clientX, e.clientY);
             }}
-            className="shrink-0 text-zinc-300 opacity-0 group-hover/section:opacity-100 hover:text-red-400 transition-colors dark:text-zinc-600 dark:hover:text-red-400"
-            aria-label="Eliminar sección"
+            onTouchStart={(e) => e.stopPropagation()}
+            className="shrink-0 rounded p-0.5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            aria-label="Más opciones de sección"
           >
-            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
-              <line x1="2" y1="2" x2="12" y2="12" /><line x1="12" y1="2" x2="2" y2="12" />
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor">
+              <circle cx="6.5" cy="2.5" r="1.2" />
+              <circle cx="6.5" cy="6.5" r="1.2" />
+              <circle cx="6.5" cy="10.5" r="1.2" />
             </svg>
           </button>
         )}
@@ -224,6 +249,23 @@ export function ShoppingListSection({
             </div>
           )}
         </>
+      )}
+
+      {/* Context menu */}
+      {menuPos && (
+        <SectionContextMenu
+          x={menuPos.x}
+          y={menuPos.y}
+          isFirst={isFirst}
+          isLast={isLast}
+          collapsed={collapsed}
+          onClose={() => setMenuPos(null)}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+          onRename={() => setEditing(true)}
+          onToggleCollapse={toggleCollapsed}
+          onDelete={handleDeleteSection}
+        />
       )}
     </div>
   );

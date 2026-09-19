@@ -200,11 +200,11 @@ export function ShoppingListItem({
           </button>
         )}
 
-        {/* Context menu hint — desktop only, appears on hover */}
+        {/* ⋯ menu button — always visible */}
         {canEdit && !editingText && (
           <button
             onClick={(e) => { e.stopPropagation(); showMenu(e.clientX, e.clientY); }}
-            className="shrink-0 rounded p-1 text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors opacity-0 group-hover:opacity-100 md:flex hidden"
+            className="shrink-0 rounded p-1 text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
             aria-label="Más opciones"
             title="Más opciones (o click derecho)"
           >
