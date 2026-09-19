@@ -115,7 +115,7 @@ export function ShoppingListCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group/list rounded-2xl border bg-white shadow-sm dark:bg-zinc-900 transition-colors ${
+      className={`group/list rounded-2xl border bg-white shadow-md dark:shadow-zinc-950/60 dark:bg-zinc-900 transition-colors ${
         isComplete
           ? "border-emerald-200 dark:border-emerald-800/60"
           : "border-zinc-200 dark:border-zinc-700/80"
@@ -233,6 +233,7 @@ export function ShoppingListCard({
               canEdit={canEdit}
               myParticipantId={myParticipantId}
               showCheckedBy={showCheckedBy}
+              index={idx}
               isFirst={idx === 0}
               isLast={idx === list.sections.length - 1}
               addItemOpen={activeAddFor === section.id}

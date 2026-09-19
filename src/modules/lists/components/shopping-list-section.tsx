@@ -7,6 +7,18 @@ import { InlineAddItem } from "./inline-add-item";
 import { SectionContextMenu } from "./section-context-menu";
 import type { ListSection, ListItem } from "../types";
 
+// Full class strings so Tailwind includes them in the build
+const SECTION_COLORS = [
+  "border-l-blue-400   dark:border-l-blue-500   bg-blue-50/70   dark:bg-blue-950/20",
+  "border-l-violet-400 dark:border-l-violet-500 bg-violet-50/70 dark:bg-violet-950/20",
+  "border-l-amber-400  dark:border-l-amber-500  bg-amber-50/70  dark:bg-amber-950/20",
+  "border-l-emerald-400 dark:border-l-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20",
+  "border-l-rose-400   dark:border-l-rose-500   bg-rose-50/70   dark:bg-rose-950/20",
+  "border-l-cyan-400   dark:border-l-cyan-500   bg-cyan-50/70   dark:bg-cyan-950/20",
+  "border-l-orange-400 dark:border-l-orange-500 bg-orange-50/70 dark:bg-orange-950/20",
+  "border-l-pink-400   dark:border-l-pink-500   bg-pink-50/70   dark:bg-pink-950/20",
+];
+
 function useCollapsedSection(sectionId: string) {
   const key = `section-collapsed-${sectionId}`;
   const [collapsed, setCollapsed] = useState(() => {
@@ -28,6 +40,7 @@ type Props = {
   canEdit: boolean;
   myParticipantId: string;
   showCheckedBy?: boolean;
+  index: number;
   isFirst: boolean;
   isLast: boolean;
   addItemOpen: boolean;
@@ -50,6 +63,7 @@ export function ShoppingListSection({
   canEdit,
   myParticipantId,
   showCheckedBy = true,
+  index,
   isFirst,
   isLast,
   addItemOpen,
@@ -156,7 +170,7 @@ export function ShoppingListSection({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleCollapsed(); }}
-        className="flex cursor-pointer items-center gap-1.5 mb-1.5 px-2 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800/40 border-l-2 border-zinc-200 dark:border-zinc-700 select-none"
+        className={`flex cursor-pointer items-center gap-1.5 mb-1.5 px-2 py-1.5 rounded-lg border-l-2 select-none ${SECTION_COLORS[index % SECTION_COLORS.length]}`}
       >
         {/* Title */}
         {editing && canEdit ? (
