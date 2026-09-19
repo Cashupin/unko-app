@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { GalleryLightbox, type GalleryPhoto } from "@/modules/gallery/components/gallery-lightbox";
 
@@ -102,12 +103,12 @@ export function GalleryClient({
               }`}
               aria-label={`${selectMode ? (isSelected ? "Deseleccionar" : "Seleccionar") : "Ver"} foto de ${photo.itemTitle}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
+                fill
                 src={photo.url}
                 alt={`${photo.itemTitle} — ${photo.userName ?? "visita"}`}
-                className="h-full w-full object-cover"
-                loading="lazy"
+                className="object-cover"
+                sizes="96px"
               />
 
               {/* User name overlay */}

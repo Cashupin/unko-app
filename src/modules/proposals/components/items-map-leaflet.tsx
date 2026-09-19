@@ -2,6 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
+import Image from "next/image";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import type { LatLngBoundsExpression } from "leaflet";
@@ -101,10 +102,12 @@ export function ItemsMapLeaflet({ items, selectedCity }: { items: MapItem[]; sel
           <Popup minWidth={220} maxWidth={260}>
             <div style={{ fontFamily: "inherit" }}>
               {item.imageUrl && (
-                <img
+                <Image
                   src={item.imageUrl}
                   alt={item.title}
-                  style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 6, marginBottom: 8 }}
+                  width={240}
+                  height={100}
+                  className="w-full object-cover rounded-md mb-2"
                 />
               )}
               <div style={{ fontWeight: 600, fontSize: 13, color: "#18181b", lineHeight: 1.3, marginBottom: 2 }}>

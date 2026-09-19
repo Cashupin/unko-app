@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS } from "@/lib/constants";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -199,8 +200,7 @@ export function EditTripForm({
                 </label>
                 {coverImageUrl ? (
                   <div className="relative rounded-xl overflow-hidden h-28">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={coverImageUrl} alt="Portada" className="w-full h-full object-cover" />
+                    <Image fill src={coverImageUrl} alt="Portada" className="object-cover" sizes="448px" />
                     <button
                       type="button"
                       onClick={() => setCoverImageUrl(null)}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { auth, signOut } from "@/auth";
 import { CURRENCY_SYMBOLS as SYM, fmtAmount } from "@/lib/constants";
 import type { Currency } from "@/lib/constants";
@@ -401,12 +402,7 @@ function HeroTripCard({ trip, countdown }: { trip: TripSummary; countdown: numbe
     >
       {/* Background: photo or gradient */}
       {trip.coverImageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={trip.coverImageUrl}
-          alt={trip.name}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <Image fill src={trip.coverImageUrl} alt={trip.name} className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
       ) : (
         <div className={`absolute inset-0 bg-linear-to-br ${palette.gradient}`} />
       )}
@@ -482,12 +478,7 @@ function MiniTripCard({ trip }: { trip: TripSummary }) {
       className="group relative flex flex-col justify-end rounded-2xl overflow-hidden min-h-28 transition-all hover:scale-[1.02] hover:shadow-xl"
     >
       {trip.coverImageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={trip.coverImageUrl}
-          alt={trip.name}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <Image fill src={trip.coverImageUrl} alt={trip.name} className="object-cover" sizes="(max-width: 768px) 50vw, 25vw" />
       ) : (
         <div className={`absolute inset-0 bg-linear-to-br ${palette.gradient}`} />
       )}

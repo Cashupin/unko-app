@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -182,8 +183,7 @@ export default function NewTripPage() {
             </label>
             {coverImageUrl ? (
               <div className="relative rounded-xl overflow-hidden h-32">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={coverImageUrl} alt="Portada" className="w-full h-full object-cover" />
+                <Image fill src={coverImageUrl} alt="Portada" className="object-cover" sizes="448px" />
                 <button
                   type="button"
                   onClick={() => setCoverImageUrl(null)}

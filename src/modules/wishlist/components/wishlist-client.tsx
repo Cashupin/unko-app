@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -352,9 +353,9 @@ export function WishlistClient({ tripId, myParticipantId, canEdit, initialItems,
               <button key={group.rootId} onClick={() => setSelectedGroup(group)}
                 className="group relative aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-800 focus:outline-none">
                 {group.root.imageUrl ? (
-                  <img src={group.root.imageUrl} alt={group.root.name}
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 group-active:scale-95"
-                    loading="lazy" />
+                  <Image fill src={group.root.imageUrl} alt={group.root.name}
+                    className="object-cover transition-transform duration-200 group-active:scale-95"
+                    sizes="(max-width: 768px) 33vw, 20vw" />
                 ) : (
                   <PlaceholderCard color={color} />
                 )}

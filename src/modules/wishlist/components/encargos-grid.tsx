@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { EncargoDetailSheet } from "./encargo-detail-sheet";
 import type { FriendRequest } from "../types";
@@ -215,11 +216,12 @@ export function EncargosGrid({ tripId, requests, onUpdate }: Props) {
                 className="group relative aspect-square overflow-hidden bg-zinc-100 focus:outline-none dark:bg-zinc-800"
               >
                 {req.imageUrl ? (
-                  <img
+                  <Image
+                    fill
                     src={req.imageUrl}
                     alt={req.name}
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 group-active:scale-95"
-                    loading="lazy"
+                    className="object-cover transition-transform duration-200 group-active:scale-95"
+                    sizes="(max-width: 768px) 33vw, 20vw"
                   />
                 ) : (
                   <PlaceholderCard color={color} />

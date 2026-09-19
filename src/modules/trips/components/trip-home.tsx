@@ -255,8 +255,7 @@ export async function TripHome({
       {/* ── Hero Banner ─── flush/edge-to-edge ────────────────────────────────── */}
       <div id="tutorial-trip-hero" className="-mx-4 -mt-6 md:-mx-6 md:-mt-8 relative h-44 sm:h-56 rounded-b-[20px] overflow-hidden mb-5">
         {coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <Image fill src={coverImageUrl} alt="" className="object-cover" sizes="100vw" priority />
         ) : (
           <div
             className="absolute inset-0"
@@ -309,13 +308,13 @@ export async function TripHome({
                 {participantsWithRoles.slice(0, 3).map((p, i) => {
                   const initials = p.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
                   return p.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       key={p.id}
                       src={p.image}
                       alt={p.name}
-                      referrerPolicy="no-referrer"
-                      className={`w-6.5 h-6.5 rounded-full border-2 border-black/40 object-cover${i > 0 ? " -ml-1.5" : ""}`}
+                      width={26}
+                      height={26}
+                      className={`rounded-full border-2 border-black/40 object-cover${i > 0 ? " -ml-1.5" : ""}`}
                     />
                   ) : (
                     <div
